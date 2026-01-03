@@ -66,9 +66,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
         {/* Logo Section */}
         <div className="p-8 text-center">
           <div className="flex flex-col items-center gap-1">
-             <span className="text-3xl font-black text-blue-600 tracking-tighter">code</span>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">مركز ريادة الأعمال الرقمية</p>
-             <p className="text-[8px] text-slate-400">Center of Digital Entrepreneurship</p>
+             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-white">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+             </div>
+             <span className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">بيزنس ديفلوبرز</span>
+             <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">مسرعة الأعمال الذكية</p>
           </div>
         </div>
 
@@ -110,7 +114,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
 
            {/* Divider with Title */}
            <div className="pt-4 border-t border-slate-200/50">
-              <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">CODE MVPLAB - COHORT 15</p>
+              <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">برنامج الاحتضان - الدفعة 15</p>
               <div className="space-y-1">
                 {NAV_ITEMS.filter(i => i.section === 'program').map(item => (
                   <button
@@ -246,7 +250,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
              <div className="flex flex-col items-center justify-center h-full text-center opacity-30 select-none">
                 <div className="text-9xl mb-8">🛠️</div>
                 <h3 className="text-4xl font-black mb-4">قيد التطوير</h3>
-                <p className="text-xl font-bold">هذه الصفحة ستكون متاحة قريباً في التحديث القادم لمسرعة CODE.</p>
+                <p className="text-xl font-bold">هذه الصفحة ستكون متاحة قريباً في التحديث القادم لمسرعة بيزنس ديفلوبرز.</p>
              </div>
            )}
         </div>

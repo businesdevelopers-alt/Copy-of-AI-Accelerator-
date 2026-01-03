@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LevelData, UserProfile, Question } from '../types';
 import { generateLevelMaterial, generateLevelQuiz, evaluateExerciseResponse } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
+import { storageService } from '../services/storageService';
 import { AreaChart, Area, ResponsiveContainer, YAxis, XAxis, Tooltip } from 'recharts';
 
 interface LevelTheme {
@@ -61,106 +62,6 @@ enum Step {
   QUIZ,
   COMPLETED
 }
-
-// مكون تفاعلي لمخطط نموذج العمل (BMC)
-const InteractiveBMCExplorer: React.FC<{ user: UserProfile; theme: LevelTheme }> = ({ user, theme }) => {
-  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
-
-  const blocks = [
-    { id: 'kp', title: 'الشركاء الرئيسيون', icon: '🤝', desc: 'من هم الذين سيساعدونك في إنجاز المشروع؟', example: `في قطاع ${user.industry}، قد يكونون موردين تقنيين أو شركاء لوجستيين.` },
-    { id: 'ka', title: 'الأنشطة الرئيسية', icon: '⚙️', desc: 'ما هي أهم الأشياء التي تقوم بها شركتك؟', example: 'تطوير المنصة، التسويق الرقمي، إدارة خدمة العملاء.' },
-    { id: 'kr', title: 'الموارد الرئيسية', icon: '🛠️', desc: 'ما الذي تحتاجه لتنفيذ أنشطتك؟', example: 'فريق برمجة، خوادم سحابية، علامة تجارية قوية.' },
-    { id: 'vp', title: 'القيمة المقترحة', icon: '💎', desc: 'لماذا سيختارك العميل؟ ما المشكلة التي تحلها؟', example: `حل ذكي وموفر للوقت في مجال ${user.industry}.` },
-    { id: 'cr', title: 'علاقات العملاء', icon: '❤️', desc: 'كيف ستحافظ على عملائك؟', example: 'دعم فني 24/7، برامج ولاء، مجتمع افتراضي.' },
-    { id: 'ch', title: 'القنوات', icon: '📱', desc: 'كيف ستصل لعملائك؟', example: 'تطبيق جوال، شبكات التواصل، حملات بريد إلكتروني.' },
-    { id: 'cs', title: 'شرائح العملاء', icon: '👥', desc: 'من هم الأشخاص الذين تحل مشكلتهم؟', example: 'الشباب المهتمون بالتقنية، أصحاب الشركات الصغيرة.' },
-    { id: 'cost', title: 'هيكل التكاليف', icon: '💸', desc: 'أين ستنفق أموالك؟', example: 'رواتب الفريق، التسويق، تكاليف التشغيل السحابية.' },
-    { id: 'rev', title: 'مصادر الإيرادات', icon: '💰', desc: 'كيف ستجني المال؟', example: 'اشتراكات شهرية، عمولة على العمليات، خدمات متميزة.' },
-  ];
-
-  return (
-    <div className="mt-12 space-y-8 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-         <h4 className="text-xl font-black text-slate-900">مستكشف نموذج العمل التفاعلي 🔍</h4>
-         <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 uppercase tracking-widest">Click to Explore Blocks</span>
-      </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 h-[450px] md:h-[350px]">
-        {/* Row 1 */}
-        <div className="col-span-1 row-span-2 flex flex-col gap-3">
-           <BMCBlock item={blocks[0]} theme={theme} isSelected={selectedBlock === blocks[0].id} onSelect={setSelectedBlock} />
-        </div>
-        <div className="col-span-1 row-span-1 flex flex-col gap-3">
-           <BMCBlock item={blocks[1]} theme={theme} isSelected={selectedBlock === blocks[1].id} onSelect={setSelectedBlock} />
-        </div>
-        <div className="col-span-1 row-span-2 flex flex-col gap-3">
-           <BMCBlock item={blocks[3]} theme={theme} isSelected={selectedBlock === blocks[3].id} onSelect={setSelectedBlock} highlight />
-        </div>
-        <div className="col-span-1 row-span-1 flex flex-col gap-3">
-           <BMCBlock item={blocks[4]} theme={theme} isSelected={selectedBlock === blocks[4].id} onSelect={setSelectedBlock} />
-        </div>
-        <div className="col-span-1 row-span-2 flex flex-col gap-3">
-           <BMCBlock item={blocks[6]} theme={theme} isSelected={selectedBlock === blocks[6].id} onSelect={setSelectedBlock} />
-        </div>
-
-        {/* Row 2 (under row 1 bits) */}
-        <div className="col-start-2 col-span-1 row-start-2 flex flex-col gap-3">
-           <BMCBlock item={blocks[2]} theme={theme} isSelected={selectedBlock === blocks[2].id} onSelect={setSelectedBlock} />
-        </div>
-        <div className="col-start-4 col-span-1 row-start-2 flex flex-col gap-3">
-           <BMCBlock item={blocks[5]} theme={theme} isSelected={selectedBlock === blocks[5].id} onSelect={setSelectedBlock} />
-        </div>
-
-        {/* Row 3 (Bottom) */}
-        <div className="col-span-2 md:col-span-2 row-start-3 flex flex-col gap-3">
-           <BMCBlock item={blocks[7]} theme={theme} isSelected={selectedBlock === blocks[7].id} onSelect={setSelectedBlock} />
-        </div>
-        <div className="col-span-2 md:col-span-3 row-start-3 flex flex-col gap-3">
-           <BMCBlock item={blocks[8]} theme={theme} isSelected={selectedBlock === blocks[8].id} onSelect={setSelectedBlock} />
-        </div>
-      </div>
-
-      {/* Details Panel */}
-      <div className={`p-8 rounded-[2.5rem] border-2 transition-all min-h-[160px] flex items-center justify-center text-center
-        ${selectedBlock ? 'bg-white border-blue-500 shadow-xl' : 'bg-slate-50 border-slate-200 border-dashed'}
-      `}>
-        {selectedBlock ? (
-          <div className="animate-fade-in space-y-4">
-            <div className="flex items-center justify-center gap-3">
-               <span className="text-3xl">{blocks.find(b => b.id === selectedBlock)?.icon}</span>
-               <h5 className="text-2xl font-black text-slate-900">{blocks.find(b => b.id === selectedBlock)?.title}</h5>
-            </div>
-            <p className="text-slate-600 font-medium max-w-2xl mx-auto">{blocks.find(b => b.id === selectedBlock)?.desc}</p>
-            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 inline-block">
-               <p className="text-sm font-bold text-blue-800">💡 مثال لمشروعك: {blocks.find(b => b.id === selectedBlock)?.example}</p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-slate-400 font-bold text-lg">اضغط على أي جزء من المخطط أعلاه لاستكشاف تفاصيله وأمثلة لمشروعك.</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const BMCBlock: React.FC<{ 
-  item: any; 
-  theme: LevelTheme; 
-  isSelected: boolean; 
-  onSelect: (id: string) => void;
-  highlight?: boolean;
-}> = ({ item, theme, isSelected, onSelect, highlight }) => (
-  <button 
-    onClick={() => onSelect(item.id)}
-    className={`h-full w-full rounded-2xl border-2 p-3 transition-all flex flex-col items-center justify-center gap-1 group
-      ${isSelected ? `${theme.primary} text-white shadow-lg scale-[1.02] border-transparent` : 
-        highlight ? 'bg-amber-50 border-amber-200 hover:border-amber-400' : 'bg-white border-slate-100 hover:border-blue-300'}
-    `}
-  >
-    <span className={`text-xl transition-transform group-hover:scale-125 ${isSelected ? 'scale-125' : ''}`}>{item.icon}</span>
-    <span className={`text-[9px] font-black text-center ${isSelected ? 'text-white' : highlight ? 'text-amber-700' : 'text-slate-500'}`}>{item.title}</span>
-  </button>
-);
 
 const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wireframe?: boolean }> = ({ levelId, theme, wireframe = false }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -276,19 +177,6 @@ const AIEngineLoader: React.FC<{ theme: LevelTheme; progress?: number }> = ({ th
            <line x1="100" y1="40" x2="100" y2="75" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" className={theme.accent} />
         </g>
       </svg>
-      {[...Array(12)].map((_, i) => (
-        <div 
-          key={i}
-          className={`absolute w-1 h-1 rounded-full ${theme.primary} shadow-[0_0_8px_currentColor] opacity-0 animate-[data-fly_3s_linear_infinite]`}
-          style={{
-            top: '50%',
-            left: '50%',
-            animationDelay: `${i * 0.25}s`,
-            '--tx': `${(Math.random() - 0.5) * 200}px`,
-            '--ty': `${(Math.random() - 0.5) * 200}px`,
-          } as any}
-        />
-      ))}
     </div>
   );
 };
@@ -317,6 +205,9 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
+  const [currentContentPage, setCurrentContentPage] = useState(0);
+  const [showRestoreToast, setShowRestoreToast] = useState(false);
+
   const loadingMessages = [
     "جاري تحليل سياق المشروع...",
     "تصميم التمارين التطبيقية...",
@@ -327,6 +218,48 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
   const profileRef = useRef<HTMLDivElement>(null);
   const themeRef = useRef<HTMLDivElement>(null);
+
+  const contentBlocks = useMemo(() => {
+    if (!content) return [];
+    return content.split('\n\n').filter(b => b.trim().length > 0);
+  }, [content]);
+
+  // استرجاع التقدم المحفوظ عند التحميل
+  useEffect(() => {
+    const session = storageService.getCurrentSession();
+    if (session) {
+      const saved = storageService.getLevelProgress(session.uid, level.id);
+      if (saved) {
+        setStep(saved.step ?? Step.LOADING_CONTENT);
+        setCurrentContentPage(saved.currentPage ?? 0);
+        setExerciseAnswer(saved.exerciseAnswer ?? '');
+        setExerciseFeedback(saved.exerciseFeedback ?? '');
+        if (saved.quizAnswers) setQuizAnswers(saved.quizAnswers);
+        if (saved.quizScore !== undefined) setQuizScore(saved.quizScore);
+        
+        // إظهار توست بسيط للمستخدم
+        if (saved.step !== Step.LOADING_CONTENT) {
+           setShowRestoreToast(true);
+           setTimeout(() => setShowRestoreToast(false), 4000);
+        }
+      }
+    }
+  }, [level.id]);
+
+  // الحفظ التلقائي عند تغير الحالة
+  useEffect(() => {
+    const session = storageService.getCurrentSession();
+    if (session && step !== Step.LOADING_CONTENT) {
+      storageService.saveLevelProgress(session.uid, level.id, {
+        step,
+        currentPage: currentContentPage,
+        exerciseAnswer,
+        exerciseFeedback,
+        quizAnswers,
+        quizScore
+      });
+    }
+  }, [step, currentContentPage, exerciseAnswer, exerciseFeedback, quizAnswers, quizScore, level.id]);
 
   useEffect(() => {
     let msgInterval: number;
@@ -358,7 +291,11 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         const data = await generateLevelMaterial(level.id, level.title, user);
         setContent(data.content);
         setExercisePrompt(data.exercise);
-        setTimeout(() => setStep(Step.LEARN), 4500);
+        
+        // إذا كنا في مرحلة التحميل فقط، ننتقل للتعلم
+        if (step === Step.LOADING_CONTENT) {
+          setTimeout(() => setStep(Step.LEARN), 4500);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -367,20 +304,11 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   }, [level.id, level.title, user]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (step !== Step.LEARN) return;
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const currentScroll = window.scrollY;
-      if (totalHeight <= 0) {
-        setReadingProgress(100);
-      } else {
-        const progress = (currentScroll / totalHeight) * 100;
-        setReadingProgress(Math.min(100, Math.max(0, progress)));
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [step]);
+    if (step === Step.LEARN && contentBlocks.length > 0) {
+      const progress = ((currentContentPage + 1) / contentBlocks.length) * 100;
+      setReadingProgress(progress);
+    }
+  }, [step, currentContentPage, contentBlocks]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -415,7 +343,10 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
     try {
       const questions = await generateLevelQuiz(level.id, level.title, user);
       setQuizQuestions(questions);
-      setQuizAnswers(new Array(questions.length).fill(-1));
+      // فقط إذا لم يكن لدينا إجابات مستعادة، نقوم بتصفيرها
+      if (quizAnswers.length !== questions.length) {
+         setQuizAnswers(new Array(questions.length).fill(-1));
+      }
       setStep(Step.QUIZ);
     } catch (e) {
       console.error(e);
@@ -478,7 +409,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   }, [step, readingProgress, exerciseAnswer, exerciseFeedback, quizAnswers, quizQuestions]);
 
   const tasks = [
-    { id: 'learn', label: 'استيعاب المادة العلمية', isCompleted: step > Step.LEARN || (step === Step.LEARN && readingProgress > 95), isActive: step === Step.LEARN },
+    { id: 'learn', label: 'استيعاب المادة العلمية', isCompleted: step > Step.LEARN || (step === Step.LEARN && readingProgress >= 100), isActive: step === Step.LEARN },
     { id: 'exercise', label: 'التطبيق العملي للمشروع', isCompleted: step > Step.EXERCISE || !!exerciseFeedback, isActive: step === Step.EXERCISE },
     { id: 'quiz', label: 'التقييم النهائي للمستوى', isCompleted: step === Step.COMPLETED, isActive: step === Step.QUIZ },
   ];
@@ -488,33 +419,37 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
       { name: 'بداية', value: 0 },
       { name: 'تعلم', value: step >= Step.LEARN ? (step === Step.LEARN ? readingProgress : 100) : 0 },
       { name: 'تطبيق', value: step >= Step.EXERCISE ? (step === Step.EXERCISE ? (exerciseFeedback ? 100 : 50) : 100) : 0 },
-      { name: 'تقييم', value: step >= Step.QUIZ ? (step === Step.QUIZ ? (quizAnswers.filter(a => a !== -1).length / quizQuestions.length) * 100 : 100) : 0 },
+      { name: 'تقييم', value: step >= Step.QUIZ ? (step === Step.QUIZ ? (quizAnswers.filter(a => a !== -1).length / (quizQuestions.length || 1)) * 100 : 100) : 0 },
       { name: 'نهاية', value: step === Step.COMPLETED ? 100 : 0 }
     ];
   }, [step, readingProgress, exerciseFeedback, quizAnswers, quizQuestions]);
 
   return (
-    <div className={`min-h-screen ${activeTheme.bg} flex flex-col font-sans transition-colors duration-500`}>
+    <div className={`min-h-screen ${activeTheme.bg} flex flex-col font-sans transition-colors duration-500 overflow-x-hidden`}>
       <style>{`
         @keyframes progress-shimmer {
           0% { transform: translateX(100%); }
           100% { transform: translateX(-100%); }
         }
         .animate-progress-shimmer { animation: progress-shimmer 2s infinite linear; }
-        @keyframes data-fly {
-          0% { transform: translate(0, 0); opacity: 0; }
-          20% { opacity: 1; }
-          80% { opacity: 1; }
-          100% { transform: translate(var(--tx), var(--ty)); opacity: 0; }
-        }
         @keyframes scanning {
           0% { transform: translateY(-50px); opacity: 0; }
           50% { opacity: 1; }
           100% { transform: translateY(150px); opacity: 0; }
         }
         .animate-scanning { animation: scanning 3s linear infinite; }
-        .hide-axis .recharts-cartesian-axis { display: none; }
       `}</style>
+
+      {/* Restore Progress Notification */}
+      {showRestoreToast && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-fade-in-up border border-slate-700">
+           <span className="text-xl">🔄</span>
+           <div className="text-right">
+              <p className="text-sm font-black">تم استعادة تقدمك</p>
+              <p className="text-[10px] text-slate-400">نحن نحفظ حالتك تلقائياً حتى لا تفقد عملك.</p>
+           </div>
+        </div>
+      )}
 
       {/* Sticky Global Header */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -538,7 +473,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden relative">
                         <div 
-                          className={`${activeTheme.primary} h-full transition-all duration-700 cubic-bezier(0.4, 0, 0.2, 1) relative`} 
+                          className={`${activeTheme.primary} h-full transition-all duration-700 relative`} 
                           style={{ width: `${granularProgress}%` }}
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-progress-shimmer"></div>
@@ -565,7 +500,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                        {THEMES.map(t => (
                          <button 
                            key={t.id}
-                           onClick={() => { setActiveTheme(t); setIsThemeMenuOpen(false); }}
+                           onClick={() => { setActiveTheme(t); setIsThemeMenuOpen(false); playPositiveSound(); }}
                            className={`p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${activeTheme.id === t.id ? 'border-slate-800 bg-slate-50' : 'border-slate-50 hover:bg-slate-50'}`}
                          >
                             <div className={`w-6 h-6 rounded-full ${t.primary} shadow-inner`}></div>
@@ -599,9 +534,8 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         </div>
       </header>
 
-      <div className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        {/* Main Content Column */}
-        <div className="flex-1">
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+        <div className="flex-1 min-w-0">
           {step === Step.LOADING_CONTENT && (
             <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4 animate-fade-in">
               <div className="relative mb-16">
@@ -628,69 +562,95 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                    </h3>
                 </div>
                 <div className="relative w-full h-2 bg-slate-200/50 rounded-full overflow-hidden border border-slate-100">
-                   <div className={`${activeTheme.primary} h-full transition-all duration-300 relative shadow-[0_0_15px_rgba(59,130,246,0.3)]`} style={{ width: `${loadingProgress}%` }}>
+                   <div className={`${activeTheme.primary} h-full transition-all duration-300 relative`} style={{ width: `${loadingProgress}%` }}>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-progress-shimmer"></div>
                    </div>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                   <span>DATA_SYNC_ID: {level.id}</span>
-                   <span className="tabular-nums">SYNCHRONIZING: {loadingProgress}%</span>
                 </div>
               </div>
             </div>
           )}
 
           {step === Step.LEARN && (
-            <div className="bg-white rounded-[3rem] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden animate-fade-in-up">
-              <div className={`relative h-64 overflow-hidden bg-gradient-to-br ${activeTheme.gradient} flex items-center justify-center px-12`}>
-                 <div className="relative z-10 flex flex-col items-center text-center w-full">
-                    <div className="w-48 h-48 mb-2 flex items-center justify-center">
+            <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden animate-fade-in-up flex flex-col h-[700px]">
+              <div className={`shrink-0 relative h-40 overflow-hidden bg-gradient-to-br ${activeTheme.gradient} flex items-center px-12`}>
+                 <div className="relative z-10 flex items-center gap-6 w-full text-right">
+                    <div className="w-24 h-24 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-3xl border border-white/30">
                        <LevelIllustration levelId={level.id} theme={activeTheme} />
                     </div>
-                    <h3 className="text-3xl font-black text-white leading-tight">دراسة المبادئ والأسس</h3>
-                    <p className="text-white/70 font-bold mt-2">المسار التدريبي للمستوى {level.id}</p>
+                    <div>
+                      <h3 className="text-3xl font-black text-white leading-tight">المسار التعليمي</h3>
+                      <p className="text-white/70 font-bold mt-1">وحدة: {level.title}</p>
+                    </div>
+                    <div className="mr-auto text-left">
+                       <div className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Modules Completed</div>
+                       <div className="flex gap-1.5">
+                          {contentBlocks.map((_, i) => (
+                             <div key={i} className={`h-1.5 w-6 rounded-full transition-all duration-500 ${i <= currentContentPage ? 'bg-white' : 'bg-white/20'}`}></div>
+                          ))}
+                       </div>
+                    </div>
                  </div>
               </div>
-              <div className={`bg-slate-50/50 px-8 py-6 border-b ${activeTheme.border}/50 flex flex-col md:flex-row md:items-center gap-4`}>
-                 <div className="flex items-center gap-4">
-                   <div className={`w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center ${activeTheme.accent} font-black border ${activeTheme.border}`}>
-                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                   </div>
-                   <div>
-                     <h3 className="text-lg font-black text-slate-800 leading-none mb-1">المحتوى التعليمي</h3>
-                     <p className="text-slate-500 text-xs font-bold">دليل {user.startupName}</p>
-                   </div>
-                 </div>
-                 <div className={`md:mr-auto flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border ${activeTheme.border} shadow-sm`}>
-                   <span className={`text-[10px] font-black ${activeTheme.text} uppercase`}>قراءة: {Math.round(readingProgress)}%</span>
-                   <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden relative">
-                      <div className={`${activeTheme.primary} h-full transition-all duration-300 relative`} style={{ width: `${readingProgress}%` }}>
-                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-progress-shimmer"></div>
+
+              <div className="flex-1 relative overflow-hidden bg-slate-50/50 p-8 flex flex-col items-center justify-center">
+                 {contentBlocks.length > 0 ? (
+                   <div className="w-full max-w-3xl relative">
+                      <div 
+                        key={currentContentPage}
+                        className="bg-white p-10 md:p-14 rounded-[3.5rem] border border-slate-100 shadow-2xl animate-fade-in-up relative overflow-hidden"
+                      >
+                         <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${activeTheme.gradient} opacity-[0.03] rounded-bl-[4rem]`}></div>
+                         <div className="flex items-center gap-4 mb-8">
+                            <span className={`w-12 h-12 ${activeTheme.secondary} ${activeTheme.accent} rounded-2xl flex items-center justify-center font-black text-lg`}>
+                               {currentContentPage + 1}
+                            </span>
+                            <div className="h-px flex-1 bg-slate-100"></div>
+                         </div>
+                         <article className="prose prose-slate max-w-none prose-p:text-xl prose-p:leading-loose prose-p:font-medium prose-p:text-slate-700">
+                            {contentBlocks[currentContentPage].split('\n').map((line, idx) => (
+                               <p key={idx} className="mb-4">{line}</p>
+                            ))}
+                         </article>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-10 px-4">
+                         <button 
+                            disabled={currentContentPage === 0}
+                            onClick={() => { playPositiveSound(); setCurrentContentPage(prev => prev - 1); }}
+                            className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 font-black text-sm
+                               ${currentContentPage === 0 ? 'bg-transparent text-slate-200 border-slate-100' : `bg-white text-slate-600 border-slate-100 hover:${activeTheme.border} hover:shadow-lg`}
+                            `}
+                         >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            <span>الجزء السابق</span>
+                         </button>
+
+                         <div className="text-xs font-black text-slate-400 uppercase tracking-widest tabular-nums">
+                            PAGE {currentContentPage + 1} / {contentBlocks.length}
+                         </div>
+
+                         {currentContentPage < contentBlocks.length - 1 ? (
+                           <button 
+                             onClick={() => { playPositiveSound(); setCurrentContentPage(prev => prev + 1); }}
+                             className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-3 font-black text-sm bg-white text-slate-900 border-slate-100 hover:${activeTheme.border} hover:shadow-lg group`}
+                           >
+                              <span>الجزء التالي</span>
+                              <svg className="w-5 h-5 transform rotate-180 group-hover:translate-x-[-3px] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                           </button>
+                         ) : (
+                           <button 
+                             onClick={() => { playCelebrationSound(); setStep(Step.EXERCISE); window.scrollTo(0, 0); }}
+                             className={`px-8 py-4 rounded-2xl transition-all flex items-center gap-3 font-black text-sm ${activeTheme.primary} text-white shadow-xl hover:opacity-90 transform hover:-translate-y-1 active:scale-95`}
+                           >
+                              <span>الانتقال للتطبيق العملي</span>
+                              <svg className="w-6 h-6 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                           </button>
+                         )}
                       </div>
                    </div>
-                 </div>
-              </div>
-              <div className="p-8 md:p-12">
-                <article className="prose prose-slate max-w-none prose-headings:font-black prose-p:text-slate-600 prose-p:leading-8 prose-p:font-medium">
-                  {content.split('\n').map((paragraph, idx) => (
-                    <p key={idx} className="mb-6">{paragraph}</p>
-                  ))}
-                </article>
-
-                {/* عنصر تفاعلي مخصص للمستوى الثاني (نموذج العمل) */}
-                {level.id === 2 && (
-                   <InteractiveBMCExplorer user={user} theme={activeTheme} />
-                )}
-
-                <div className="mt-12 pt-8 border-t border-slate-100 flex justify-end">
-                  <button 
-                    onClick={() => { playPositiveSound(); setStep(Step.EXERCISE); window.scrollTo(0, 0); }}
-                    className={`${activeTheme.primary} hover:opacity-90 text-white px-10 py-4 rounded-[1.5rem] font-black shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group`}
-                  >
-                    <span>الانتقال للتمرين العملي</span>
-                    <svg className="w-5 h-5 transform rotate-180 group-hover:translate-x-[-4px] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                  </button>
-                </div>
+                 ) : (
+                   <div className="text-slate-400 font-bold">جاري ترتيب البطاقات التعليمية...</div>
+                 )}
               </div>
             </div>
           )}
@@ -802,22 +762,6 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                    </div>
                  ))}
                  
-                 {quizScore !== null && quizScore < (quizQuestions.length * 0.6) && (
-                    <div className="mt-8 bg-orange-50 border-2 border-orange-100 p-8 rounded-[2.5rem] animate-fade-in flex flex-col md:flex-row items-center gap-6">
-                      <div className="text-4xl">💡</div>
-                      <div className="flex-1 text-center md:text-right">
-                        <h4 className="text-lg font-black text-orange-800 mb-1">لم تتجاوز عتبة النجاح (60%)</h4>
-                        <p className="text-orange-700 text-sm font-medium leading-relaxed">تحتاج لمراجعة المادة العلمية مرة أخرى، أو يمكنك طلب المساعدة من مرشدينا لتوضيح المفاهيم الصعبة عليك.</p>
-                      </div>
-                      <button 
-                        onClick={onRequestMentorship}
-                        className="px-8 py-4 bg-orange-600 text-white rounded-2xl font-black text-sm hover:bg-orange-700 shadow-lg transition-all active:scale-95"
-                      >
-                        طلب جلسة إرشادية
-                      </button>
-                    </div>
-                 )}
-
                  <div className="pt-10 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-100">
                     {quizScore !== null ? (
                       <div className="text-2xl font-black text-slate-900">النتيجة النهائية: <span className={quizScore >= (quizQuestions.length * 0.6) ? 'text-green-600' : 'text-rose-600'}>{quizScore} / {quizQuestions.length}</span></div>
@@ -906,14 +850,10 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                           <span className="text-[10px] font-black">{idx + 1}</span>
                         )}
                       </div>
-                      <p className={`text-[11px] font-bold leading-tight ${task.isActive ? 'text-slate-900' : 'text-slate-500'}`}>{task.label}</p>
+                      <p className={`text-[11px] font-bold leading-tight ${task.isActive ? 'text-slate-900' : 'text-slate-50'}`}>{task.label}</p>
                     </div>
                   ))}
                </div>
-            </div>
-            <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl">
-               <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2">AI Guidance</p>
-               <p className="text-[10px] font-bold leading-relaxed opacity-70">المستشار الذكي يراقب منحنى تعلمك لتحسين التوصيات المستقبلية لمشروعك.</p>
             </div>
           </div>
         </aside>
@@ -927,7 +867,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
             <p className="text-slate-500 text-center mb-10 font-bold leading-relaxed">
               {pendingAction === 'complete' 
                 ? 'هل أنت متأكد من رغبتك في إنهاء المستوى والعودة للوحة التحكم؟ سيتم حفظ تقدمك تلقائياً.' 
-                : 'هل أنت متأكد من رغبتك في مغادرة المستوى والعودة؟ قد تفقد بعض التقدم غير المحفوظ في التمارين.'}
+                : 'هل أنت متأكد من رغبتك في مغادرة المستوى والعودة؟ لا تقلق، سيتم حفظ تقدمك الحالي للعودة إليه لاحقاً.'}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <button onClick={() => setShowExitModal(false)} className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all">إلغاء</button>

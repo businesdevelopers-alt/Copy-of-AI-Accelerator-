@@ -9,7 +9,8 @@ const DB_KEYS = {
   STARTUPS: 'db_startups',
   PROGRESS: 'db_progress',
   LOGS: 'db_logs',
-  SESSION: 'db_current_session'
+  SESSION: 'db_current_session',
+  TEMP_LEVEL_STATE: 'db_temp_level_' // سيتبع بـ userId_levelId
 };
 
 export const storageService = {
@@ -159,6 +160,26 @@ export const storageService = {
     }
   },
 
+  // --- Level Auto-Save Operations ---
+  saveLevelProgress: (uid: string, levelId: number, data: any) => {
+    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
+    localStorage.setItem(key, JSON.stringify({
+      ...data,
+      timestamp: new Date().toISOString()
+    }));
+  },
+
+  getLevelProgress: (uid: string, levelId: number) => {
+    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : null;
+  },
+
+  clearLevelProgress: (uid: string, levelId: number) => {
+    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
+    localStorage.removeItem(key);
+  },
+
   // --- Progress Operations ---
   updateProgress: (uid: string, levelId: number, data: Partial<ProgressRecord>) => {
     const progressList: ProgressRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
@@ -178,6 +199,8 @@ export const storageService = {
     }
     
     localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
+    // بمجرد التحديث الرسمي، نمسح النسخة المؤقتة
+    storageService.clearLevelProgress(uid, levelId);
   },
 
   getUserProgress: (uid: string): ProgressRecord[] => {
