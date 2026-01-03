@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { id: 'startup_profile', label: 'ملف الشركة', icon: '📈' },
   { id: 'bootcamp', label: 'المنهج التدريبي', icon: '📚' },
   { id: 'tasks', label: 'المهام والتسليمات', icon: '📝' },
-  { id: 'services', label: 'خدمات التنفيذ', icon: '🛠️' }, // تبويب جديد
+  { id: 'services', label: 'خدمات التنفيذ', icon: '🛠️' }, 
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels, onSelectLevel, onShowCertificate, onLogout, onOpenProAnalytics }) => {
@@ -137,6 +137,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         .service-card { transition: all 0.3s ease; }
         .service-card:hover { transform: translateY(-4px); }
         .status-badge { font-size: 9px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
+        .active-dot { position: relative; }
+        .active-dot::after { content: ''; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; border: 2px solid white; }
       `}</style>
 
       {/* Sidebar */}
@@ -149,9 +151,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {NAV_ITEMS.map(item => (
-            <button key={item.id} onClick={() => { setActiveNav(item.id); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold transition-all ${activeNav === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200/50'}`}>
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-sm">{item.label}</span>
+            <button 
+              key={item.id} 
+              onClick={() => { setActiveNav(item.id); setIsMobileMenuOpen(false); }} 
+              className={`w-full flex items-center justify-between p-4 rounded-xl font-bold transition-all ${activeNav === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200/50'}`}
+            >
+              <div className="flex items-center gap-4">
+                <span className="text-xl">{item.icon}</span>
+                <span className="text-sm">{item.label}</span>
+              </div>
+              {item.id === 'services' && userRequests.length > 0 && (
+                <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                  {userRequests.length}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -211,51 +224,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
            {activeNav === 'services' && (
              <div className="max-w-6xl mx-auto space-y-12 animate-fade-in pb-20">
-                <div className="text-center space-y-4">
-                   <h3 className="text-4xl font-black">خدمات التنفيذ الاختيارية</h3>
-                   <p className="text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
-                     البرنامج مجاني، ولكننا نوفر لك فريقاً محترفاً لتسريع بناء مخرجاتك بجودة عالمية حسب الحاجة.
-                   </p>
+                <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-slate-100 pb-10">
+                   <div className="space-y-2">
+                      <h3 className="text-4xl font-black">خدمات التنفيذ الاختيارية</h3>
+                      <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+                        البرنامج مجاني، ولكننا نوفر لك فريقاً محترفاً لتسريع بناء مخرجاتك بجودة عالمية حسب الحاجة.
+                      </p>
+                   </div>
+                   {userRequests.length > 0 && (
+                     <div className="px-6 py-3 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4">
+                        <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs font-black text-blue-900">لديك {userRequests.length} طلبات قيد المتابعة</span>
+                     </div>
+                   )}
                 </div>
 
-                {/* Status bar for current requests */}
-                {userRequests.length > 0 && (
-                  <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-blue-900/20 border-blue-500/30' : 'bg-blue-50 border-blue-100'} mb-10`}>
-                     <h4 className="text-xs font-black text-blue-600 uppercase mb-4 tracking-widest">طلباتك الحالية:</h4>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {userRequests.map(req => {
-                          const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
-                          return (
-                            <div key={req.id} className="bg-white/80 p-4 rounded-2xl border border-white flex justify-between items-center shadow-sm">
-                               <div>
-                                  <p className="text-xs font-black text-slate-900">{svc?.title}</p>
-                                  <p className="text-[9px] text-slate-400 font-bold">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</p>
-                               </div>
-                               <span className={`status-badge ${req.status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
-                                  {req.status}
-                               </span>
-                            </div>
-                          );
-                        })}
-                     </div>
-                  </div>
-                )}
-
+                {/* Service Catalog Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                    {SERVICES_CATALOG.map(service => (
                      <div key={service.id} className={`service-card p-10 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col justify-between ${isDark ? 'bg-slate-900 border-slate-800 shadow-none' : ''}`}>
                         <div>
-                           <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl mb-8 shadow-inner border border-slate-50">
-                              {service.icon}
+                           <div className="flex justify-between items-start mb-8">
+                              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl shadow-inner border border-slate-50">
+                                 {service.icon}
+                              </div>
+                              <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${service.category === 'Design' ? 'bg-purple-100 text-purple-600' : service.category === 'Tech' ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
+                                 {service.category}
+                              </span>
                            </div>
                            <h4 className="text-2xl font-black mb-4 leading-tight">{service.title}</h4>
-                           <p className="text-sm text-slate-500 font-medium leading-relaxed mb-10">{service.description}</p>
+                           <p className="text-sm text-slate-500 font-medium leading-relaxed mb-10 h-20 overflow-hidden line-clamp-3">{service.description}</p>
+                           
                            <div className="space-y-4 mb-10">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">الباقات المتاحة:</p>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">الباقات المقترحة:</p>
                               {service.packages.map(pkg => (
-                                <div key={pkg.id} className="flex justify-between items-center py-2 border-b border-slate-50">
+                                <div key={pkg.id} className="flex justify-between items-center py-2 border-b border-slate-50 group/pkg">
                                    <span className="text-xs font-bold text-slate-700">{pkg.name}</span>
-                                   <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{pkg.price}</span>
+                                   <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded group-hover/pkg:bg-blue-600 group-hover/pkg:text-white transition-colors">{pkg.price}</span>
                                 </div>
                               ))}
                            </div>
@@ -264,15 +269,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                           onClick={() => { setSelectedService(service); playPositiveSound(); }}
                           className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all shadow-lg active:scale-95"
                         >
-                           طلب تفاصيل الخدمة
+                           تخصيص وطلب الخدمة
                         </button>
                      </div>
                    ))}
                 </div>
+
+                {/* My Requests Tracker (if any) */}
+                {userRequests.length > 0 && (
+                  <div className="mt-20 space-y-8 animate-fade-in-up">
+                    <h4 className="text-xl font-black flex items-center gap-3">
+                       <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
+                       سجل طلباتك الحالية
+                    </h4>
+                    <div className={`rounded-[2.5rem] border overflow-hidden ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100'}`}>
+                       <table className="w-full text-right">
+                          <thead className={`text-[10px] font-black text-slate-400 uppercase tracking-widest border-b ${isDark ? 'border-slate-800' : 'border-slate-50'}`}>
+                             <tr>
+                                <th className="px-8 py-5">الخدمة</th>
+                                <th className="px-8 py-5">الباقة</th>
+                                <th className="px-8 py-5">التاريخ</th>
+                                <th className="px-8 py-5">الحالة</th>
+                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50/10">
+                             {userRequests.map(req => {
+                               const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
+                               const pkg = svc?.packages.find(p => p.id === req.packageId);
+                               return (
+                                 <tr key={req.id} className="hover:bg-blue-50/5">
+                                    <td className="px-8 py-6 font-black text-sm">{svc?.title}</td>
+                                    <td className="px-8 py-6 text-xs font-bold text-slate-500">{pkg?.name}</td>
+                                    <td className="px-8 py-6 text-xs text-slate-400 font-mono">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</td>
+                                    <td className="px-8 py-6">
+                                       <span className={`status-badge ${req.status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                                          {req.status === 'PENDING' ? 'قيد المراجعة' : req.status}
+                                       </span>
+                                    </td>
+                                 </tr>
+                               );
+                             })}
+                          </tbody>
+                       </table>
+                    </div>
+                  </div>
+                )}
              </div>
            )}
 
-           {/* Keep other navigations (bootcamp, tasks, etc) */}
+           {/* Keep existing navigation views */}
            {activeNav === 'startup_profile' && (
              <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
                 <div className={`p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-sm`}>
@@ -341,7 +386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                  <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="text-slate-400 hover:text-slate-900 transition-colors">✕</button>
                  <div className="text-right">
                     <h3 className="text-2xl font-black mb-1">{selectedService.title}</h3>
-                    <p className="text-blue-500 text-xs font-bold uppercase tracking-widest">اختيار الباقة والمواصفات</p>
+                    <p className="text-blue-500 text-xs font-bold uppercase tracking-widest">تخصيص الطلب</p>
                  </div>
               </div>
 
@@ -369,7 +414,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest pr-2">تفاصيل إضافية أو ملاحظات</label>
                     <textarea 
                       className={`w-full h-32 p-5 rounded-[1.5rem] border outline-none focus:border-blue-500 resize-none font-medium ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}
-                      placeholder="اشرح احتياجك بدقة، أو اذكر أي تفاصيل تقنية..."
+                      placeholder="اشرح احتياجك بدقة، أو اذكر أي تفاصيل تقنية تساعد فريقنا..."
                       value={requestDetails}
                       onChange={e => setRequestDetails(e.target.value)}
                     />
@@ -389,7 +434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                          </>
                        ) : (
                          <>
-                           <span>إرسال طلب التنفيذ</span>
+                           <span>تأكيد طلب التنفيذ</span>
                            <svg className="w-5 h-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} /></svg>
                          </>
                        )}
@@ -400,7 +445,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         </div>
       )}
 
-      {/* Task Modal - Existing */}
+      {/* Existing Task Modal */}
       {selectedTask && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
            <div className={`max-w-xl w-full p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-2xl`}>
