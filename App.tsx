@@ -21,6 +21,7 @@ import { LegalPortal, LegalType } from './components/LegalPortal';
 import { StaffPortal } from './components/StaffPortal';
 import { AchievementsPage } from './components/AchievementsPage';
 import { MentorshipPage } from './components/MentorshipPage';
+import { IncubationProgram } from './components/IncubationProgram';
 
 function App() {
   const [stage, setStage] = useState<FiltrationStage>(FiltrationStage.LANDING);
@@ -117,7 +118,12 @@ function App() {
           onLogin={() => setStage(FiltrationStage.LOGIN)}
           onAchievements={() => setStage(FiltrationStage.ACHIEVEMENTS)}
           onMentorship={() => setStage(FiltrationStage.MENTORSHIP)}
+          onIncubation={() => setStage(FiltrationStage.INCUBATION_PROGRAM)}
         />
+      )}
+
+      {stage === FiltrationStage.INCUBATION_PROGRAM && (
+        <IncubationProgram onBack={() => setStage(FiltrationStage.LANDING)} onApply={() => setStage(FiltrationStage.WELCOME)} />
       )}
 
       {stage === FiltrationStage.LOGIN && <Login onLoginSuccess={handleLoginSuccess} onBack={() => setStage(FiltrationStage.LANDING)} />}

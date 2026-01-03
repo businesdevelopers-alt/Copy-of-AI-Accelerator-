@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord } from '../types';
+import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest } from '../types';
 import { storageService } from '../services/storageService';
 import { playPositiveSound, playCelebrationSound } from '../services/audioService';
 import { 
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { id: 'startup_profile', label: 'ملف الشركة', icon: '📈' },
   { id: 'bootcamp', label: 'المنهج التدريبي', icon: '📚' },
   { id: 'tasks', label: 'المهام والتسليمات', icon: '📝' },
+  { id: 'services', label: 'خدمات التنفيذ', icon: '🛠️' }, // تبويب جديد
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels, onSelectLevel, onShowCertificate, onLogout, onOpenProAnalytics }) => {
@@ -32,9 +33,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   
   const [userProfile, setUserProfile] = useState<UserProfile>(initialUser);
   const [userTasks, setUserTasks] = useState<TaskRecord[]>([]);
+  const [userRequests, setUserRequests] = useState<ServiceRequest[]>([]);
   const [selectedTask, setSelectedTask] = useState<TaskRecord | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<ServicePackage | null>(null);
+  const [requestDetails, setRequestDetails] = useState('');
   const [submissionText, setSubmissionText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const completedCount = levels.filter(l => l.isCompleted).length;
@@ -46,7 +52,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     if (session) {
       const tasks = storageService.getUserTasks(session.uid);
       setUserTasks(tasks);
-      // تحديث البروفايل من التخزين في حال تم تغييره
+      const requests = storageService.getUserServiceRequests(session.uid);
+      setUserRequests(requests);
+
       const startups = storageService.getAllStartups();
       const currentStartup = startups.find(s => s.projectId === session.projectId);
       if (currentStartup) {
@@ -106,8 +114,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     playPositiveSound();
   };
 
+  const handleServiceRequest = () => {
+    if (!selectedService || !selectedPackage) return;
+    setIsRequesting(true);
+    const session = storageService.getCurrentSession();
+    
+    setTimeout(() => {
+      const newReq = storageService.requestService(session.uid, selectedService.id, selectedPackage.id, requestDetails);
+      setUserRequests(prev => [...prev, newReq]);
+      setIsRequesting(false);
+      setSelectedService(null);
+      setSelectedPackage(null);
+      setRequestDetails('');
+      playCelebrationSound();
+      alert('تم إرسال طلب الخدمة بنجاح، سيقوم مستشارنا بالتواصل معك لمناقشة التفاصيل.');
+    }, 1200);
+  };
+
   return (
     <div className={`min-h-screen flex ${isDark ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8f9fa] text-slate-900'}`} dir="rtl">
+      <style>{`
+        .service-card { transition: all 0.3s ease; }
+        .service-card:hover { transform: translateY(-4px); }
+        .status-badge { font-size: 9px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
+      `}</style>
+
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 right-0 z-50 w-72 lg:static transition-transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'} border-l flex flex-col`}>
         <div className="p-8 text-center border-b border-slate-200/10">
@@ -116,7 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
           </div>
           <h2 className="font-black text-sm truncate">{userProfile.startupName}</h2>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {NAV_ITEMS.map(item => (
             <button key={item.id} onClick={() => { setActiveNav(item.id); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 p-4 rounded-xl font-bold transition-all ${activeNav === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-200/50'}`}>
               <span className="text-xl">{item.icon}</span>
@@ -153,8 +184,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                       <h3 className="text-4xl font-black mt-1">🛡️ {completedCount}</h3>
                    </div>
                    <div className={`p-8 rounded-[2.5rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-sm`}>
-                      <p className="text-[10px] font-black text-slate-400 uppercase">المهام</p>
-                      <h3 className="text-4xl font-black mt-1">📝 {userTasks.filter(t => t.status === 'SUBMITTED' || t.status === 'APPROVED').length}</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">طلبات الخدمات</p>
+                      <h3 className="text-4xl font-black mt-1">🛠️ {userRequests.length}</h3>
                    </div>
                 </div>
 
@@ -175,10 +206,73 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                       ))}
                    </div>
                 </div>
-                {progress === 100 && <button onClick={onShowCertificate} className="w-full py-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-3xl font-black shadow-2xl text-xl animate-bounce">🎓 استلم شهادة التخرج والدروع</button>}
              </div>
            )}
 
+           {activeNav === 'services' && (
+             <div className="max-w-6xl mx-auto space-y-12 animate-fade-in pb-20">
+                <div className="text-center space-y-4">
+                   <h3 className="text-4xl font-black">خدمات التنفيذ الاختيارية</h3>
+                   <p className="text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+                     البرنامج مجاني، ولكننا نوفر لك فريقاً محترفاً لتسريع بناء مخرجاتك بجودة عالمية حسب الحاجة.
+                   </p>
+                </div>
+
+                {/* Status bar for current requests */}
+                {userRequests.length > 0 && (
+                  <div className={`p-6 rounded-[2rem] border ${isDark ? 'bg-blue-900/20 border-blue-500/30' : 'bg-blue-50 border-blue-100'} mb-10`}>
+                     <h4 className="text-xs font-black text-blue-600 uppercase mb-4 tracking-widest">طلباتك الحالية:</h4>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {userRequests.map(req => {
+                          const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
+                          return (
+                            <div key={req.id} className="bg-white/80 p-4 rounded-2xl border border-white flex justify-between items-center shadow-sm">
+                               <div>
+                                  <p className="text-xs font-black text-slate-900">{svc?.title}</p>
+                                  <p className="text-[9px] text-slate-400 font-bold">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</p>
+                               </div>
+                               <span className={`status-badge ${req.status === 'PENDING' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                                  {req.status}
+                               </span>
+                            </div>
+                          );
+                        })}
+                     </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   {SERVICES_CATALOG.map(service => (
+                     <div key={service.id} className={`service-card p-10 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col justify-between ${isDark ? 'bg-slate-900 border-slate-800 shadow-none' : ''}`}>
+                        <div>
+                           <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl mb-8 shadow-inner border border-slate-50">
+                              {service.icon}
+                           </div>
+                           <h4 className="text-2xl font-black mb-4 leading-tight">{service.title}</h4>
+                           <p className="text-sm text-slate-500 font-medium leading-relaxed mb-10">{service.description}</p>
+                           <div className="space-y-4 mb-10">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">الباقات المتاحة:</p>
+                              {service.packages.map(pkg => (
+                                <div key={pkg.id} className="flex justify-between items-center py-2 border-b border-slate-50">
+                                   <span className="text-xs font-bold text-slate-700">{pkg.name}</span>
+                                   <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{pkg.price}</span>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                        <button 
+                          onClick={() => { setSelectedService(service); playPositiveSound(); }}
+                          className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+                        >
+                           طلب تفاصيل الخدمة
+                        </button>
+                     </div>
+                   ))}
+                </div>
+             </div>
+           )}
+
+           {/* Keep other navigations (bootcamp, tasks, etc) */}
            {activeNav === 'startup_profile' && (
              <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
                 <div className={`p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-sm`}>
@@ -233,13 +327,80 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
              </div>
            )}
 
-           {activeNav !== 'home' && activeNav !== 'startup_profile' && activeNav !== 'tasks' && (
+           {activeNav !== 'home' && activeNav !== 'startup_profile' && activeNav !== 'tasks' && activeNav !== 'services' && (
              <div className="flex flex-col items-center justify-center py-40 opacity-20"><span className="text-9xl mb-4">🏗️</span><h3 className="text-2xl font-black">قيد التطوير</h3></div>
            )}
         </div>
       </main>
 
-      {/* Task Modal */}
+      {/* Service Request Modal */}
+      {selectedService && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+           <div className={`max-w-2xl w-full p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-2xl animate-fade-in-up`}>
+              <div className="flex justify-between items-start mb-8">
+                 <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="text-slate-400 hover:text-slate-900 transition-colors">✕</button>
+                 <div className="text-right">
+                    <h3 className="text-2xl font-black mb-1">{selectedService.title}</h3>
+                    <p className="text-blue-500 text-xs font-bold uppercase tracking-widest">اختيار الباقة والمواصفات</p>
+                 </div>
+              </div>
+
+              <div className="space-y-8">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedService.packages.map(pkg => (
+                      <button 
+                        key={pkg.id} 
+                        onClick={() => { setSelectedPackage(pkg); playPositiveSound(); }}
+                        className={`p-6 rounded-[2rem] border-2 text-right transition-all flex flex-col gap-2 relative overflow-hidden
+                          ${selectedPackage?.id === pkg.id ? 'border-blue-600 bg-blue-50 shadow-lg' : 'border-slate-100 hover:border-blue-300'}
+                        `}
+                      >
+                         {selectedPackage?.id === pkg.id && <div className="absolute top-4 left-4 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">✓</div>}
+                         <h5 className="font-black text-lg">{pkg.name}</h5>
+                         <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">سعر {pkg.price}</p>
+                         <ul className="mt-4 space-y-1">
+                            {pkg.features.map((f, i) => <li key={i} className="text-[9px] font-bold text-slate-500">• {f}</li>)}
+                         </ul>
+                      </button>
+                    ))}
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest pr-2">تفاصيل إضافية أو ملاحظات</label>
+                    <textarea 
+                      className={`w-full h-32 p-5 rounded-[1.5rem] border outline-none focus:border-blue-500 resize-none font-medium ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}
+                      placeholder="اشرح احتياجك بدقة، أو اذكر أي تفاصيل تقنية..."
+                      value={requestDetails}
+                      onChange={e => setRequestDetails(e.target.value)}
+                    />
+                 </div>
+
+                 <div className="flex gap-4">
+                    <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="flex-1 py-4 font-black text-slate-400">إلغاء</button>
+                    <button 
+                      onClick={handleServiceRequest} 
+                      disabled={!selectedPackage || isRequesting} 
+                      className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                       {isRequesting ? (
+                         <>
+                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                           <span>جاري الإرسال...</span>
+                         </>
+                       ) : (
+                         <>
+                           <span>إرسال طلب التنفيذ</span>
+                           <svg className="w-5 h-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} /></svg>
+                         </>
+                       )}
+                    </button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Task Modal - Existing */}
       {selectedTask && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
            <div className={`max-w-xl w-full p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-2xl`}>

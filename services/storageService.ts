@@ -1,11 +1,12 @@
 
-import { UserRecord, StartupRecord, ProgressRecord, ActivityLogRecord, UserProfile, TaskRecord, TASKS_CONFIG } from '../types';
+import { UserRecord, StartupRecord, ProgressRecord, ActivityLogRecord, UserProfile, TaskRecord, TASKS_CONFIG, ServiceRequest } from '../types';
 
 const DB_KEYS = {
   USERS: 'db_users',
   STARTUPS: 'db_startups',
   PROGRESS: 'db_progress',
   TASKS: 'db_tasks',
+  SERVICES: 'db_service_requests', // مفتاح جديد
   LOGS: 'db_logs',
   SESSION: 'db_current_session',
   TEMP_LEVEL_STATE: 'db_temp_level_'
@@ -50,7 +51,6 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.STARTUPS, JSON.stringify([...startups, newStartup]));
     localStorage.setItem(DB_KEYS.SESSION, JSON.stringify({ uid, projectId: newStartup.projectId }));
 
-    // تهيئة المهام فوراً عند التسجيل
     const tasks = TASKS_CONFIG.map(t => ({ ...t, uid, status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' }));
     const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
     localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...tasks]));
@@ -73,7 +73,6 @@ export const storageService = {
     user.lastLogin = new Date().toISOString();
     localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
 
-    // التأكد من وجود مهام للمستخدم (حالة التحديثات القديمة)
     const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
     const userHasTasks = allTasks.some((t: any) => t.uid === user.uid);
     if (!userHasTasks) {
@@ -135,6 +134,28 @@ export const storageService = {
     return session ? JSON.parse(session) : null;
   },
 
+  // --- Service Request Operations ---
+  requestService: (uid: string, serviceId: string, packageId: string, details: string) => {
+    const requests = JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]');
+    const newRequest: ServiceRequest = {
+      id: `req_${Date.now()}`,
+      uid,
+      serviceId,
+      packageId,
+      status: 'PENDING',
+      requestedAt: new Date().toISOString(),
+      details
+    };
+    localStorage.setItem(DB_KEYS.SERVICES, JSON.stringify([...requests, newRequest]));
+    return newRequest;
+  },
+
+  getUserServiceRequests: (uid: string): ServiceRequest[] => {
+    const requests = JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]');
+    return requests.filter((r: any) => r.uid === uid);
+  },
+
+  // --- Task Operations ---
   getUserTasks: (uid: string): TaskRecord[] => {
     const tasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
     return tasks.filter((t: any) => t.uid === uid);

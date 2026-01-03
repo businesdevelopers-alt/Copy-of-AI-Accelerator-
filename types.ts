@@ -18,7 +18,90 @@ export enum FiltrationStage {
   TOOLS = 'TOOLS',
   STAFF_PORTAL = 'STAFF_PORTAL',
   ACHIEVEMENTS = 'ACHIEVEMENTS',
-  MENTORSHIP = 'MENTORSHIP'
+  MENTORSHIP = 'MENTORSHIP',
+  INCUBATION_PROGRAM = 'INCUBATION_PROGRAM'
+}
+
+export interface ServicePackage {
+  id: string;
+  name: string;
+  price: string;
+  features: string[];
+}
+
+export interface ServiceItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'Design' | 'Tech' | 'Finance' | 'Legal' | 'Marketing';
+  packages: ServicePackage[];
+}
+
+export const SERVICES_CATALOG: ServiceItem[] = [
+  {
+    id: 'svc_design',
+    title: 'تصميم UI/UX وهوية بصرية',
+    description: 'تحويل فكرتك إلى واجهات مستخدم جذابة وتجربة سهلة مع بناء هوية براند متكاملة.',
+    icon: '🎨',
+    category: 'Design',
+    packages: [
+      { id: 'p1', name: 'باقة الأساسيات', price: 'مرن', features: ['تصميم الشعار', 'لوحة الألوان', 'الخطوط الرسمية'] },
+      { id: 'p2', name: 'باقة التطبيق الكاملة', price: 'حسب الحجم', features: ['تصميم ١٠ شاشات', 'User Flow', 'Prototype تفاعلي'] }
+    ]
+  },
+  {
+    id: 'svc_landing',
+    title: 'بناء Landing Page + Tracking',
+    description: 'صفحة هبوط احترافية عالية التحويل مع ربط أدوات التحليل والتتبع (Google Analytics, Pixel).',
+    icon: '🌐',
+    category: 'Tech',
+    packages: [
+      { id: 'p3', name: 'صفحة إطلاق سريعة', price: 'اقتصادي', features: ['تصميم متجاوب', 'نموذج تسجيل', 'ربط الدومين'] },
+      { id: 'p4', name: 'باقة النمو المتقدمة', price: 'احترافي', features: ['A/B Testing', 'Heatmaps', 'أتمتة البريد'] }
+    ]
+  },
+  {
+    id: 'svc_pitch',
+    title: 'إعداد Pitch Deck للمستثمرين',
+    description: 'صياغة وتصميم عرض تقديمي يقنع المستثمرين بجاذبية مشروعك وجدواه المالية.',
+    icon: '🚀',
+    category: 'Finance',
+    packages: [
+      { id: 'p5', name: 'مراجعة وتنسيق', price: 'سريع', features: ['تحسين المحتوى الحالي', 'تنسيق بصري بريميوم'] },
+      { id: 'p6', name: 'بناء العرض من الصفر', price: 'متكامل', features: ['صياغة القصة', 'تحليل الأرقام', 'تصميم سيناريو الإلقاء'] }
+    ]
+  },
+  {
+    id: 'svc_finance',
+    title: 'نموذج مالي وتسعير',
+    description: 'بناء ملف Excel احترافي يتضمن التوقعات المالية، نقطة التعادل، وهيكل التسعير.',
+    icon: '📊',
+    category: 'Finance',
+    packages: [
+      { id: 'p7', name: 'باقة التوقعات', price: 'محدد', features: ['توقعات ٣ سنوات', 'تحليل التدفق النقدي'] }
+    ]
+  },
+  {
+    id: 'svc_legal',
+    title: 'مستندات قانونية أساسية',
+    description: 'تجهيز سياسات الخصوصية، شروط الاستخدام، وعقود التأسيس الأولية.',
+    icon: '⚖️',
+    category: 'Legal',
+    packages: [
+      { id: 'p8', name: 'باقة الامتثال', price: 'قانوني', features: ['سياسة الخصوصية', 'شروط الخدمة', 'إخلاء المسؤولية'] }
+    ]
+  }
+];
+
+export interface ServiceRequest {
+  id: string;
+  uid: string;
+  serviceId: string;
+  packageId: string;
+  status: 'PENDING' | 'DISCUSSING' | 'IN_PROGRESS' | 'COMPLETED';
+  requestedAt: string;
+  details?: string;
 }
 
 export interface TaskRecord {

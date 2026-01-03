@@ -9,7 +9,8 @@ interface LandingPageProps {
   onRoadmap: () => void;
   onTools: () => void;
   onAchievements: () => void;
-  onMentorship: () => void; // مضافة حديثاً
+  onMentorship: () => void;
+  onIncubation: () => void; // مضافة حديثاً
   onLegalClick: (type: 'PRIVACY' | 'TERMS' | 'CONTACT') => void;
   onLogin?: () => void;
 }
@@ -33,7 +34,7 @@ const JOURNEY_STEPS: JourneyStep[] = [
   { id: 6, title: 'عرض الاستثمار', icon: '🚀', goal: 'تجهيز ملف العرض النهائي وإغلاق أول جولة تمويلية ناجحة.', deliverables: ['Pitch Deck عالمي', 'مهارات الإلقاء', 'قائمة المستهدفين'], gradient: 'from-slate-700 to-slate-900', glow: 'rgba(30, 41, 59, 0.1)' }
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder, onRoadmap, onTools, onAchievements, onMentorship, onLegalClick, onLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder, onRoadmap, onTools, onAchievements, onMentorship, onIncubation, onLegalClick, onLogin }) => {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   return (
@@ -60,6 +61,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
           </div>
         </div>
         <div className="hidden md:flex gap-8 items-center text-sm font-bold text-slate-500">
+          <button onClick={onIncubation} className="text-blue-600 font-black hover:text-blue-700 transition-colors">برنامج الاحتضان</button>
           <button onClick={onRoadmap} className="hover:text-blue-600 transition-colors">خارطة الطريق</button>
           <button onClick={onTools} className="hover:text-blue-600 transition-colors">الأدوات</button>
           <button onClick={onMentorship} className="hover:text-blue-600 transition-colors">الإرشاد</button>
@@ -137,6 +139,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
                   <span className="text-xl font-black text-slate-900 uppercase tracking-tight">بيزنس ديفلوبرز</span>
                </div>
                <div className="flex gap-10 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                 <button onClick={onIncubation} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">برنامج الاحتضان</button>
                  <button onClick={onMentorship} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">الإرشاد</button>
                  <button onClick={onAchievements} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">إنجازاتنا</button>
                  <button onClick={() => onLegalClick('PRIVACY')} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">سياسة الخصوصية</button>
