@@ -51,7 +51,7 @@ function App() {
             startupDescription: startup.description,
             industry: startup.industry,
             name: `${currentUser.firstName} ${currentUser.lastName}`,
-            hasCompletedAssessment: startup.status !== 'PENDING'
+            hasCompletedAssessment: startup.status === 'APPROVED'
           });
         }
       }
@@ -89,7 +89,7 @@ function App() {
       techLevel: 'Medium'
     });
 
-    setStage(FiltrationStage.DASHBOARD); // Now goes to Personal Page first
+    setStage(FiltrationStage.DASHBOARD);
   };
 
   const handleStartAssessment = () => {
@@ -107,8 +107,12 @@ function App() {
   };
 
   const handleProjectEvaluationComplete = (evalResult: ProjectEvaluationResult) => {
+    const avgScore = Math.round((analyticalScore + evalResult.totalScore) / 2);
+    // PASS THRESHOLD is 70%
+    const isQualified = avgScore >= 70;
+
     const result: FinalResult = {
-      score: Math.round((analyticalScore + evalResult.totalScore) / 2),
+      score: avgScore,
       leadershipStyle,
       projectEval: evalResult,
       metrics: {
@@ -119,23 +123,32 @@ function App() {
         strategy: evalResult.market * 5,
         ethics: 95
       },
-      isQualified: evalResult.classification === 'Green',
-      badges: [{ id: 'b1', name: 'رائد أعمال معتمد', icon: '🏆', color: 'blue' }],
+      isQualified: isQualified,
+      badges: isQualified ? [{ id: 'b1', name: 'رائد أعمال معتمد', icon: '🏆', color: 'blue' }] : [],
       recommendation: evalResult.aiOpinion
     };
     setFinalResult(result);
     setStage(FiltrationStage.ASSESSMENT_RESULT);
   };
 
+  const handleAssessmentContinue = () => {
+    if (finalResult?.isQualified) {
+      setStage(FiltrationStage.APPLICATION_STATUS);
+    } else {
+      setStage(FiltrationStage.DEVELOPMENT_PLAN);
+    }
+  };
+
   const finalizeAssessment = () => {
-    if (userProfile) {
+    if (userProfile && finalResult?.isQualified) {
        const updated = { ...userProfile, hasCompletedAssessment: true };
        setUserProfile(updated);
-       // Update persistence if needed
        const session = storageService.getCurrentSession();
        if (session) storageService.updateStartupStatus(session.projectId, 'APPROVED');
+       setStage(FiltrationStage.DASHBOARD);
+    } else {
+       setStage(FiltrationStage.DEVELOPMENT_PLAN);
     }
-    setStage(FiltrationStage.DASHBOARD);
   };
 
   const handleLevelComplete = (id: number) => {
@@ -166,10 +179,22 @@ function App() {
       {stage === FiltrationStage.PERSONALITY_TEST && <PersonalityTest onComplete={handlePersonalityComplete} />}
       {stage === FiltrationStage.ANALYTICAL_TEST && applicantProfile && <AnalyticalTest profile={applicantProfile} onComplete={handleAnalyticalComplete} />}
       {stage === FiltrationStage.PROJECT_EVALUATION && applicantProfile && <ProjectEvaluation profile={applicantProfile} onComplete={handleProjectEvaluationComplete} />}
-      {stage === FiltrationStage.ASSESSMENT_RESULT && finalResult && <AssessmentResult result={finalResult} onContinue={() => setStage(FiltrationStage.APPLICATION_STATUS)} />}
-      {stage === FiltrationStage.APPLICATION_STATUS && applicantProfile && finalResult && <ApplicationStatus profile={applicantProfile} result={finalResult} onNext={() => setStage(FiltrationStage.FINAL_REPORT)} />}
-      {stage === FiltrationStage.FINAL_REPORT && applicantProfile && finalResult && <FinalReport profile={applicantProfile} result={finalResult} onStartJourney={finalizeAssessment} />}
-      {stage === FiltrationStage.DEVELOPMENT_PLAN && applicantProfile && finalResult && <DevelopmentPlan profile={applicantProfile} result={finalResult} onRestart={() => setStage(FiltrationStage.WELCOME)} />}
+      
+      {stage === FiltrationStage.ASSESSMENT_RESULT && finalResult && (
+        <AssessmentResult result={finalResult} onContinue={handleAssessmentContinue} />
+      )}
+      
+      {stage === FiltrationStage.APPLICATION_STATUS && applicantProfile && finalResult && (
+        <ApplicationStatus profile={applicantProfile} result={finalResult} onNext={() => setStage(FiltrationStage.FINAL_REPORT)} />
+      )}
+      
+      {stage === FiltrationStage.FINAL_REPORT && applicantProfile && finalResult && (
+        <FinalReport profile={applicantProfile} result={finalResult} onStartJourney={finalizeAssessment} />
+      )}
+      
+      {stage === FiltrationStage.DEVELOPMENT_PLAN && applicantProfile && finalResult && (
+        <DevelopmentPlan profile={applicantProfile} result={finalResult} onRestart={() => setStage(FiltrationStage.PERSONALITY_TEST)} />
+      )}
 
       {stage === FiltrationStage.STAFF_PORTAL && <StaffPortal onBack={() => setStage(FiltrationStage.LANDING)} />}
       
