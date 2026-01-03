@@ -3,8 +3,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LevelData, UserProfile, Question, DIGITAL_SHIELDS } from '../types';
 import { generateLevelMaterial, generateLevelQuiz, evaluateExerciseResponse } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
-import { storageService } from '../services/storageService';
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface LevelTheme {
   id: string;
@@ -75,7 +73,7 @@ enum Step {
   COMPLETED
 }
 
-const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wireframe?: boolean; isDarkMode?: boolean }> = ({ levelId, theme, wireframe = false, isDarkMode = false }) => {
+const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wireframe?: boolean; isDarkMode?: boolean; activePage?: number }> = ({ levelId, theme, wireframe = false, isDarkMode = false, activePage = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
 
@@ -89,8 +87,8 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
   const renderIllustration = () => {
     const opacity = wireframe ? "0.1" : (isHovered ? "0.4" : "0.2");
     const strokeWidth = wireframe ? "1" : "4";
-    const className = `${wireframe ? 'animate-pulse' : ''} transition-all duration-500`;
-    const colorClass = "white"; 
+    const className = `${wireframe ? 'animate-pulse' : ''} transition-all duration-700 ${isClicked ? 'scale-110 rotate-3' : ''}`;
+    const colorClass = isDarkMode ? "#3b82f6" : "currentColor"; 
 
     switch (levelId) {
       case 1:
@@ -107,7 +105,8 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
         return (
           <svg viewBox="0 0 200 200" className={`w-full h-full ${className}`}>
             <rect x="40" y="40" width="120" height="120" rx="15" fill={wireframe ? "none" : colorClass} fillOpacity={opacity} stroke={colorClass} strokeWidth={strokeWidth} strokeDasharray={wireframe ? "5,5" : "none"} />
-            {!wireframe && <rect x="55" y="55" width="40" height="40" rx="6" fill={colorClass} className="animate-bounce" />}
+            {!wireframe && <rect x="55" y="55" width="40" height="40" rx="6" fill={colorClass} className="animate-pulse" />}
+            {!wireframe && activePage > 0 && <rect x="105" y="105" width="40" height="40" rx="6" fill={colorClass} fillOpacity="0.4" />}
           </svg>
         );
       case 3:
@@ -115,6 +114,7 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
           <svg viewBox="0 0 200 200" className={`w-full h-full ${className}`}>
             <circle cx="100" cy="100" r="70" fill="none" stroke={colorClass} strokeWidth={strokeWidth} opacity={wireframe ? "0.1" : "0.2"} strokeDasharray={wireframe ? "4,4" : "none"} />
             <circle cx="100" cy="100" r="45" fill="none" stroke={colorClass} strokeWidth={strokeWidth} opacity={wireframe ? "0.1" : "0.2"} />
+            {!wireframe && <path d="M100 30 L100 170 M30 100 L170 100" stroke={colorClass} strokeWidth="2" strokeDasharray="5 5" opacity="0.3" />}
           </svg>
         );
       case 4:
@@ -136,6 +136,7 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
         return (
           <svg viewBox="0 0 200 200" className={`w-full h-full ${className}`}>
             <path d="M100 40 L130 100 L100 130 L70 100 Z" fill={wireframe ? "none" : colorClass} fillOpacity={opacity} stroke={colorClass} strokeWidth={strokeWidth} strokeDasharray={wireframe ? "3,3" : "none"} />
+            {!wireframe && <path d="M100 10 L100 40 M190 100 L160 100 M100 190 L100 160 M10 100 L40 100" stroke={colorClass} strokeWidth="4" strokeLinecap="round" opacity="0.4" />}
           </svg>
         );
       default:
@@ -150,7 +151,7 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
       onMouseLeave={() => !wireframe && setIsHovered(false)}
       onClick={handleClick}
     >
-      <div className={`w-48 h-48 transform transition-all duration-700 ${isHovered ? 'drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]' : ''}`}>
+      <div className={`w-48 h-48 transform transition-all duration-700 ${isHovered ? 'drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]' : ''}`}>
         {renderIllustration()}
       </div>
     </div>
@@ -167,7 +168,6 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
   const [quizScore, setQuizScore] = useState<number | null>(null);
-  const [readingProgress, setReadingProgress] = useState(0);
   const [activeTheme, setActiveTheme] = useState<LevelTheme>(() => {
      const savedThemeId = localStorage.getItem('user_preferred_level_theme');
      if (savedThemeId) {
@@ -179,6 +179,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   });
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('level_display_mode') === 'dark');
   const [currentContentPage, setCurrentContentPage] = useState(0);
+  const [revealedInsights, setRevealedInsights] = useState<Record<number, boolean>>({});
 
   const shieldInfo = DIGITAL_SHIELDS.find(s => s.levelId === level.id);
 
@@ -206,6 +207,11 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
     };
     loadContent();
   }, [level.id, level.title, user]);
+
+  const toggleInsight = (idx: number) => {
+    setRevealedInsights(prev => ({ ...prev, [idx]: !prev[idx] }));
+    if (!revealedInsights[idx]) playPositiveSound();
+  };
 
   const startQuiz = async () => {
     setStep(Step.LOADING_QUIZ);
@@ -248,6 +254,10 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
            50% { transform: translateY(-10px); }
         }
         .animate-float-badge { animation: float-badge 3s ease-in-out infinite; }
+        .discovery-card { transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .discovery-card:hover { transform: translateY(-4px); }
+        .insight-reveal { transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); max-height: 0; opacity: 0; overflow: hidden; }
+        .insight-reveal.active { max-height: 400px; opacity: 1; margin-top: 2rem; }
       `}</style>
 
       {/* Simplified Header */}
@@ -260,47 +270,109 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
             <div className="text-center">
                 <h2 className="font-black text-sm">{level.title}</h2>
                 <div className="w-32 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                    <div className={`${activeTheme.primary} h-full`} style={{ width: `${(currentContentPage / (carouselItems.length || 1)) * 100}%` }}></div>
+                    <div className={`${activeTheme.primary} h-full transition-all duration-700`} style={{ width: `${(currentContentPage / (carouselItems.length || 1)) * 100}%` }}></div>
                 </div>
             </div>
-            <div className="w-20"></div>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+                {isDarkMode ? '☀️' : '🌙'}
+              </button>
+            </div>
         </div>
       </header>
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-12 flex flex-col items-center">
         {step === Step.LOADING_CONTENT && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-             <div className="w-24 h-24 border-8 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-             <p className="font-black text-xl animate-pulse">جاري سحب المادة العلمية من قاعدة المعرفة...</p>
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-fade-in">
+             <div className="relative w-32 h-32">
+                <div className="absolute inset-0 border-8 border-slate-100 rounded-full"></div>
+                <div className={`absolute inset-0 border-8 ${activeTheme.accent} border-t-transparent rounded-full animate-spin`}></div>
+                <div className="absolute inset-0 flex items-center justify-center text-4xl">📚</div>
+             </div>
+             <div className="text-center space-y-2">
+               <p className="font-black text-xl animate-pulse">جاري استدعاء المعرفة الذكية...</p>
+               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Building Personal Learning Path</p>
+             </div>
           </div>
         )}
 
         {step === Step.LEARN && (
-           <div className="w-full space-y-10 animate-fade-in">
-              <div className={`p-10 md:p-16 rounded-[4rem] border shadow-2xl transition-all duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+           <div className="w-full space-y-12 animate-fade-in">
+              <div className="flex justify-center mb-4">
+                 <LevelIllustration levelId={level.id} theme={activeTheme} isDarkMode={isDarkMode} activePage={currentContentPage} />
+              </div>
+
+              <div className={`p-10 md:p-16 rounded-[4rem] border shadow-2xl transition-all duration-700 relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
                   {carouselItems[currentContentPage]?.type === 'content' ? (
-                     <article className={`prose max-w-none ${isDarkMode ? 'prose-invert text-slate-200' : 'prose-slate text-slate-800'} prose-p:text-2xl prose-p:leading-[3rem]`}>
-                        {carouselItems[currentContentPage].data.split('\n').map((p, i) => <p key={i} className="mb-6">{p}</p>)}
-                     </article>
+                     <div key={currentContentPage} className="animate-fade-in-up">
+                        <div 
+                          onClick={() => toggleInsight(currentContentPage)}
+                          className={`discovery-card p-8 rounded-[2.5rem] cursor-pointer border-2 transition-all relative group
+                            ${isDarkMode ? 'bg-slate-800/40 border-slate-700 hover:border-blue-500' : 'bg-slate-50 border-slate-100 hover:border-blue-200'}
+                          `}
+                        >
+                           <div className="absolute -top-4 -right-4 w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                              <span className="text-xl">✨</span>
+                           </div>
+                           
+                           <article className={`prose max-w-none ${isDarkMode ? 'prose-invert text-slate-200' : 'prose-slate text-slate-800'} prose-p:text-2xl prose-p:leading-[3.2rem]`}>
+                              {carouselItems[currentContentPage].data.split('\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
+                           </article>
+
+                           <div className="mt-8 pt-8 border-t border-slate-200/50 flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">انقر لاستكشاف الرؤية الاستراتيجية</span>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-500 ${revealedInsights[currentContentPage] ? 'rotate-180 bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 9l-7 7-7-7" strokeWidth={3} /></svg>
+                              </div>
+                           </div>
+
+                           <div className={`insight-reveal ${revealedInsights[currentContentPage] ? 'active' : ''}`}>
+                              <div className={`p-8 rounded-3xl border-l-4 ${isDarkMode ? 'bg-blue-900/20 border-blue-500 text-blue-100' : 'bg-blue-50 border-blue-600 text-blue-900'}`}>
+                                 <h4 className="font-black text-sm mb-4 uppercase tracking-widest flex items-center gap-3">
+                                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                                    رؤية استراتيجية لـ {user.startupName}
+                                 </h4>
+                                 <p className="text-lg font-medium leading-relaxed italic">
+                                    بناءً على هذا الجزء التعليمي، يتوقع نظامنا أن التركيز على هذه النقاط سيعزز من قدرتك التنافسية في قطاع {user.industry}. حاول ربط هذه المبادئ بخطتك التنفيذية الأسبوعية القادمة.
+                                 </p>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
                   ) : (
-                    <div className="text-center space-y-8">
-                       <div className="text-6xl">📚</div>
-                       <h3 className="text-3xl font-black">مصادر المحطة المعتمدة</h3>
-                       <p className="text-slate-500 font-medium">يمكنك تحميل الملفات الملحقة لتوسيع معرفتك بهذا الجانب.</p>
+                    <div className="text-center space-y-10 animate-fade-in-up">
+                       <div className="w-24 h-24 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto shadow-inner text-6xl">📚</div>
+                       <div className="space-y-4">
+                          <h3 className="text-3xl font-black">مصادر المحطة المعتمدة</h3>
+                          <p className="text-slate-500 text-lg font-medium max-w-lg mx-auto">لقد أتممت قراءة المادة العلمية. يمكنك تعزيز فهمك عبر المصادر الإضافية التالية.</p>
+                       </div>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {['دليل التنفيذ', 'نموذج PDF المعتمد', 'فيديو توضيحي', 'أدوات السوق'].map(m => (
-                             <div key={m} className="p-6 bg-slate-50 border border-slate-200 rounded-2xl font-bold hover:border-blue-500 cursor-pointer transition-colors">{m}</div>
+                          {['دليل التنفيذ السريع', 'نموذج PDF المعتمد', 'فيديو توضيحي (Gemini)', 'أدوات تحليل السوق'].map((m, i) => (
+                             <div key={m} className={`p-8 rounded-[2rem] border-2 font-black hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex items-center justify-between group
+                               ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}
+                             `}>
+                                <span>{m}</span>
+                                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeWidth={2.5} /></svg>
+                                </div>
+                             </div>
                           ))}
                        </div>
                     </div>
                   )}
               </div>
-              <div className="flex justify-between items-center px-10">
-                  <button disabled={currentContentPage === 0} onClick={() => setCurrentContentPage(p => p - 1)} className="px-8 py-4 bg-slate-200 rounded-2xl font-black disabled:opacity-30">السابق</button>
+
+              <div className="flex justify-between items-center px-6">
+                  <button disabled={currentContentPage === 0} onClick={() => { setCurrentContentPage(p => p - 1); playPositiveSound(); }} className="px-10 py-5 bg-slate-200 text-slate-600 rounded-[1.8rem] font-black disabled:opacity-30 transition-all active:scale-95">السابق</button>
+                  <div className="flex gap-2">
+                     {carouselItems.map((_, i) => (
+                       <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i === currentContentPage ? 'w-8 bg-blue-600' : 'w-2 bg-slate-200'}`}></div>
+                     ))}
+                  </div>
                   {currentContentPage < carouselItems.length - 1 ? (
-                    <button onClick={() => setCurrentContentPage(p => p + 1)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl">المتابعة</button>
+                    <button onClick={() => { setCurrentContentPage(p => p + 1); playPositiveSound(); }} className="px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black shadow-xl hover:bg-blue-600 transition-all active:scale-95">المتابعة</button>
                   ) : (
-                    <button onClick={() => setStep(Step.EXERCISE)} className="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl animate-pulse">بدء التمرين التطبيقي</button>
+                    <button onClick={() => { setStep(Step.EXERCISE); playPositiveSound(); }} className="px-14 py-5 bg-blue-600 text-white rounded-[1.8rem] font-black shadow-2xl animate-pulse active:scale-95 transition-all">بدء التمرين التطبيقي</button>
                   )}
               </div>
            </div>
@@ -308,37 +380,49 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
         {step === Step.EXERCISE && (
             <div className="w-full max-w-3xl space-y-10 animate-fade-in-up">
-                <div className={`p-10 rounded-[3.5rem] border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                    <h3 className="text-2xl font-black mb-6 flex items-center gap-4">
-                        <span className="text-4xl">✏️</span>
-                        تحدي المستوى {level.id}
+                <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative overflow-hidden transition-all duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full"></div>
+                    <h3 className="text-3xl font-black mb-8 flex items-center gap-4">
+                        <span className="text-5xl">✏️</span>
+                        تحدي العبور للمستوى {level.id}
                     </h3>
-                    <p className="text-xl font-medium leading-relaxed mb-8 opacity-80">{exercisePrompt}</p>
+                    <div className={`p-8 rounded-[2.5rem] mb-10 border-r-8 ${isDarkMode ? 'bg-slate-800 border-blue-500' : 'bg-blue-50 border-blue-600'}`}>
+                       <p className="text-xl font-bold leading-relaxed">{exercisePrompt}</p>
+                    </div>
                     <textarea 
-                        className="w-full h-64 p-8 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all font-bold"
+                        className={`w-full h-64 p-8 rounded-[2.5rem] outline-none border-2 transition-all font-bold text-lg resize-none shadow-inner
+                          ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-blue-500 text-white' : 'bg-slate-50 border-slate-200 focus:border-blue-500 text-slate-900'}
+                        `}
                         placeholder="صغ مخرجاتك هنا ليقوم AI بمراجعتها..."
                         value={exerciseAnswer}
                         onChange={e => setExerciseAnswer(e.target.value)}
                         disabled={!!exerciseFeedback}
                     />
                     {exerciseFeedback && (
-                        <div className={`mt-8 p-8 rounded-3xl border-2 ${exerciseFeedback.includes('مقبولة') ? 'bg-green-50 border-green-200 text-green-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
-                            <p className="font-black text-lg mb-2">🤖 مراجعة المستشار:</p>
-                            <p className="font-medium leading-relaxed">{exerciseFeedback}</p>
+                        <div className={`mt-10 p-10 rounded-[3rem] border-2 animate-fade-in ${exerciseFeedback.includes('مقبولة') ? 'bg-green-50 border-green-200 text-green-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+                            <div className="flex items-center gap-4 mb-4">
+                               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-2xl">🤖</div>
+                               <p className="font-black text-xl">مراجعة المستشار الذكي:</p>
+                            </div>
+                            <p className="font-bold text-lg leading-relaxed italic pr-4 border-r-2 border-current/20">"{exerciseFeedback}"</p>
                         </div>
                     )}
-                    <div className="mt-10 flex justify-end gap-4">
+                    <div className="mt-12 flex justify-end gap-4">
                        {!exerciseFeedback ? (
                          <button onClick={async () => {
                              setIsExerciseSubmitting(true);
+                             playPositiveSound();
                              const res = await evaluateExerciseResponse(exercisePrompt, exerciseAnswer);
                              setExerciseFeedback(res.feedback);
                              setIsExerciseSubmitting(false);
-                         }} disabled={isExerciseSubmitting || exerciseAnswer.length < 20} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black shadow-xl disabled:opacity-30">إرسال للمراجعة</button>
+                         }} disabled={isExerciseSubmitting || exerciseAnswer.length < 20} className="px-14 py-6 bg-slate-900 text-white rounded-[2rem] font-black shadow-2xl disabled:opacity-30 transition-all active:scale-95 flex items-center gap-4">
+                            {isExerciseSubmitting && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
+                            <span>إرسال للمراجعة الفورية</span>
+                         </button>
                        ) : exerciseFeedback.includes('مقبولة') ? (
-                         <button onClick={startQuiz} className="px-12 py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl animate-bounce">انتقل للاختبار النهائي</button>
+                         <button onClick={startQuiz} className="px-14 py-6 bg-blue-600 text-white rounded-[2rem] font-black shadow-2xl animate-bounce transition-all active:scale-95">انتقل للاختبار النهائي 🎯</button>
                        ) : (
-                         <button onClick={() => { setExerciseFeedback(''); setExerciseAnswer(''); }} className="px-12 py-5 bg-slate-200 rounded-2xl font-black">إعادة المحاولة</button>
+                         <button onClick={() => { setExerciseFeedback(''); setExerciseAnswer(''); playPositiveSound(); }} className="px-14 py-6 bg-slate-200 text-slate-700 rounded-[2rem] font-black transition-all active:scale-95">إعادة صياغة الحل</button>
                        )}
                     </div>
                 </div>
@@ -347,56 +431,98 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
         {step === Step.QUIZ && (
             <div className="w-full max-w-3xl animate-fade-in-up">
-                 <div className={`p-10 rounded-[3.5rem] border ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                    <h3 className="text-2xl font-black mb-10 text-center">اختبار الكفاءة النهائي</h3>
+                 <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative transition-all duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                    <div className="text-center mb-12">
+                       <span className="text-xs font-black text-blue-500 uppercase tracking-[0.3em]">Final Proficiency Assessment</span>
+                       <h3 className="text-3xl font-black mt-2">اختبار الكفاءة النهائي</h3>
+                    </div>
                     <div className="space-y-12">
                         {quizQuestions.map((q, qIdx) => (
                             <div key={q.id} className="space-y-6">
-                                <p className="font-black text-lg">{qIdx + 1}. {q.text}</p>
-                                <div className="grid grid-cols-1 gap-3">
+                                <p className="font-black text-xl flex items-center gap-4">
+                                   <span className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-xs text-slate-400">{qIdx + 1}</span>
+                                   {q.text}
+                                </p>
+                                <div className="grid grid-cols-1 gap-4 pr-10">
                                     {q.options.map((opt, oIdx) => (
                                         <button 
                                             key={oIdx} 
                                             onClick={() => { const na = [...quizAnswers]; na[qIdx] = oIdx; setQuizAnswers(na); playPositiveSound(); }}
-                                            className={`p-5 text-right rounded-2xl border-2 transition-all font-bold ${quizAnswers[qIdx] === oIdx ? 'bg-blue-600 border-blue-600 text-white' : 'bg-slate-50 border-slate-100 hover:border-blue-200'}`}
+                                            className={`p-6 text-right rounded-3xl border-2 transition-all font-bold text-lg group relative overflow-hidden
+                                              ${quizAnswers[qIdx] === oIdx 
+                                                ? 'bg-blue-600 border-blue-600 text-white shadow-xl' 
+                                                : (isDarkMode ? 'bg-slate-800 border-slate-700 hover:border-blue-500 text-slate-300' : 'bg-slate-50 border-slate-100 hover:border-blue-200')}
+                                            `}
                                         >
-                                            {opt}
+                                            <span className="relative z-10">{opt}</span>
+                                            {quizAnswers[qIdx] === oIdx && (
+                                               <div className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                               </div>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <button onClick={handleQuizSubmit} disabled={quizAnswers.includes(-1)} className="w-full mt-16 py-6 bg-slate-900 text-white rounded-3xl font-black text-xl shadow-2xl disabled:opacity-30">إنهاء الاختبار وحصد الدرع</button>
+                    <button onClick={handleQuizSubmit} disabled={quizAnswers.includes(-1)} className="w-full mt-16 py-7 bg-slate-900 text-white rounded-[2.5rem] font-black text-2xl shadow-2xl disabled:opacity-30 active:scale-95 transition-all flex items-center justify-center gap-4">
+                       <span>إنهاء الاختبار وحصد الدرع</span>
+                       <span className="text-3xl">🛡️</span>
+                    </button>
                  </div>
             </div>
         )}
 
         {step === Step.COMPLETED && (
-          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-10 animate-fade-in">
+          <div className="flex flex-col items-center justify-center min-h-[75vh] text-center space-y-12 animate-fade-in">
              <div className="relative">
-                <div className="absolute inset-0 bg-blue-500 blur-[80px] opacity-20 rounded-full animate-pulse"></div>
-                <div className={`w-64 h-64 rounded-[4rem] bg-gradient-to-br ${shieldInfo?.color} flex items-center justify-center text-[120px] shadow-2xl border-8 border-white animate-shield-earned relative z-10`}>
+                <div className="absolute inset-0 bg-blue-500 blur-[100px] opacity-30 rounded-full animate-pulse"></div>
+                <div className={`w-72 h-72 rounded-[5rem] bg-gradient-to-br ${shieldInfo?.color} flex items-center justify-center text-[140px] shadow-3xl border-8 border-white animate-shield-earned relative z-10`}>
                    {shieldInfo?.icon}
-                   <div className="absolute -top-6 -right-6 bg-yellow-400 text-white p-3 rounded-2xl font-black text-xs shadow-lg animate-bounce uppercase">درع جديد!</div>
+                   <div className="absolute -top-10 -right-10 bg-yellow-400 text-white px-5 py-3 rounded-3xl font-black text-sm shadow-2xl animate-bounce uppercase tracking-widest border-4 border-white">درع جديد!</div>
                 </div>
              </div>
              
-             <div className="space-y-4">
-                <h2 className="text-5xl font-black">عمل رائع!</h2>
-                <h3 className="text-2xl font-black text-blue-600">لقد كسبت: {shieldInfo?.name}</h3>
-                <p className="text-slate-500 font-medium max-w-md mx-auto">تم إضافة الدرع الرقمي إلى خزانتك وتوثيقه في ملفك الريادي. أنت الآن تمتلك {level.id} من أصل 6 دروع.</p>
+             <div className="space-y-6">
+                <h2 className="text-6xl font-black tracking-tight">إنجاز مذهل!</h2>
+                <div className="space-y-2">
+                   <h3 className="text-3xl font-black text-blue-600">لقد كسبت: {shieldInfo?.name}</h3>
+                   <p className="text-slate-500 font-bold text-xl uppercase tracking-widest">Level {level.id} Mastery Achieved</p>
+                </div>
+                <p className="text-slate-400 font-medium max-w-xl mx-auto text-lg leading-relaxed">تم توثيق هذا الإنجاز وتشفيره في ملفك الريادي. مشروعك الآن أكثر نضجاً وقرباً من الجاهزية الاستثمارية.</p>
              </div>
 
-             <button 
-               onClick={onComplete}
-               className="px-20 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-xl shadow-2xl transform hover:scale-105 transition-all"
-             >
-               العودة لاستعراض الإنجازات
-             </button>
+             <div className="flex flex-col sm:flex-row gap-6">
+                <button 
+                  onClick={onComplete}
+                  className="px-16 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-xl shadow-2xl transform hover:scale-105 transition-all active:scale-95 flex items-center gap-4"
+                >
+                  العودة للوحة التحكم
+                </button>
+                <button 
+                   onClick={() => window.print()}
+                   className="px-10 py-6 bg-white border-2 border-slate-200 text-slate-600 rounded-[2.5rem] font-black text-lg transition-all hover:bg-slate-50 active:scale-95"
+                >
+                   مشاركة الإنجاز 🔗
+                </button>
+             </div>
           </div>
         )}
       </main>
+
+      {/* Interactive Floating Feedback */}
+      {step === Step.LEARN && (
+        <div className="fixed bottom-8 left-8 z-50 animate-bounce">
+           <div className={`p-4 rounded-2xl shadow-2xl border-2 flex items-center gap-3 transition-colors ${isDarkMode ? 'bg-slate-900 border-blue-500' : 'bg-white border-blue-100'}`}>
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">🧠</div>
+              <div>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Learning Momentum</p>
+                 <p className="text-xs font-black text-blue-500">مستوى التركيز: عالٍ جداً</p>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };
