@@ -22,6 +22,8 @@ export const storageService = {
       lastName: profile.lastName,
       email: profile.email,
       phone: profile.phone,
+      age: profile.age || 0,
+      birthDate: profile.birthDate || '',
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
       settings: { theme: 'blue', notifications: true }
@@ -33,6 +35,9 @@ export const storageService = {
       name: profile.startupName,
       description: profile.startupDescription,
       industry: profile.industry,
+      foundationYear: profile.foundationYear || new Date().getFullYear(),
+      foundersCount: profile.foundersCount || 1,
+      technologies: profile.technologies || '',
       stage: 'Idea',
       metrics: { 
         readiness: Math.floor(Math.random() * 40) + 30, 

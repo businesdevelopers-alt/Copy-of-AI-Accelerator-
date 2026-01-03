@@ -269,16 +269,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
     switch (id) {
       case 'welcome': return (
         <div className="mb-4 space-y-6">
-          <div className="animate-fade-in-up">
+          <div className="animate-fade-in-up text-right">
             <h2 className={`text-4xl font-black ${isDark ? 'text-white' : 'text-slate-900'} mb-2 transition-colors duration-500`}>مرحباً بك، {user.firstName} 👋</h2>
             <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'} font-bold`}>هذه مساحتك الشخصية لمتابعة وتطوير مشروعك <span className={`${activeGlobalTheme.accent} transition-colors duration-500`}>"{user.startupName}"</span>.</p>
           </div>
           
-          {!user.hasCompletedAssessment && (
+          {allCompleted ? (
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-600 p-8 rounded-[2.5rem] text-white shadow-2xl animate-fade-in-up border border-yellow-400/20 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-12 translate-x-12"></div>
+               <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                  <div className="max-w-md text-right">
+                     <span className="bg-white/20 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block">لقد تخرجت! 🎉</span>
+                     <h3 className="text-3xl font-black mb-2">تهانينا على إتمام المسار</h3>
+                     <p className="text-yellow-50 text-sm font-medium leading-relaxed">لقد أتممت كافة مستويات مسرعة الأعمال بنجاح. مشروعك الآن جاهز لمواجهة العالم وجذب الاستثمارات.</p>
+                  </div>
+                  <button 
+                    onClick={onShowCertificate}
+                    className="px-10 py-5 bg-white text-amber-900 rounded-[1.8rem] font-black text-sm shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 whitespace-nowrap"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>عرض شهادة التخرج</span>
+                  </button>
+               </div>
+            </div>
+          ) : !user.hasCompletedAssessment && (
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-[2.5rem] text-white shadow-2xl animate-fade-in-up border border-blue-500/20 relative overflow-hidden group">
                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-12 translate-x-12"></div>
                <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="max-w-md">
+                  <div className="max-w-md text-right">
                      <span className="bg-white/20 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block">الخطوة التالية</span>
                      <h3 className="text-2xl font-black mb-2">أكمل اختبارات الترشيح</h3>
                      <p className="text-blue-100 text-sm font-medium leading-relaxed">تحتاج لاجتياز 3 مراحل (تحليل الشخصية، الاختبار التحليلي، تقييم الفكرة) للبدء رسمياً في مسار المسرعة.</p>
@@ -296,29 +314,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
         </div>
       );
       case 'profile_stats': return (
-        <div className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'} p-8 rounded-[2.5rem] border animate-fade-in-up h-full`}>
-           <div className="flex items-center gap-4 mb-8">
-              <div className={`w-14 h-14 rounded-2xl ${activeGlobalTheme.primary} text-white flex items-center justify-center text-2xl font-black shadow-lg`}>{(user.firstName).charAt(0)}</div>
-              <div>
-                 <h4 className={`font-black text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{user.firstName} {user.lastName}</h4>
-                 <p className="text-slate-400 text-xs font-bold">{user.email}</p>
+        <div className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'} p-6 rounded-[2rem] border animate-fade-in-up h-full overflow-hidden`}>
+           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100/10 text-right">
+              <div className={`w-12 h-12 rounded-xl ${activeGlobalTheme.primary} text-white flex items-center justify-center text-xl font-black shadow-lg shrink-0`}>{(user.firstName).charAt(0)}</div>
+              <div className="overflow-hidden">
+                 <h4 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'} truncate`}>{user.firstName} {user.lastName}</h4>
+                 <p className="text-slate-400 text-[10px] font-bold truncate">{user.email}</p>
               </div>
            </div>
-           <div className="space-y-4">
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex justify-between items-center">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">قطاع المشروع</span>
-                 <span className={`text-sm font-black ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{user.industry}</span>
-              </div>
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex justify-between items-center">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">حالة الطلب</span>
-                 <span className={`text-xs font-black px-2 py-1 rounded-lg ${user.hasCompletedAssessment ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {user.hasCompletedAssessment ? 'مقبول ✅' : 'قيد التقييم ⏳'}
-                 </span>
-              </div>
-              <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex justify-between items-center">
-                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">رقم الهاتف</span>
-                 <span className={`text-xs font-mono font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{user.phone}</span>
-              </div>
+           <div className="space-y-1">
+              {[
+                { label: 'قطاع المشروع', val: user.industry, icon: '🏭' },
+                { label: 'حالة الطلب', val: user.hasCompletedAssessment ? 'مقبول ✅' : 'قيد التقييم ⏳', icon: '📝', highlight: true },
+                { label: 'رقم الهاتف', val: user.phone, icon: '📞' },
+                { label: 'العمر', val: user.age || 'غير محدد', icon: '👤' },
+              ].map((item, i) => (
+                <div key={i} className={`flex items-center justify-between p-3 rounded-xl transition-colors ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
+                   <div className="flex items-center gap-3">
+                      <span className="text-sm grayscale group-hover:grayscale-0">{item.icon}</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{item.label}</span>
+                   </div>
+                   <span className={`text-xs font-black ${item.highlight ? (user.hasCompletedAssessment ? 'text-green-500' : 'text-amber-500') : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
+                      {item.val}
+                   </span>
+                </div>
+              ))}
+
+              {allCompleted && (
+                <button 
+                  onClick={onShowCertificate}
+                  className={`w-full mt-4 flex items-center justify-between p-4 rounded-2xl bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-all transform active:scale-95`}
+                >
+                   <div className="flex items-center gap-3">
+                      <span className="text-lg">🎓</span>
+                      <span className="text-xs font-black uppercase tracking-widest">شهادة التخرج</span>
+                   </div>
+                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                </button>
+              )}
            </div>
         </div>
       );
@@ -326,7 +359,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
         <div className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} p-8 rounded-[2.5rem] border relative overflow-hidden group animate-fade-in-up h-full`}>
           <div className="flex flex-col gap-8 relative z-10">
             <div className="shrink-0"><RadialProgress progress={user.hasCompletedAssessment ? progress : 0} theme={activeGlobalTheme} isDark={isDark} size={160} /></div>
-            <div className="space-y-6 w-full">
+            <div className="space-y-6 w-full text-right">
               <div>
                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 block ${activeGlobalTheme.accent}`}>تحليل الإنجاز</span>
                 <h3 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'} leading-none`}>ملخص الأداء</h3>
@@ -364,7 +397,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
       <header className={`sticky top-0 z-40 ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-gray-200 shadow-sm'} backdrop-blur-md border-b`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-20 items-center">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg ${activeGlobalTheme.primary}`}><svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div><div><h1 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'} leading-none`}>بيزنس ديفلوبرز</h1><span className={`text-[9px] font-bold uppercase tracking-widest mt-1 block ${activeGlobalTheme.accent}`}>Hub Terminal</span></div></div>
+            <div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg ${activeGlobalTheme.primary}`}>
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div><div className="text-right"><h1 className={`font-black text-lg ${isDark ? 'text-white' : 'text-slate-900'} leading-none`}>بيزنس ديفلوبرز</h1><span className={`text-[9px] font-bold uppercase tracking-widest mt-1 block ${activeGlobalTheme.accent}`}>Hub Terminal</span></div></div>
           </div>
           <div className="flex items-center gap-4">
             <button onClick={toggleThemeMode} className={`p-2.5 rounded-xl transition-all border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}>
@@ -373,7 +410,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
             <button onClick={() => setIsSettingsOpen(true)} className={`p-2.5 ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-400'} rounded-xl transition-all border`}>
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
-            <div className="relative" ref={profileRef}><button onClick={() => setIsProfileOpen(!isProfileOpen)} className={`h-10 w-10 rounded-xl ${isDark ? 'bg-blue-600' : 'bg-slate-900'} flex items-center justify-center text-white font-black shadow-sm`}>{(user.firstName).charAt(0)}</button>{isProfileOpen && (<div className={`absolute left-0 mt-3 w-64 rounded-2xl shadow-2xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'} border p-2 z-50 animate-fade-in`}><div className={`p-4 ${isDark ? 'bg-slate-900' : 'bg-slate-50'} rounded-xl mb-2`}><h4 className={`font-black ${isDark ? 'text-white' : 'text-slate-900'} text-sm mb-1`}>{user.startupName}</h4><p className={`text-[10px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{user.industry}</p></div><button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-black text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>تسجيل الخروج</button></div>)}</div>
+            <div className="relative" ref={profileRef}><button onClick={() => setIsProfileOpen(!isProfileOpen)} className={`h-10 w-10 rounded-xl ${isDark ? 'bg-blue-600' : 'bg-slate-900'} flex items-center justify-center text-white font-black shadow-sm`}>{(user.firstName).charAt(0)}</button>{isProfileOpen && (<div className={`absolute left-0 mt-3 w-64 rounded-2xl shadow-2xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'} border p-2 z-50 animate-fade-in text-right`}><div className={`p-4 ${isDark ? 'bg-slate-900' : 'bg-slate-50'} rounded-xl mb-2`}><h4 className={`font-black ${isDark ? 'text-white' : 'text-slate-900'} text-sm mb-1`}>{user.startupName}</h4><p className={`text-[10px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{user.industry}</p></div><button onClick={onLogout} className="w-full flex items-center justify-end gap-3 px-4 py-3 text-sm font-black text-rose-600 hover:bg-rose-50 rounded-xl transition-colors">تسجيل الخروج<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button></div>)}</div>
           </div>
         </div>
       </header>
@@ -392,19 +429,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
       </main>
 
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in text-right">
            <div ref={settingsRef} className={`${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} rounded-[3rem] w-full max-w-2xl shadow-2xl border animate-fade-in-up overflow-hidden flex flex-col max-h-[90vh]`}>
               <div className={`px-10 py-8 ${isDark ? 'border-slate-800' : 'border-slate-100'} border-b flex justify-between items-center`}>
+                 <button onClick={() => setIsSettingsOpen(false)} className={`p-3 ${isDark ? 'hover:bg-slate-800 text-slate-500 hover:text-white' : 'hover:bg-slate-50 text-slate-400 hover:text-slate-900'} rounded-2xl transition-colors`}>
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
                  <div className="flex items-center gap-4">
-                    <span className="text-3xl">⚙️</span>
                     <div>
                        <h3 className={`text-2xl font-black ${isDark ? 'text-white' : 'text-slate-900'} tracking-tight`}>إعدادات المنصة</h3>
                        <p className={`text-[10px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'} uppercase tracking-widest`}>Terminal Settings</p>
                     </div>
+                    <span className="text-3xl">⚙️</span>
                  </div>
-                 <button onClick={() => setIsSettingsOpen(false)} className={`p-3 ${isDark ? 'hover:bg-slate-800 text-slate-500 hover:text-white' : 'hover:bg-slate-50 text-slate-400 hover:text-slate-900'} rounded-2xl transition-colors`}>
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                 </button>
               </div>
 
               <div className="p-10 overflow-y-auto space-y-12">

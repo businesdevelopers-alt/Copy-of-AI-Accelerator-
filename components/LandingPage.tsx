@@ -48,8 +48,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
       <nav className="max-w-7xl mx-auto w-full px-6 py-6 flex justify-between items-center relative z-50">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-3 transition-transform hover:rotate-0">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 text-white">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
           <div className="flex flex-col">
@@ -70,7 +70,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
       <section className="relative pt-12 pb-24 md:pt-20 md:pb-32 overflow-hidden bg-dot-pattern">
         <div className="absolute top-0 right-0 w-1/2 h-screen bg-blue-50 rounded-bl-[10rem] -z-10 opacity-50"></div>
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8 animate-fade-in-up">
+          <div className="space-y-8 animate-fade-in-up text-right">
             <div className="inline-flex items-center gap-3 bg-blue-50 text-blue-600 px-5 py-2 rounded-full text-xs font-black border border-blue-100">
               <span className="animate-bounce">✨</span>
               <span className="uppercase tracking-widest text-[10px]">مستقبل ريادة الأعمال يبدأ هنا</span>
@@ -86,7 +86,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
             <p className="text-xl text-slate-500 max-w-lg leading-relaxed font-medium">
               حوّل فكرتك إلى شركة ناشئة ناجحة وجاهزة للاستثمار من خلال أول مسار تدريبي ذكي في المنطقة معتمد على تقنيات Gemini AI.
             </p>
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+            <div className="flex flex-col sm:flex-row gap-5 pt-4 justify-end">
               <button onClick={onStart} className="px-12 py-6 bg-blue-600 hover:bg-blue-700 text-white text-xl font-black rounded-[2rem] shadow-2xl shadow-blue-200 transition-all flex items-center justify-center gap-3 group active:scale-95">
                 <span>ابدأ رحلتك الآن</span>
                 <svg className="w-6 h-6 group-hover:translate-x-[-4px] transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,7 +98,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
               </button>
             </div>
             <div className="pt-4">
-              <button onClick={onPathFinder} className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-2">
+              <button onClick={onPathFinder} className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-2 justify-end">
                 <span className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs">💬</span>
                 تحدث مع الموجه الذكي لتحديد مسارك
               </button>
@@ -109,8 +109,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
             <div className="bg-white p-4 rounded-[4rem] border border-slate-100 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-700">
               <div className="bg-slate-50 rounded-[3rem] shadow-inner p-10 text-slate-900 min-h-[500px] flex flex-col justify-center text-center">
                 <div className="w-20 h-20 bg-blue-600 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-xl shadow-blue-200">
-                  <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3c-4.43 0-8.123 2.875-9.352 6.848m14.704 0c.414 1.35.648 2.775.648 4.252 0 1.62-.27 3.177-.764 4.634m-4.304 1.236A10.002 10.002 0 0112 21c-2.825 0-5.39-1.168-7.247-3.058" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-white">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                   </svg>
                 </div>
                 <h3 className="text-2xl font-black mb-4">بوابة المسرعة</h3>
@@ -149,7 +149,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
                     >
                       <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${step.gradient} opacity-[0.05] rounded-bl-[4rem]`}></div>
                       
-                      <div className="flex items-center gap-6 mb-10">
+                      <div className="flex items-center gap-6 mb-10 text-right">
                         <div className={`w-20 h-20 rounded-[2rem] bg-gradient-to-br ${step.gradient} flex items-center justify-center text-5xl shadow-xl group-hover:rotate-6 transition-transform transform text-white`}>
                           {step.icon}
                         </div>
@@ -159,18 +159,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
                         </div>
                       </div>
 
-                      <div className="space-y-8">
+                      <div className="space-y-8 text-right">
                         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                             <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2 justify-end">
                              الهدف الاستراتيجي
+                             <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
                           </h4>
                           <p className="text-slate-700 font-bold leading-relaxed">{step.goal}</p>
                         </div>
 
                         <div className="pt-8 border-t border-slate-100">
                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-5">المخرجات الرئيسية للمحطة:</h4>
-                          <div className="flex flex-wrap gap-2.5">
+                          <div className="flex flex-wrap gap-2.5 justify-end">
                             {step.deliverables.map((d, i) => (
                               <span key={i} className="px-5 py-2.5 bg-white text-slate-600 text-[11px] font-black rounded-2xl border border-slate-200 shadow-sm group-hover:border-blue-500 transition-colors flex items-center gap-2">
                                 <span className="text-blue-600 text-sm">✓</span>
@@ -212,8 +212,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
             <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-12">
                <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                     </svg>
                   </div>
                   <span className="text-xl font-black text-slate-900 uppercase tracking-tight">بيزنس ديفلوبرز</span>

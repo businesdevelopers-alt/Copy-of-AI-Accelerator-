@@ -28,6 +28,8 @@ export interface UserRecord {
   lastName: string;
   email: string;
   phone: string;
+  age: number;
+  birthDate: string;
   createdAt: string;
   lastLogin: string;
   settings: {
@@ -42,6 +44,9 @@ export interface StartupRecord {
   name: string;
   description: string;
   industry: string;
+  foundationYear: number;
+  foundersCount: number;
+  technologies: string;
   stage: ProjectStageType;
   metrics: RadarMetrics;
   aiClassification: 'Green' | 'Yellow' | 'Red';
@@ -98,6 +103,11 @@ export interface UserProfile {
   industry: string;
   phone: string;
   email: string;
+  age?: number;
+  birthDate?: string;
+  foundationYear?: number;
+  foundersCount?: number;
+  technologies?: string;
   name?: string; 
   hasCompletedAssessment?: boolean;
 }
