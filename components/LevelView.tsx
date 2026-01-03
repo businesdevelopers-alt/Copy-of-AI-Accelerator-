@@ -50,7 +50,7 @@ interface LevelViewProps {
   user: UserProfile;
   onComplete: () => void;
   onBack: () => void;
-  onRequestMentorship?: () => void; // مضافة لربط نظام الإرشاد
+  onRequestMentorship?: () => void;
 }
 
 enum Step {
@@ -61,6 +61,106 @@ enum Step {
   QUIZ,
   COMPLETED
 }
+
+// مكون تفاعلي لمخطط نموذج العمل (BMC)
+const InteractiveBMCExplorer: React.FC<{ user: UserProfile; theme: LevelTheme }> = ({ user, theme }) => {
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+
+  const blocks = [
+    { id: 'kp', title: 'الشركاء الرئيسيون', icon: '🤝', desc: 'من هم الذين سيساعدونك في إنجاز المشروع؟', example: `في قطاع ${user.industry}، قد يكونون موردين تقنيين أو شركاء لوجستيين.` },
+    { id: 'ka', title: 'الأنشطة الرئيسية', icon: '⚙️', desc: 'ما هي أهم الأشياء التي تقوم بها شركتك؟', example: 'تطوير المنصة، التسويق الرقمي، إدارة خدمة العملاء.' },
+    { id: 'kr', title: 'الموارد الرئيسية', icon: '🛠️', desc: 'ما الذي تحتاجه لتنفيذ أنشطتك؟', example: 'فريق برمجة، خوادم سحابية، علامة تجارية قوية.' },
+    { id: 'vp', title: 'القيمة المقترحة', icon: '💎', desc: 'لماذا سيختارك العميل؟ ما المشكلة التي تحلها؟', example: `حل ذكي وموفر للوقت في مجال ${user.industry}.` },
+    { id: 'cr', title: 'علاقات العملاء', icon: '❤️', desc: 'كيف ستحافظ على عملائك؟', example: 'دعم فني 24/7، برامج ولاء، مجتمع افتراضي.' },
+    { id: 'ch', title: 'القنوات', icon: '📱', desc: 'كيف ستصل لعملائك؟', example: 'تطبيق جوال، شبكات التواصل، حملات بريد إلكتروني.' },
+    { id: 'cs', title: 'شرائح العملاء', icon: '👥', desc: 'من هم الأشخاص الذين تحل مشكلتهم؟', example: 'الشباب المهتمون بالتقنية، أصحاب الشركات الصغيرة.' },
+    { id: 'cost', title: 'هيكل التكاليف', icon: '💸', desc: 'أين ستنفق أموالك؟', example: 'رواتب الفريق، التسويق، تكاليف التشغيل السحابية.' },
+    { id: 'rev', title: 'مصادر الإيرادات', icon: '💰', desc: 'كيف ستجني المال؟', example: 'اشتراكات شهرية، عمولة على العمليات، خدمات متميزة.' },
+  ];
+
+  return (
+    <div className="mt-12 space-y-8 animate-fade-in-up">
+      <div className="flex items-center justify-between">
+         <h4 className="text-xl font-black text-slate-900">مستكشف نموذج العمل التفاعلي 🔍</h4>
+         <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-3 py-1 rounded-full border border-blue-100 uppercase tracking-widest">Click to Explore Blocks</span>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 h-[450px] md:h-[350px]">
+        {/* Row 1 */}
+        <div className="col-span-1 row-span-2 flex flex-col gap-3">
+           <BMCBlock item={blocks[0]} theme={theme} isSelected={selectedBlock === blocks[0].id} onSelect={setSelectedBlock} />
+        </div>
+        <div className="col-span-1 row-span-1 flex flex-col gap-3">
+           <BMCBlock item={blocks[1]} theme={theme} isSelected={selectedBlock === blocks[1].id} onSelect={setSelectedBlock} />
+        </div>
+        <div className="col-span-1 row-span-2 flex flex-col gap-3">
+           <BMCBlock item={blocks[3]} theme={theme} isSelected={selectedBlock === blocks[3].id} onSelect={setSelectedBlock} highlight />
+        </div>
+        <div className="col-span-1 row-span-1 flex flex-col gap-3">
+           <BMCBlock item={blocks[4]} theme={theme} isSelected={selectedBlock === blocks[4].id} onSelect={setSelectedBlock} />
+        </div>
+        <div className="col-span-1 row-span-2 flex flex-col gap-3">
+           <BMCBlock item={blocks[6]} theme={theme} isSelected={selectedBlock === blocks[6].id} onSelect={setSelectedBlock} />
+        </div>
+
+        {/* Row 2 (under row 1 bits) */}
+        <div className="col-start-2 col-span-1 row-start-2 flex flex-col gap-3">
+           <BMCBlock item={blocks[2]} theme={theme} isSelected={selectedBlock === blocks[2].id} onSelect={setSelectedBlock} />
+        </div>
+        <div className="col-start-4 col-span-1 row-start-2 flex flex-col gap-3">
+           <BMCBlock item={blocks[5]} theme={theme} isSelected={selectedBlock === blocks[5].id} onSelect={setSelectedBlock} />
+        </div>
+
+        {/* Row 3 (Bottom) */}
+        <div className="col-span-2 md:col-span-2 row-start-3 flex flex-col gap-3">
+           <BMCBlock item={blocks[7]} theme={theme} isSelected={selectedBlock === blocks[7].id} onSelect={setSelectedBlock} />
+        </div>
+        <div className="col-span-2 md:col-span-3 row-start-3 flex flex-col gap-3">
+           <BMCBlock item={blocks[8]} theme={theme} isSelected={selectedBlock === blocks[8].id} onSelect={setSelectedBlock} />
+        </div>
+      </div>
+
+      {/* Details Panel */}
+      <div className={`p-8 rounded-[2.5rem] border-2 transition-all min-h-[160px] flex items-center justify-center text-center
+        ${selectedBlock ? 'bg-white border-blue-500 shadow-xl' : 'bg-slate-50 border-slate-200 border-dashed'}
+      `}>
+        {selectedBlock ? (
+          <div className="animate-fade-in space-y-4">
+            <div className="flex items-center justify-center gap-3">
+               <span className="text-3xl">{blocks.find(b => b.id === selectedBlock)?.icon}</span>
+               <h5 className="text-2xl font-black text-slate-900">{blocks.find(b => b.id === selectedBlock)?.title}</h5>
+            </div>
+            <p className="text-slate-600 font-medium max-w-2xl mx-auto">{blocks.find(b => b.id === selectedBlock)?.desc}</p>
+            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 inline-block">
+               <p className="text-sm font-bold text-blue-800">💡 مثال لمشروعك: {blocks.find(b => b.id === selectedBlock)?.example}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-slate-400 font-bold text-lg">اضغط على أي جزء من المخطط أعلاه لاستكشاف تفاصيله وأمثلة لمشروعك.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const BMCBlock: React.FC<{ 
+  item: any; 
+  theme: LevelTheme; 
+  isSelected: boolean; 
+  onSelect: (id: string) => void;
+  highlight?: boolean;
+}> = ({ item, theme, isSelected, onSelect, highlight }) => (
+  <button 
+    onClick={() => onSelect(item.id)}
+    className={`h-full w-full rounded-2xl border-2 p-3 transition-all flex flex-col items-center justify-center gap-1 group
+      ${isSelected ? `${theme.primary} text-white shadow-lg scale-[1.02] border-transparent` : 
+        highlight ? 'bg-amber-50 border-amber-200 hover:border-amber-400' : 'bg-white border-slate-100 hover:border-blue-300'}
+    `}
+  >
+    <span className={`text-xl transition-transform group-hover:scale-125 ${isSelected ? 'scale-125' : ''}`}>{item.icon}</span>
+    <span className={`text-[9px] font-black text-center ${isSelected ? 'text-white' : highlight ? 'text-amber-700' : 'text-slate-500'}`}>{item.title}</span>
+  </button>
+);
 
 const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wireframe?: boolean }> = ({ levelId, theme, wireframe = false }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -576,6 +676,12 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                     <p key={idx} className="mb-6">{paragraph}</p>
                   ))}
                 </article>
+
+                {/* عنصر تفاعلي مخصص للمستوى الثاني (نموذج العمل) */}
+                {level.id === 2 && (
+                   <InteractiveBMCExplorer user={user} theme={activeTheme} />
+                )}
+
                 <div className="mt-12 pt-8 border-t border-slate-100 flex justify-end">
                   <button 
                     onClick={() => { playPositiveSound(); setStep(Step.EXERCISE); window.scrollTo(0, 0); }}
