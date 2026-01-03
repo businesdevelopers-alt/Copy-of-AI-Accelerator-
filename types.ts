@@ -21,6 +21,29 @@ export enum FiltrationStage {
   MENTORSHIP = 'MENTORSHIP'
 }
 
+export interface TaskRecord {
+  id: string;
+  levelId: number;
+  title: string;
+  description: string;
+  deliverableType: string;
+  status: 'LOCKED' | 'ASSIGNED' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+  submission?: {
+    content: string;
+    submittedAt: string;
+    feedback?: string;
+  };
+}
+
+export const TASKS_CONFIG: TaskRecord[] = [
+  { id: 'task_1', levelId: 1, title: 'تقرير التحقق الميداني', deliverableType: 'مستند PDF / رابط استبيان', description: 'قم بإجراء مقابلات مع 10 عملاء محتملين وتوثيق أهم 3 مشاكل يواجهونها.', status: 'LOCKED' },
+  { id: 'task_2', levelId: 2, title: 'مخطط نموذج العمل النهائي', deliverableType: 'Business Model Canvas', description: 'صمم مخطط نموذج العمل الكامل لمشروعك مع توضيح تدفقات الإيرادات بدقة.', status: 'LOCKED' },
+  { id: 'task_3', levelId: 3, title: 'مصفوفة تحليل المنافسين', deliverableType: 'جدول مقارنة', description: 'قارن مشروعك بـ 3 منافسين مباشرين وحدد ميزتك التنافسية (USP).', status: 'LOCKED' },
+  { id: 'task_4', levelId: 4, title: 'خارطة طريق الـ MVP', deliverableType: 'قائمة المزايا (Backlog)', description: 'حدد المزايا التي سيتم إطلاقها في النسخة الأولى والجدول الزمني للتطوير.', status: 'LOCKED' },
+  { id: 'task_5', levelId: 5, title: 'نموذج التوقعات المالية', deliverableType: 'Excel / Spreadsheet', description: 'ارفع ملف التوقعات المالية للسنوات الثلاث الأولى متضمناً نقطة التعادل.', status: 'LOCKED' },
+  { id: 'task_6', levelId: 6, title: 'ملف العرض الاستثماري (Final Deck)', deliverableType: 'عرض تقديمي (Pitch Deck)', description: 'النسخة النهائية من العرض الجاهز للإرسال للمستثمرين.', status: 'LOCKED' },
+];
+
 export interface Badge {
   id: string;
   name: string;
@@ -47,6 +70,7 @@ export interface UserProfile {
   industry: string;
   phone: string;
   email: string;
+  logo?: string;
   age?: number;
   birthDate?: string;
   foundationYear?: number;
@@ -129,7 +153,6 @@ export const LEVELS_CONFIG: LevelData[] = [
   { id: 6, title: 'عرض الاستثمار النهائي', description: 'جهز عرضاً تقديمياً احترافياً (Pitch Deck) لجذب المستثمرين.', isCompleted: false, isLocked: false, icon: '🚀' },
 ];
 
-// Added missing members for filtration and analysis features
 export interface NominationData {
   companyName: string;
   founderName: string;
@@ -244,7 +267,6 @@ export interface GovStats {
   regulatoryGaps: string[];
 }
 
-// Added missing storage and staff portal record types
 export interface UserRecord {
   uid: string;
   firstName: string;

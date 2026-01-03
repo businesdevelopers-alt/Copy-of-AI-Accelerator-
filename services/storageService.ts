@@ -1,5 +1,5 @@
 
-import { UserRecord, StartupRecord, ProgressRecord, ActivityLogRecord, UserProfile } from '../types';
+import { UserRecord, StartupRecord, ProgressRecord, ActivityLogRecord, UserProfile, TaskRecord, TASKS_CONFIG } from '../types';
 
 /**
  * خدمة إدارة قاعدة البيانات المحلية (LocalStorage Wrapper)
@@ -8,6 +8,7 @@ const DB_KEYS = {
   USERS: 'db_users',
   STARTUPS: 'db_startups',
   PROGRESS: 'db_progress',
+  TASKS: 'db_tasks', // مفتاح جديد للمهام
   LOGS: 'db_logs',
   SESSION: 'db_current_session',
   TEMP_LEVEL_STATE: 'db_temp_level_' // سيتبع بـ userId_levelId
@@ -59,6 +60,11 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.USERS, JSON.stringify([...users, newUser]));
     localStorage.setItem(DB_KEYS.STARTUPS, JSON.stringify([...startups, newStartup]));
     localStorage.setItem(DB_KEYS.SESSION, JSON.stringify({ uid, projectId: newStartup.projectId }));
+
+    // تهيئة المهام للمستخدم الجديد
+    const tasks = TASKS_CONFIG.map(t => ({ ...t, uid }));
+    const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...tasks]));
 
     return { user: newUser, startup: newStartup };
   },
@@ -134,12 +140,49 @@ export const storageService = {
     });
     localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
 
+    // إضافة مهام تجريبية
+    const demoTasks = TASKS_CONFIG.map(t => ({ 
+      ...t, 
+      uid, 
+      status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' 
+    }));
+    const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...demoTasks]));
+
     return demoEmail;
   },
 
   getCurrentSession: () => {
     const session = localStorage.getItem(DB_KEYS.SESSION);
     return session ? JSON.parse(session) : null;
+  },
+
+  // --- Task Operations ---
+  getUserTasks: (uid: string): (TaskRecord & { uid: string })[] => {
+    const tasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    return tasks.filter((t: any) => t.uid === uid);
+  },
+
+  submitTask: (uid: string, taskId: string, content: string) => {
+    const tasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    const index = tasks.findIndex((t: any) => t.uid === uid && t.id === taskId);
+    if (index > -1) {
+      tasks[index].status = 'SUBMITTED';
+      tasks[index].submission = {
+        content,
+        submittedAt: new Date().toISOString()
+      };
+      localStorage.setItem(DB_KEYS.TASKS, JSON.stringify(tasks));
+    }
+  },
+
+  unlockTaskForLevel: (uid: string, levelId: number) => {
+    const tasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    const index = tasks.findIndex((t: any) => t.uid === uid && t.levelId === levelId);
+    if (index > -1 && tasks[index].status === 'LOCKED') {
+      tasks[index].status = 'ASSIGNED';
+      localStorage.setItem(DB_KEYS.TASKS, JSON.stringify(tasks));
+    }
   },
 
   // --- Admin Operations ---
@@ -201,6 +244,11 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
     // بمجرد التحديث الرسمي، نمسح النسخة المؤقتة
     storageService.clearLevelProgress(uid, levelId);
+
+    // فتح المهمة المقابلة فوراً
+    if (data.status === 'COMPLETED') {
+      storageService.unlockTaskForLevel(uid, levelId);
+    }
   },
 
   getUserProgress: (uid: string): ProgressRecord[] => {

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LevelData, UserProfile, Question, DIGITAL_SHIELDS } from '../types';
 import { generateLevelMaterial, generateLevelQuiz, evaluateExerciseResponse } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface LevelTheme {
   id: string;
@@ -194,6 +195,15 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
     return items;
   }, [contentBlocks]);
 
+  // Chart Data for Progress
+  const progressChartData = useMemo(() => {
+    return carouselItems.map((item, i) => ({
+      name: i === carouselItems.length - 1 ? 'المصادر' : `الجزء ${i + 1}`,
+      val: i <= currentContentPage ? 100 : 0,
+      active: i === currentContentPage
+    }));
+  }, [carouselItems, currentContentPage]);
+
   useEffect(() => {
     const loadContent = async () => {
       try {
@@ -258,19 +268,26 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         .discovery-card:hover { transform: translateY(-4px); }
         .insight-reveal { transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); max-height: 0; opacity: 0; overflow: hidden; }
         .insight-reveal.active { max-height: 400px; opacity: 1; margin-top: 2rem; }
+        .progress-map-card { transition: all 0.4s ease; }
+        .progress-map-card:hover { transform: translateY(-2px); }
       `}</style>
 
-      {/* Simplified Header */}
+      {/* Improved Header with Deep Progress */}
       <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-gray-100 shadow-sm'}`}>
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <button onClick={onBack} className="text-slate-400 font-black text-xs hover:text-blue-600 transition-all flex items-center gap-2">
                 <svg className="w-4 h-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" strokeWidth={2.5} /></svg>
                 خروج من المحطة
             </button>
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center">
                 <h2 className="font-black text-sm">{level.title}</h2>
-                <div className="w-32 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                    <div className={`${activeTheme.primary} h-full transition-all duration-700`} style={{ width: `${(currentContentPage / (carouselItems.length || 1)) * 100}%` }}></div>
+                <div className="flex items-center gap-3 mt-1.5">
+                   <div className="w-40 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                       <div className={`${activeTheme.primary} h-full transition-all duration-1000 ease-out`} style={{ width: `${(currentContentPage / (carouselItems.length - 1 || 1)) * 100}%` }}></div>
+                   </div>
+                   <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">
+                      {Math.round((currentContentPage / (carouselItems.length - 1 || 1)) * 100)}%
+                   </span>
                 </div>
             </div>
             <div className="flex items-center gap-4">
@@ -298,6 +315,65 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
         {step === Step.LEARN && (
            <div className="w-full space-y-12 animate-fade-in">
+              {/* Learning Progress Map (Area Chart Visualization) */}
+              <div className={`p-6 rounded-[2.5rem] border progress-map-card transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-100 shadow-sm'}`}>
+                 <div className="flex justify-between items-center mb-6 px-4">
+                    <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xs">📈</div>
+                       <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">خارطة التحصيل المعرفي للمحطة</h4>
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-500">الجزء {currentContentPage + 1} / {carouselItems.length}</span>
+                 </div>
+                 <div className="h-20 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                       <AreaChart data={progressChartData}>
+                          <defs>
+                             <linearGradient id="learnGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                             </linearGradient>
+                          </defs>
+                          <Tooltip 
+                             content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                   return (
+                                      <div className={`p-2 rounded-lg border text-[10px] font-black ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-lg'}`}>
+                                         {payload[0].payload.name}
+                                      </div>
+                                   );
+                                }
+                                return null;
+                             }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="val" 
+                            stroke="#3b82f6" 
+                            strokeWidth={3} 
+                            fillOpacity={1} 
+                            fill="url(#learnGrad)" 
+                            animationDuration={1500}
+                          />
+                       </AreaChart>
+                    </ResponsiveContainer>
+                 </div>
+                 <div className="flex justify-between mt-4 px-2 overflow-x-auto hide-scrollbar gap-4">
+                    {carouselItems.map((_, i) => (
+                       <button 
+                         key={i} 
+                         onClick={() => { setCurrentContentPage(i); playPositiveSound(); }}
+                         className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all
+                           ${i === currentContentPage 
+                             ? 'bg-blue-600 text-white shadow-lg ring-4 ring-blue-500/20 scale-110' 
+                             : (i < currentContentPage ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-slate-100 text-slate-400 opacity-50')}
+                         `}
+                       >
+                         {i === carouselItems.length - 1 ? '📚' : i + 1}
+                       </button>
+                    ))}
+                 </div>
+              </div>
+
               <div className="flex justify-center mb-4">
                  <LevelIllustration levelId={level.id} theme={activeTheme} isDarkMode={isDarkMode} activePage={currentContentPage} />
               </div>

@@ -32,6 +32,7 @@ function App() {
   const [nominationOutcome, setNominationOutcome] = useState<NominationResult | null>(null);
   const [projectEvaluation, setProjectEvaluation] = useState<ProjectEvaluationResult | null>(null);
 
+  // Initialize and Sync Levels based on DB Progress
   useEffect(() => {
     const session = storageService.getCurrentSession();
     if (session) {
@@ -52,6 +53,28 @@ function App() {
             name: `${currentUser.firstName} ${currentUser.lastName}`,
             hasCompletedAssessment: startup.status === 'APPROVED'
           });
+
+          // Sync Levels
+          const userProgress = storageService.getUserProgress(currentUser.uid);
+          const updatedLevels = LEVELS_CONFIG.map((lvl, index) => {
+            const progress = userProgress.find(p => p.levelId === lvl.id);
+            const isCompleted = progress?.status === 'COMPLETED';
+            
+            // Logic for locking:
+            // Level 1 (index 0) is always unlocked if the startup is APPROVED.
+            // Level N is unlocked if Level N-1 is COMPLETED.
+            let isLocked = index === 0 ? false : true;
+            if (index > 0) {
+              const prevLvlProgress = userProgress.find(p => p.levelId === LEVELS_CONFIG[index-1].id);
+              if (prevLvlProgress?.status === 'COMPLETED') {
+                isLocked = false;
+              }
+            }
+
+            return { ...lvl, isCompleted, isLocked };
+          });
+          setLevels(updatedLevels);
+          
           setStage(FiltrationStage.DASHBOARD);
         }
       }
@@ -87,6 +110,8 @@ function App() {
   const handleLoginSuccess = (profile: UserProfile) => {
     setUserProfile(profile);
     setStage(FiltrationStage.DASHBOARD);
+    // Reload to trigger level sync
+    window.location.reload();
   };
 
   const handleRegister = (profile: UserProfile) => {
@@ -99,7 +124,6 @@ function App() {
       hasCompletedAssessment: false
     });
 
-    // ننتقل أولاً إلى تقييم الفكرة (Idea Validation)
     setStage(FiltrationStage.PROJECT_EVALUATION);
   };
 
@@ -150,7 +174,17 @@ function App() {
       storageService.updateProgress(session.uid, id, { status: 'COMPLETED', score: 100, completedAt: new Date().toISOString() });
       storageService.logAction(session.uid, 'TEST_SUBMIT', `Completed Level ${id}`);
     }
-    setLevels(prev => prev.map(l => l.id === id ? { ...l, isCompleted: true } : l.id === id + 1 ? { ...l, isLocked: false } : l));
+    
+    setLevels(prev => {
+      const updated = prev.map(l => l.id === id ? { ...l, isCompleted: true } : l);
+      // Logic to unlock the next level
+      return updated.map((l, idx) => {
+        if (idx > 0 && updated[idx-1].isCompleted) {
+          return { ...l, isLocked: false };
+        }
+        return l;
+      });
+    });
     setStage(FiltrationStage.DASHBOARD);
   };
 
@@ -220,7 +254,16 @@ function App() {
         <Dashboard 
           user={userProfile} 
           levels={levels} 
-          onSelectLevel={(id) => { setActiveLevelId(id); setStage(FiltrationStage.LEVEL_VIEW); }} 
+          onSelectLevel={(id) => {
+            const lvl = levels.find(l => l.id === id);
+            if (lvl?.isLocked) {
+              playErrorSound();
+              alert('هذه المحطة مغلقة. يجب إكمال المحطة السابقة أولاً.');
+              return;
+            }
+            setActiveLevelId(id); 
+            setStage(FiltrationStage.LEVEL_VIEW); 
+          }} 
           onShowCertificate={() => setStage(FiltrationStage.CERTIFICATE)} 
           onLogout={() => { localStorage.removeItem('db_current_session'); setStage(FiltrationStage.LANDING); }} 
           onOpenProAnalytics={() => setStage(FiltrationStage.PROJECT_BUILDER)}
@@ -248,5 +291,21 @@ function App() {
     </div>
   );
 }
+
+const playErrorSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+};
 
 export default App;
