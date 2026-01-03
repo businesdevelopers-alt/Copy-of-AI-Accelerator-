@@ -48,6 +48,52 @@ async function callGemini<T = string>(params: {
 }
 
 /**
+ * وظيفة الذكاء الاصطناعي لاقتراح أيقونات ذات صلة بكل مستوى بناءً على المحتوى
+ * تم إصلاح المخطط ليتوافق مع قيود Gemini API
+ */
+export const suggestIconsForLevels = async (levels: any[]): Promise<Record<number, string>> => {
+  const levelsSummary = levels.map(l => `ID: ${l.id}, Title: ${l.title}, Description: ${l.description}`).join('\n');
+  
+  const prompt = `Based on the following levels in an entrepreneurship accelerator bootcamp, suggest exactly one appropriate and modern emoji icon for each level ID. Ensure the icon reflects the strategic essence of the title and description.\n\n${levelsSummary}`;
+
+  try {
+    const res = await callGemini<{ iconMappings: { levelId: number, emoji: string }[] }>({
+      prompt,
+      systemInstruction: "You are a creative UI/UX iconographer. Return a JSON object containing an array of mappings between level IDs and relevant emojis.",
+      json: true,
+      schema: {
+        type: Type.OBJECT,
+        properties: {
+          iconMappings: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                levelId: { type: Type.NUMBER, description: "The ID of the level" },
+                emoji: { type: Type.STRING, description: "The suggested emoji icon" }
+              },
+              required: ["levelId", "emoji"]
+            }
+          }
+        },
+        required: ["iconMappings"]
+      }
+    });
+
+    const final: Record<number, string> = {};
+    if (res.iconMappings && Array.isArray(res.iconMappings)) {
+      res.iconMappings.forEach(mapping => {
+        if (mapping.levelId) final[mapping.levelId] = mapping.emoji;
+      });
+    }
+    return final;
+  } catch (error) {
+    console.warn("AI Icon suggestion failed, using defaults:", error);
+    return {};
+  }
+};
+
+/**
  * اكتشاف فرص التوسع والأسواق الجديدة
  */
 export const discoverOpportunities = async (startupName: string, description: string, industry: string): Promise<OpportunityAnalysis> => {
@@ -144,26 +190,6 @@ export const evaluateNominationForm = async (data: NominationData): Promise<Nomi
       required: ["aiScore", "redFlags", "aiAnalysis", "categorySuggestion"]
     }
   });
-};
-
-export const suggestIconsForLevels = async (levels: any[]): Promise<Record<number, string>> => {
-  const levelsSummary = levels.map(l => `ID: ${l.id}, Title: ${l.title}, Desc: ${l.description}`).join('\n');
-  
-  return callGemini<Record<string, string>>({
-    prompt: `Based on the following levels in an entrepreneurship accelerator, suggest a single appropriate emoji icon for each level ID.\n\n${levelsSummary}`,
-    systemInstruction: "You are a UI/UX specialist. Return a JSON object mapping level IDs to a single relevant emoji. Example: { '1': '💡' }",
-    json: true,
-    schema: {
-      type: Type.OBJECT,
-      additionalProperties: { type: Type.STRING }
-    }
-  }).then(res => {
-    const final: Record<number, string> = {};
-    Object.entries(res).forEach(([k, v]) => {
-      final[parseInt(k)] = v;
-    });
-    return final;
-  }).catch(() => ({}));
 };
 
 export const createPathFinderChat = () => {
@@ -420,7 +446,6 @@ export const getGovInsights = async (): Promise<any> => {
   });
 };
 
-// Fix for ToolsPage.tsx error: Added generateProjectDetails
 export const generateProjectDetails = async (data: any): Promise<string> => {
   return callGemini({
     prompt: `حلل تفاصيل المشروع بناءً على المعطيات: ${JSON.stringify(data)}. الرد بالعربية.`,
@@ -428,7 +453,6 @@ export const generateProjectDetails = async (data: any): Promise<string> => {
   });
 };
 
-// Fix for ToolsPage.tsx error: Added generateProductSpecs
 export const generateProductSpecs = async (data: any): Promise<string> => {
   return callGemini({
     prompt: `حدد ميزات Core MVP ورحلة المستخدم التقنية لمشروع: ${data.projectName}. الوصف: ${data.description}. الرد بالعربية بأسلوب مهني تقني.`,
@@ -436,10 +460,9 @@ export const generateProductSpecs = async (data: any): Promise<string> => {
   });
 };
 
-// Fix for ToolsPage.tsx error: Added generateLeanBusinessPlan
 export const generateLeanBusinessPlan = async (data: any): Promise<string> => {
   return callGemini({
-    prompt: `ابنِ خطة عمل استراتيجية مرنة لمشروع ${data.startupName} في قطاع ${data.industry}. 
+    prompt: `ابنِ خطة عمل استراتيجية مرنة لمشروع ${data.startupName} in قطاع ${data.industry}. 
     المشكلة: ${data.problem}
     الحل: ${data.solution}
     السوق المستهدف: ${data.targetMarket}
@@ -448,7 +471,6 @@ export const generateLeanBusinessPlan = async (data: any): Promise<string> => {
   });
 };
 
-// Fix for ToolsPage.tsx error: Added generatePitchDeckOutline
 export const generatePitchDeckOutline = async (data: any): Promise<{ slides: { title: string; content: string }[] }> => {
   return callGemini<{ slides: { title: string; content: string }[] }>({
     prompt: `صغ هيكلاً لعرض تقديمي (Pitch Deck) لمشروع ${data.startupName}. 
@@ -477,7 +499,6 @@ export const generatePitchDeckOutline = async (data: any): Promise<{ slides: { t
   });
 };
 
-// Fix for ToolsPage.tsx error: Added generateFounderCV
 export const generateFounderCV = async (data: any): Promise<string> => {
   return callGemini({
     prompt: `صمم سيرة ذاتية احترافية ومقنعة لمؤسس شركة ناشئة:

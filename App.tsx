@@ -71,18 +71,38 @@ function App() {
           }
           return { ...lvl, isCompleted, isLocked };
         });
-        setLevels(updatedLevels);
+        
+        // المحافظة على الأيقونات الحالية (المقترحة من AI مسبقاً في الجلسة إذا وجدت)
+        setLevels(prev => updatedLevels.map(lvl => {
+          const existing = prev.find(p => p.id === lvl.id);
+          return existing ? { ...lvl, icon: existing.icon } : lvl;
+        }));
+        
         setStage(FiltrationStage.DASHBOARD);
       }
     }
   }, []);
 
+  // تفعيل ميزة الأيقونات الذكية عند التشغيل الأول
   useEffect(() => {
+    const fetchAIIcons = async () => {
+      try {
+        const iconMap = await suggestIconsForLevels(LEVELS_CONFIG);
+        if (Object.keys(iconMap).length > 0) {
+          setLevels(prev => prev.map(lvl => ({
+            ...lvl,
+            icon: iconMap[lvl.id] || lvl.icon
+          })));
+        }
+      } catch (err) {
+        console.error("System: AI Icon Enhancement failed.", err);
+      }
+    };
+    fetchAIIcons();
     hydrateSession();
   }, [hydrateSession]);
 
   const handleLoginSuccess = (profile: UserProfile) => {
-    // بدلاً من reload، نقوم بتحديث البيانات فوراً
     setUserProfile(profile);
     hydrateSession();
     setStage(FiltrationStage.DASHBOARD);
@@ -172,7 +192,6 @@ function App() {
         <AssessmentResult result={finalResult} onContinue={() => {
           const session = storageService.getCurrentSession();
           if (session) storageService.updateStartupStatus(session.projectId, 'APPROVED');
-          // بدلاً من reload، نقوم بتحديث البيانات فوراً
           hydrateSession();
           setStage(FiltrationStage.DASHBOARD);
         }} />
