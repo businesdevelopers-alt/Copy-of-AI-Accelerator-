@@ -206,6 +206,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
     return saved ? JSON.parse(saved) : {};
   });
 
+  // Effect to sync state with localStorage changes (for AI-suggested icons)
+  useEffect(() => {
+    const syncWithStorage = () => {
+      const icons = localStorage.getItem('dashboard_level_icons');
+      if (icons) setLevelIcons(JSON.parse(icons));
+    };
+    window.addEventListener('storage', syncWithStorage);
+    return () => window.removeEventListener('storage', syncWithStorage);
+  }, []);
+
   const activeGlobalTheme = CARD_THEMES[globalThemeId];
   const profileRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -252,7 +262,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, levels, onSelectLeve
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setIsProfileOpen(false);
       if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setIsSettingsOpen(false);
       
-      // Close customizer if clicking outside list item areas
       if (openCustomizer !== null) {
         const target = e.target as HTMLElement;
         if (!target.closest('.relative.rounded-3xl')) {

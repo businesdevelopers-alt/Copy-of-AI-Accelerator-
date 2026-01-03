@@ -1,12 +1,11 @@
 
+
 export enum FiltrationStage {
   LANDING = 'LANDING',
   PATH_FINDER = 'PATH_FINDER',
   WELCOME = 'WELCOME',
   LOGIN = 'LOGIN',
-  PERSONALITY_TEST = 'PERSONALITY_TEST',
-  ANALYTICAL_TEST = 'ANALYTICAL_TEST',
-  PROJECT_EVALUATION = 'PROJECT_EVALUATION',
+  NOMINATION_TEST = 'NOMINATION_TEST',
   ASSESSMENT_RESULT = 'ASSESSMENT_RESULT',
   APPLICATION_STATUS = 'APPLICATION_STATUS',
   FINAL_REPORT = 'FINAL_REPORT',
@@ -17,10 +16,56 @@ export enum FiltrationStage {
   PROJECT_BUILDER = 'PROJECT_BUILDER',
   ROADMAP = 'ROADMAP',
   TOOLS = 'TOOLS',
-  STAFF_PORTAL = 'STAFF_PORTAL'
+  STAFF_PORTAL = 'STAFF_PORTAL',
+  ACHIEVEMENTS = 'ACHIEVEMENTS'
 }
 
-// --- Database Schema Types ---
+export interface NominationData {
+  companyName: string;
+  founderName: string;
+  phone: string;
+  email: string;
+  location: string;
+  websiteUrl?: string;
+  pitchDeckUrl?: string;
+  hasCommercialRegister: 'YES' | 'NO' | 'IN_PROGRESS';
+  hasTechnicalPartner: boolean;
+  isCommitted10Hours: boolean;
+  problemStatement: string;
+  targetCustomerType: string[];
+  currentAlternatives: string;
+  marketSize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'UNKNOWN';
+  whyNow: string;
+  productStage: 'IDEA' | 'PROTOTYPE' | 'MVP' | 'TRACTION';
+  demoUrl?: string;
+  topFeatures: string;
+  executionPlan: 'NONE' | 'GENERAL' | 'WEEKLY';
+  currentResources: string[];
+  userCount: '0' | '1-10' | '11-50' | '50+';
+  tractionEvidence: string[];
+  revenueModel: 'SUBSCRIPTION' | 'COMMISSION' | 'ANNUAL' | 'PAY_PER_USE' | 'NOT_SET';
+  expectedPrice: string;
+  customerAcquisitionPath: string;
+  incubationReason: string;
+  weeklyHours: 'LESS_5' | '5-10' | '10-20' | '20+';
+  agreesToWeeklySession: boolean;
+  agreesToKPIs: boolean;
+  potentialObstacles: string;
+}
+
+export interface NominationAIResponse {
+  aiScore: number;
+  redFlags: string[];
+  aiAnalysis: string;
+  categorySuggestion: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
+}
+
+export interface NominationResult {
+  totalScore: number;
+  category: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
+  redFlags: string[];
+  aiAnalysis: string;
+}
 
 export interface UserRecord {
   uid: string;
@@ -38,63 +83,6 @@ export interface UserRecord {
   };
 }
 
-export interface StartupRecord {
-  projectId: string;
-  ownerId: string; 
-  name: string;
-  description: string;
-  industry: string;
-  foundationYear: number;
-  foundersCount: number;
-  technologies: string;
-  stage: ProjectStageType;
-  metrics: RadarMetrics;
-  aiClassification: 'Green' | 'Yellow' | 'Red';
-  aiOpinion: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-}
-
-export interface ProgressRecord {
-  id: string;
-  uid: string;
-  levelId: number;
-  status: 'LOCKED' | 'AVAILABLE' | 'COMPLETED';
-  score: number;
-  completedAt?: string;
-  exerciseAnswer?: string;
-  aiFeedback?: string;
-}
-
-export interface ActivityLogRecord {
-  logId: string;
-  uid: string;
-  actionType: 'LOGIN' | 'LEVEL_START' | 'TEST_SUBMIT' | 'AI_QUERY';
-  metadata: string;
-  timestamp: string;
-}
-
-export type AgentCategory = 'Vision' | 'Market' | 'User' | 'Opportunity' | 'Risk' | 'Decision';
-
-export interface AIAgent {
-  id: string;
-  name: string;
-  category: AgentCategory;
-  description: string;
-  recommendedModel: string;
-  role: string;
-}
-
-export type ProjectStageType = 'Idea' | 'Prototype' | 'Product';
-export type TechLevelType = 'Low' | 'Medium' | 'High';
-
-export interface ApplicantProfile {
-  codeName: string;
-  projectStage: ProjectStageType;
-  sector: string;
-  goal: string;
-  techLevel: TechLevelType;
-}
-
 export interface UserProfile {
   firstName: string;
   lastName: string;
@@ -110,6 +98,9 @@ export interface UserProfile {
   technologies?: string;
   name?: string; 
   hasCompletedAssessment?: boolean;
+  agreedToTerms?: boolean; // جديد
+  signedContractName?: string; // جديد
+  contractSignedAt?: string; // جديد
 }
 
 export interface LevelData {
@@ -159,12 +150,70 @@ export interface FinalResult {
   recommendation: string;
 }
 
+// Added types for missing exports
+export type ProjectStageType = 'Idea' | 'Prototype' | 'Product';
+export type TechLevelType = 'Low' | 'Medium' | 'High';
+
+export interface ApplicantProfile {
+  codeName: string;
+  projectStage: ProjectStageType;
+  sector: string;
+  goal: string;
+  techLevel: TechLevelType;
+}
+
+export interface PersonalityOption {
+  text: string;
+  style: 'Visionary' | 'Operational' | 'Balanced';
+}
+
+export interface PersonalityQuestion {
+  id: number;
+  situation: string;
+  options: PersonalityOption[];
+}
+
 export interface AnalyticalQuestion {
   text: string;
   options: string[];
   correctIndex: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
 }
+
+export type AgentCategory = 'Vision' | 'Market' | 'User' | 'Opportunity';
+
+export interface AIAgent {
+  id: string;
+  name: string;
+  description: string;
+  category: AgentCategory;
+}
+
+export interface ProjectBuildData {
+  projectName: string;
+  description: string;
+  quality: 'Quick' | 'Balanced' | 'Enhanced' | 'Professional' | 'Max';
+  selectedAgents: string[];
+  results?: {
+    vision?: string;
+    marketAnalysis?: string;
+    userPersonas?: string;
+    hypotheses?: string[];
+    pitchDeck?: { title: string; content: string }[];
+  };
+}
+
+export const AVAILABLE_AGENTS: AIAgent[] = [
+  { id: 'a1', name: 'محلل الرؤية الاستراتيجي', description: 'يحلل أهداف المشروع بعيدة المدى.', category: 'Vision' },
+  { id: 'a2', name: 'خبير أبحاث السوق', description: 'يحلل المنافسين واتجاهات السوق.', category: 'Market' },
+  { id: 'a3', name: 'أخصائي تجربة المستخدم', description: 'يصمم ملفات تعريف المستخدمين.', category: 'User' },
+  { id: 'a4', name: 'مستكشف الفرص', description: 'يحدد ثغرات النمو المحتملة.', category: 'Opportunity' },
+  { id: 'a5', name: 'مصمم القيمة المضافة', description: 'يصمم عرض القيمة للمستخدمين.', category: 'Vision' },
+  { id: 'a6', name: 'محلل الجدوى المالية', description: 'يحلل تدفقات الإيرادات والتكاليف.', category: 'Opportunity' },
+  { id: 'a7', name: 'خبير التوسع الجغرافي', description: 'يخطط لدخول أسواق جديدة.', category: 'Market' },
+  { id: 'a8', name: 'مدير خارطة الطريق', description: 'يصمم خطة تنفيذ تقنية وزمنية.', category: 'Vision' },
+  { id: 'a9', name: 'أخصائي جذب العملاء', description: 'يصمم استراتيجيات النمو الأولي.', category: 'User' },
+];
 
 export interface FailureSimulation {
   brutalTruth: string;
@@ -182,6 +231,39 @@ export interface GovStats {
   regulatoryGaps: string[];
 }
 
+export interface StartupRecord {
+  projectId: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  industry: string;
+  foundationYear: number;
+  foundersCount: number;
+  technologies: string;
+  stage: ProjectStageType;
+  metrics: RadarMetrics;
+  aiClassification: 'Green' | 'Yellow' | 'Red';
+  aiOpinion: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface ProgressRecord {
+  id: string;
+  uid: string;
+  levelId: number;
+  status: 'AVAILABLE' | 'COMPLETED' | 'LOCKED';
+  score: number;
+  completedAt?: string;
+}
+
+export interface ActivityLogRecord {
+  logId: string;
+  uid: string;
+  actionType: 'LOGIN' | 'TEST_SUBMIT' | 'LOGOUT';
+  metadata: string;
+  timestamp: string;
+}
+
 export const SECTORS = [
   { value: 'Tech', label: 'تقنية وتكنولوجيا' },
   { value: 'Health', label: 'صحة وطب' },
@@ -192,26 +274,6 @@ export const SECTORS = [
   { value: 'Energy', label: 'طاقة' },
 ];
 
-export interface PersonalityQuestion {
-  id: number;
-  situation: string;
-  options: { text: string; style: string }[];
-}
-
-export interface ProjectBuildData {
-  projectName: string;
-  description: string;
-  quality: 'Quick' | 'Balanced' | 'Enhanced' | 'Professional' | 'Max';
-  selectedAgents: string[];
-  results?: {
-    vision?: string;
-    marketAnalysis?: string;
-    userPersonas?: string;
-    hypotheses?: string[];
-    pitchDeck?: { title: string; content: string }[];
-  };
-}
-
 export const LEVELS_CONFIG: LevelData[] = [
   { id: 1, title: 'التحقق من الفكرة', description: 'تأكد من أن فكرتك تحل مشكلة حقيقية وتستحق الاستثمار والجهد.', isCompleted: false, isLocked: false, icon: '💡' },
   { id: 2, title: 'نموذج العمل التجاري', description: 'ابنِ خطة عمل واضحة تحدد مصادر الدخل، العملاء، وقنوات التوزيع.', isCompleted: false, isLocked: true, icon: '📊' },
@@ -219,11 +281,4 @@ export const LEVELS_CONFIG: LevelData[] = [
   { id: 4, title: 'المنتج الأولي (MVP)', description: 'حدد الميزات الأساسية لمنتجك لإطلاقه بأقل التكاليف والحصول على تعليقات العملاء.', isCompleted: false, isLocked: true, icon: '🛠️' },
   { id: 5, title: 'الخطة المالية والتمويل', description: 'توقع التكاليف، الإيرادات، التدفقات النقدية، وااحتياجات التمويل المستقبلي.', isCompleted: false, isLocked: true, icon: '💰' },
   { id: 6, title: 'عرض الاستثمار النهائي', description: 'جهز عرضاً تقديمياً احترافياً (Pitch Deck) لجذب المستثمرين.', isCompleted: false, isLocked: true, icon: '🚀' },
-];
-
-export const AVAILABLE_AGENTS: AIAgent[] = [
-  { id: 'vis-1', name: 'وكيل الرؤية الاستراتيجية', category: 'Vision', description: 'يقيّم الملاءمة الاستراتيجية للفكرة مع السوق.', recommendedModel: 'gemini-3-pro-preview', role: 'Strategic Advisor' },
-  { id: 'mkt-1', name: 'وكيل أبحاث السوق', category: 'Market', description: 'يحلل الطلب، المنافسة، والفرص المتاحة.', recommendedModel: 'gemini-3-pro-preview', role: 'Market Analyst' },
-  { id: 'rsk-1', name: 'وكيل تقييم المخاطر', category: 'Risk', description: 'يحدد المخاطر ويقترح خطط تخفيف.', recommendedModel: 'gemini-3-pro-preview', role: 'Risk Auditor' },
-  { id: 'dec-1', name: 'وكيل القرار والنمو', category: 'Decision', description: 'يصدر التوصيات النهائية للنمو والتوسع.', recommendedModel: 'gemini-3-pro-preview', role: 'Decision Maker' }
 ];

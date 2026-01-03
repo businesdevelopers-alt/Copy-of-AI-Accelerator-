@@ -8,6 +8,7 @@ interface LandingPageProps {
   onGovDashboard: () => void;
   onRoadmap: () => void;
   onTools: () => void;
+  onAchievements: () => void; // مضافة حديثاً
   onLegalClick: (type: 'PRIVACY' | 'TERMS' | 'CONTACT') => void;
   onLogin?: () => void;
 }
@@ -31,7 +32,7 @@ const JOURNEY_STEPS: JourneyStep[] = [
   { id: 6, title: 'عرض الاستثمار', icon: '🚀', goal: 'تجهيز ملف العرض النهائي وإغلاق أول جولة تمويلية ناجحة.', deliverables: ['Pitch Deck عالمي', 'مهارات الإلقاء', 'قائمة المستهدفين'], gradient: 'from-slate-700 to-slate-900', glow: 'rgba(30, 41, 59, 0.1)' }
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder, onRoadmap, onTools, onLegalClick, onLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder, onRoadmap, onTools, onAchievements, onLegalClick, onLogin }) => {
   const [hoveredStep, setHoveredStep] = useState<number | null>(null);
 
   return (
@@ -60,6 +61,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
         <div className="hidden md:flex gap-8 items-center text-sm font-bold text-slate-500">
           <button onClick={onRoadmap} className="hover:text-blue-600 transition-colors">خارطة الطريق</button>
           <button onClick={onTools} className="hover:text-blue-600 transition-colors">الأدوات</button>
+          <button onClick={onAchievements} className="hover:text-blue-600 transition-colors">إنجازاتنا</button>
           <div className="h-6 w-px bg-slate-200 mx-2"></div>
           <button onClick={onLogin} className="text-slate-900 hover:text-blue-600 transition-colors px-4">تسجيل الدخول</button>
           <button onClick={onStart} className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95">ابدأ مجاناً</button>
@@ -219,6 +221,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart, onPathFinder,
                   <span className="text-xl font-black text-slate-900 uppercase tracking-tight">بيزنس ديفلوبرز</span>
                </div>
                <div className="flex gap-10 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                 <button onClick={onAchievements} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">إنجازاتنا</button>
                  <button onClick={() => onLegalClick('PRIVACY')} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">سياسة الخصوصية</button>
                  <button onClick={() => onLegalClick('TERMS')} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">الشروط والأحكام</button>
                  <button onClick={() => onLegalClick('CONTACT')} className="hover:text-blue-600 transition-colors underline-offset-8 hover:underline">تواصل معنا</button>

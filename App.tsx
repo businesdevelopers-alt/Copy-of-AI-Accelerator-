@@ -1,16 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { FiltrationStage, ApplicantProfile, FinalResult, UserProfile, LevelData, LEVELS_CONFIG, ProjectEvaluationResult } from './types';
+import { FiltrationStage, ApplicantProfile, FinalResult, UserProfile, LevelData, LEVELS_CONFIG, NominationResult } from './types';
 import { storageService } from './services/storageService';
+import { suggestIconsForLevels } from './services/geminiService';
 import { Registration } from './components/Registration';
 import { Login } from './components/Login';
-import { PersonalityTest } from './components/Filtration/PersonalityTest';
-import { AnalyticalTest } from './components/Filtration/AnalyticalTest';
-import { ProjectEvaluation } from './components/Filtration/ProjectEvaluation';
+import { NominationTest } from './components/Filtration/NominationTest';
 import { AssessmentResult } from './components/Filtration/AssessmentResult';
-import { FinalReport } from './components/Filtration/FinalReport';
 import { DevelopmentPlan } from './components/Filtration/DevelopmentPlan';
-import { ApplicationStatus } from './components/Filtration/ApplicationStatus';
 import { LandingPage } from './components/LandingPage';
 import { RoadmapPage } from './components/RoadmapPage';
 import { PathFinder } from './components/PathFinder';
@@ -21,17 +18,16 @@ import { AdminDashboard } from './components/Filtration/AdminDashboard';
 import { ToolsPage } from './components/ToolsPage';
 import { LegalPortal, LegalType } from './components/LegalPortal';
 import { StaffPortal } from './components/StaffPortal';
+import { AchievementsPage } from './components/AchievementsPage'; // استيراد الصفحة الجديدة
 
 function App() {
   const [stage, setStage] = useState<FiltrationStage>(FiltrationStage.LANDING);
-  const [applicantProfile, setApplicantProfile] = useState<ApplicantProfile | null>(null);
-  const [leadershipStyle, setLeadershipStyle] = useState<string>('');
-  const [analyticalScore, setAnalyticalScore] = useState<number>(0);
-  const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [levels, setLevels] = useState<LevelData[]>(LEVELS_CONFIG);
   const [activeLevelId, setActiveLevelId] = useState<number | null>(null);
   const [activeLegal, setActiveLegal] = useState<LegalType>(null);
+  const [nominationOutcome, setNominationOutcome] = useState<NominationResult | null>(null);
 
   useEffect(() => {
     const session = storageService.getCurrentSession();
@@ -53,10 +49,29 @@ function App() {
             name: `${currentUser.firstName} ${currentUser.lastName}`,
             hasCompletedAssessment: startup.status === 'APPROVED'
           });
+          setStage(FiltrationStage.DASHBOARD);
         }
       }
     }
   }, []);
+
+  // AI-Powered Icon Suggestion Logic
+  useEffect(() => {
+    if (stage === FiltrationStage.DASHBOARD && userProfile?.hasCompletedAssessment) {
+      const savedIcons = localStorage.getItem('dashboard_level_icons');
+      const hasAIIcons = localStorage.getItem('dashboard_ai_icons_synced');
+      
+      if (!savedIcons && !hasAIIcons) {
+        suggestIconsForLevels(levels).then(iconMap => {
+          if (Object.keys(iconMap).length > 0) {
+            localStorage.setItem('dashboard_level_icons', JSON.stringify(iconMap));
+            localStorage.setItem('dashboard_ai_icons_synced', 'true');
+            window.dispatchEvent(new Event('storage'));
+          }
+        });
+      }
+    }
+  }, [stage, userProfile, levels]);
 
   const handleStartFiltration = () => setStage(FiltrationStage.WELCOME);
   const handleStartPathFinder = () => setStage(FiltrationStage.PATH_FINDER);
@@ -64,6 +79,7 @@ function App() {
   const handleShowTools = () => setStage(FiltrationStage.TOOLS);
   const handleLoginNav = () => setStage(FiltrationStage.LOGIN);
   const handleStaffLogin = () => setStage(FiltrationStage.STAFF_PORTAL);
+  const handleShowAchievements = () => setStage(FiltrationStage.ACHIEVEMENTS); // دالة التنقل الجديدة
 
   const handleLoginSuccess = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -74,69 +90,36 @@ function App() {
     const { user, startup } = storageService.registerUser(profile);
     storageService.logAction(user.uid, 'LOGIN', 'User Registered');
     
-    const updatedProfile = {
+    setUserProfile({
       ...profile,
       name: `${profile.firstName} ${profile.lastName}`,
       hasCompletedAssessment: false
-    };
-
-    setUserProfile(updatedProfile);
-    setApplicantProfile({
-      codeName: updatedProfile.name,
-      projectStage: 'Idea',
-      sector: profile.industry,
-      goal: profile.startupDescription,
-      techLevel: 'Medium'
     });
 
-    setStage(FiltrationStage.DASHBOARD);
+    setStage(FiltrationStage.NOMINATION_TEST);
   };
 
-  const handleStartAssessment = () => {
-    setStage(FiltrationStage.PERSONALITY_TEST);
-  };
-
-  const handlePersonalityComplete = (style: string) => {
-    setLeadershipStyle(style);
-    setStage(FiltrationStage.ANALYTICAL_TEST);
-  };
-
-  const handleAnalyticalComplete = (score: number) => {
-    setAnalyticalScore(score);
-    setStage(FiltrationStage.PROJECT_EVALUATION);
-  };
-
-  const handleProjectEvaluationComplete = (evalResult: ProjectEvaluationResult) => {
-    const avgScore = Math.round((analyticalScore + evalResult.totalScore) / 2);
-    // PASS THRESHOLD is 70%
-    const isQualified = avgScore >= 70;
-
+  const handleNominationComplete = (res: NominationResult) => {
+    setNominationOutcome(res);
+    
     const result: FinalResult = {
-      score: avgScore,
-      leadershipStyle,
-      projectEval: evalResult,
+      score: res.totalScore,
+      leadershipStyle: res.category === 'DIRECT_ADMISSION' ? "رائد أعمال متمكن" : "ريادي قيد التطوير",
       metrics: {
-        readiness: evalResult.readiness * 5,
-        analysis: analyticalScore,
-        tech: evalResult.innovation * 5,
-        personality: 80,
-        strategy: evalResult.market * 5,
+        readiness: res.totalScore * 0.8,
+        analysis: res.totalScore * 0.9,
+        tech: res.totalScore * 0.7,
+        personality: 85,
+        strategy: res.totalScore * 0.75,
         ethics: 95
       },
-      isQualified: isQualified,
-      badges: isQualified ? [{ id: 'b1', name: 'رائد أعمال معتمد', icon: '🏆', color: 'blue' }] : [],
-      recommendation: evalResult.aiOpinion
+      isQualified: res.category === 'DIRECT_ADMISSION' || res.category === 'INTERVIEW',
+      badges: res.category === 'DIRECT_ADMISSION' ? [{ id: 'b1', name: 'نخبة الرواد', icon: '💎', color: 'blue' }] : [],
+      recommendation: res.aiAnalysis
     };
+    
     setFinalResult(result);
     setStage(FiltrationStage.ASSESSMENT_RESULT);
-  };
-
-  const handleAssessmentContinue = () => {
-    if (finalResult?.isQualified) {
-      setStage(FiltrationStage.APPLICATION_STATUS);
-    } else {
-      setStage(FiltrationStage.DEVELOPMENT_PLAN);
-    }
   };
 
   const finalizeAssessment = () => {
@@ -164,7 +147,17 @@ function App() {
   return (
     <div className="font-sans antialiased text-slate-900">
       {stage === FiltrationStage.LANDING && (
-        <LandingPage onStart={handleStartFiltration} onPathFinder={handleStartPathFinder} onSmartFeatures={() => {}} onGovDashboard={() => {}} onRoadmap={handleShowRoadmap} onTools={handleShowTools} onLegalClick={(type) => setActiveLegal(type)} onLogin={handleLoginNav} />
+        <LandingPage 
+          onStart={handleStartFiltration} 
+          onPathFinder={handleStartPathFinder} 
+          onSmartFeatures={() => {}} 
+          onGovDashboard={() => {}} 
+          onRoadmap={handleShowRoadmap} 
+          onTools={handleShowTools} 
+          onLegalClick={(type) => setActiveLegal(type)} 
+          onLogin={handleLoginNav}
+          onAchievements={handleShowAchievements} // تمرير الدالة الجديدة
+        />
       )}
 
       {stage === FiltrationStage.LOGIN && (
@@ -173,27 +166,26 @@ function App() {
 
       {stage === FiltrationStage.ROADMAP && <RoadmapPage onStart={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.TOOLS && <ToolsPage onBack={() => setStage(FiltrationStage.LANDING)} />}
+      {stage === FiltrationStage.ACHIEVEMENTS && <AchievementsPage onBack={() => setStage(FiltrationStage.LANDING)} />} {/* المكون الجديد */}
       {stage === FiltrationStage.PATH_FINDER && <PathFinder onApproved={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.WELCOME && <Registration onRegister={handleRegister} onStaffLogin={handleStaffLogin} />}
 
-      {stage === FiltrationStage.PERSONALITY_TEST && <PersonalityTest onComplete={handlePersonalityComplete} />}
-      {stage === FiltrationStage.ANALYTICAL_TEST && applicantProfile && <AnalyticalTest profile={applicantProfile} onComplete={handleAnalyticalComplete} />}
-      {stage === FiltrationStage.PROJECT_EVALUATION && applicantProfile && <ProjectEvaluation profile={applicantProfile} onComplete={handleProjectEvaluationComplete} />}
+      {stage === FiltrationStage.NOMINATION_TEST && (
+        <NominationTest 
+          onComplete={handleNominationComplete} 
+          onReject={(reason) => {
+            alert(`نأسف، تم رفض الطلب بسبب: ${reason}`);
+            setStage(FiltrationStage.LANDING);
+          }}
+        />
+      )}
       
       {stage === FiltrationStage.ASSESSMENT_RESULT && finalResult && (
-        <AssessmentResult result={finalResult} onContinue={handleAssessmentContinue} />
+        <AssessmentResult result={finalResult} onContinue={finalizeAssessment} />
       )}
       
-      {stage === FiltrationStage.APPLICATION_STATUS && applicantProfile && finalResult && (
-        <ApplicationStatus profile={applicantProfile} result={finalResult} onNext={() => setStage(FiltrationStage.FINAL_REPORT)} />
-      )}
-      
-      {stage === FiltrationStage.FINAL_REPORT && applicantProfile && finalResult && (
-        <FinalReport profile={applicantProfile} result={finalResult} onStartJourney={finalizeAssessment} />
-      )}
-      
-      {stage === FiltrationStage.DEVELOPMENT_PLAN && applicantProfile && finalResult && (
-        <DevelopmentPlan profile={applicantProfile} result={finalResult} onRestart={() => setStage(FiltrationStage.PERSONALITY_TEST)} />
+      {stage === FiltrationStage.DEVELOPMENT_PLAN && finalResult && (
+        <DevelopmentPlan result={finalResult} onRestart={() => setStage(FiltrationStage.NOMINATION_TEST)} />
       )}
 
       {stage === FiltrationStage.STAFF_PORTAL && <StaffPortal onBack={() => setStage(FiltrationStage.LANDING)} />}
@@ -206,7 +198,7 @@ function App() {
           onShowCertificate={() => setStage(FiltrationStage.CERTIFICATE)} 
           onLogout={() => { localStorage.removeItem('db_current_session'); setStage(FiltrationStage.LANDING); }} 
           onOpenProAnalytics={() => setStage(FiltrationStage.PROJECT_BUILDER)}
-          onStartAssessment={handleStartAssessment}
+          onStartAssessment={() => setStage(FiltrationStage.NOMINATION_TEST)}
         />
       )}
 

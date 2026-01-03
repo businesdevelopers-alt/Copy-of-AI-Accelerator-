@@ -1,25 +1,14 @@
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { 
-  ApplicantProfile, 
-  UserProfile, 
-  ProjectEvaluationResult, 
-  Question, 
-  AnalyticalQuestion, 
-  FailureSimulation, 
-  GovStats 
+  NominationData,
+  NominationResult,
+  NominationAIResponse
 } from "../types";
 
-/**
- * Shared model constants based on task complexity.
- */
 const FLASH_MODEL = "gemini-3-flash-preview";
-const PRO_MODEL = "gemini-3-pro-preview";
 
-/**
- * Core internal helper to interact with Gemini API.
- * Handles initialization, prompt execution, and structured data parsing.
- */
 async function callGemini<T = string>(params: {
   prompt: string;
   systemInstruction?: string;
@@ -47,26 +36,78 @@ async function callGemini<T = string>(params: {
     if (!text) throw new Error("The AI returned an empty response.");
 
     if (params.json) {
-      try {
-        // Clean markdown indicators if the model accidentally includes them despite responseMimeType
-        const cleaned = text.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-        return JSON.parse(cleaned) as T;
-      } catch (parseError) {
-        console.error("JSON Parsing failed for AI output:", text);
-        throw new Error("AI output was not valid JSON.");
-      }
+      return JSON.parse(text.replace(/```json|```/g, '').trim()) as T;
     }
 
     return text as unknown as T;
   } catch (error) {
-    console.error(`Gemini Service Error [${model}]:`, error);
+    console.error(`Gemini Service Error:`, error);
     throw error;
   }
 }
 
 /**
- * Specialized chat session creator for the Path Finder interview.
+ * تقييم نموذج ترشيح الشركات
+ * Fix: Updated return type to NominationAIResponse to correctly match the internal AI processing logic
  */
+export const evaluateNominationForm = async (data: NominationData): Promise<NominationAIResponse> => {
+  const prompt = `حلل بيانات التقدم لمسرعة الأعمال التالية:
+  - اسم المشروع: ${data.companyName}
+  - المشكلة: ${data.problemStatement}
+  - لماذا الآن: ${data.whyNow}
+  - خطة التنفيذ: ${data.executionPlan}
+  - العوائق: ${data.potentialObstacles}
+  
+  المطلوب: 
+  1. تقييم جودة الإجابات النصية من 20 (تضاف لاحقاً للدرجة التقنية).
+  2. تحديد "رايات حمراء" (Red Flags) إذا كان الكلام عاماً جداً، أو يفتقر للأرقام، أو إذا كان العائق المذكور يمنع النجاح.
+  3. تقديم رأي موجز كخبير استثماري.`;
+
+  return callGemini<NominationAIResponse>({
+    prompt,
+    systemInstruction: `أنت مقيّم محترف في مسرعة أعمال عالمية. قم بتحليل الطلب بدقة.
+    يجب أن تعيد النتيجة بتنسيق JSON حصراً:
+    {
+      "aiScore": number (0-20),
+      "redFlags": string[],
+      "aiAnalysis": string,
+      "categorySuggestion": "DIRECT_ADMISSION" | "INTERVIEW" | "PRE_INCUBATION" | "REJECTION"
+    }`,
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        aiScore: { type: Type.NUMBER },
+        redFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
+        aiAnalysis: { type: Type.STRING },
+        categorySuggestion: { type: Type.STRING }
+      },
+      required: ["aiScore", "redFlags", "aiAnalysis", "categorySuggestion"]
+    }
+  });
+};
+
+// بقية الوظائف السابقة...
+export const suggestIconsForLevels = async (levels: any[]): Promise<Record<number, string>> => {
+  const levelsSummary = levels.map(l => `ID: ${l.id}, Title: ${l.title}, Desc: ${l.description}`).join('\n');
+  
+  return callGemini<Record<string, string>>({
+    prompt: `Based on the following levels in an entrepreneurship accelerator, suggest a single appropriate emoji icon for each level ID.\n\n${levelsSummary}`,
+    systemInstruction: "You are a UI/UX specialist. Return a JSON object mapping level IDs to a single relevant emoji. Example: { '1': '💡' }",
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      additionalProperties: { type: Type.STRING }
+    }
+  }).then(res => {
+    const final: Record<number, string> = {};
+    Object.entries(res).forEach(([k, v]) => {
+      final[parseInt(k)] = v;
+    });
+    return final;
+  }).catch(() => ({}));
+};
+
 export const createPathFinderChat = () => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   return ai.chats.create({
@@ -82,8 +123,6 @@ export const createPathFinderChat = () => {
     }
   });
 };
-
-// --- STARTUP TOOLS ---
 
 export const generateStartupIdea = async (data: { sector: string, interest: string }): Promise<string> => {
   return callGemini({
@@ -144,10 +183,8 @@ export const generatePitchDeckOutline = async (data: { startupName: string, prob
   });
 };
 
-// --- EVALUATION & ASSESSMENT ---
-
-export const evaluateProjectIdea = async (description: string, profile: ApplicantProfile): Promise<ProjectEvaluationResult> => {
-  return callGemini<ProjectEvaluationResult>({
+export const evaluateProjectIdea = async (description: string, profile: any): Promise<any> => {
+  return callGemini<any>({
     prompt: `قم بتقييم فكرة المشروع التالية: "${description}" في قطاع ${profile.sector}. قيم من 20 في: Clarity, Value, Innovation, Market, Readiness.`,
     json: true,
     schema: {
@@ -171,8 +208,8 @@ export const evaluateProjectIdea = async (description: string, profile: Applican
   }));
 };
 
-export const generateAnalyticalQuestions = async (profile: ApplicantProfile): Promise<AnalyticalQuestion[]> => {
-  return callGemini<AnalyticalQuestion[]>({
+export const generateAnalyticalQuestions = async (profile: any): Promise<any[]> => {
+  return callGemini<any[]>({
     prompt: `أنتج 3 أسئلة تحليلية ذكية لتقييم رائد أعمال في قطاع ${profile.sector}.`,
     json: true,
     schema: {
@@ -191,9 +228,7 @@ export const generateAnalyticalQuestions = async (profile: ApplicantProfile): Pr
   });
 };
 
-// --- EDUCATION & ACCELERATOR LEVELS ---
-
-export const generateLevelMaterial = async (levelId: number, title: string, user: UserProfile): Promise<{ content: string; exercise: string }> => {
+export const generateLevelMaterial = async (levelId: number, title: string, user: any): Promise<{ content: string; exercise: string }> => {
   return callGemini<{ content: string; exercise: string }>({
     prompt: `أنتج مادة تعليمية وتمرين تطبيقي للمستوى ${levelId}: ${title} لمشروع ${user.startupName}.`,
     json: true,
@@ -208,8 +243,8 @@ export const generateLevelMaterial = async (levelId: number, title: string, user
   });
 };
 
-export const generateLevelQuiz = async (levelId: number, title: string, user: UserProfile): Promise<Question[]> => {
-  return callGemini<Question[]>({
+export const generateLevelQuiz = async (levelId: number, title: string, user: any): Promise<any[]> => {
+  return callGemini<any[]>({
     prompt: `أنتج اختباراً من 3 أسئلة اختيار من متعدد للمستوى ${levelId}: ${title}.`,
     json: true,
     schema: {
@@ -244,12 +279,10 @@ export const evaluateExerciseResponse = async (prompt: string, answer: string): 
   });
 };
 
-// --- ADVANCED PRO FEATURES ---
-
 export const runProjectAgents = async (name: string, description: string, agentIds: string[]): Promise<any> => {
   return callGemini({
     prompt: `حلل مشروع: ${name}. الوصف: ${description}. باستخدام الوكلاء: ${agentIds.join(', ')}.`,
-    model: PRO_MODEL,
+    model: "gemini-3-pro-preview",
     json: true,
     schema: {
       type: Type.OBJECT,
@@ -267,7 +300,7 @@ export const runProjectAgents = async (name: string, description: string, agentI
 export const generatePitchDeck = async (name: string, description: string, results: any): Promise<{ title: string; content: string }[]> => {
   return callGemini<{ title: string; content: string }[]>({
     prompt: `حول نتائج مشروع ${name} إلى عرض تقديمي (Pitch Deck) احترافي. النتائج: ${JSON.stringify(results)}`,
-    model: PRO_MODEL,
+    model: "gemini-3-pro-preview",
     json: true,
     schema: {
       type: Type.ARRAY,
@@ -282,8 +315,6 @@ export const generatePitchDeck = async (name: string, description: string, resul
     }
   });
 };
-
-// --- ANALYTICS & EXPORT ---
 
 export const analyzeExportOpportunity = async (formData: any): Promise<any> => {
   return callGemini({
@@ -310,8 +341,8 @@ export const analyzeExportOpportunity = async (formData: any): Promise<any> => {
   });
 };
 
-export const simulateBrutalTruth = async (formData: any): Promise<FailureSimulation> => {
-  return callGemini<FailureSimulation>({
+export const simulateBrutalTruth = async (formData: any): Promise<any> => {
+  return callGemini<any>({
     prompt: `قدم "الحقيقة القاسية" حول فشل تصدير ${formData.productType} إلى ${formData.targetMarket}.`,
     json: true,
     schema: {
@@ -329,8 +360,8 @@ export const simulateBrutalTruth = async (formData: any): Promise<FailureSimulat
   });
 };
 
-export const getGovInsights = async (): Promise<GovStats> => {
-  return callGemini<GovStats>({
+export const getGovInsights = async (): Promise<any> => {
+  return callGemini<any>({
     prompt: `ولد إحصائيات ورؤى وطنية حول سوق التصدير بناءً على بيانات افتراضية واقعية للمنطقة العربية.`,
     json: true,
     schema: {
