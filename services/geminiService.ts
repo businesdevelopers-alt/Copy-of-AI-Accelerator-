@@ -1,10 +1,10 @@
 
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { 
   NominationData,
   NominationResult,
-  NominationAIResponse
+  NominationAIResponse,
+  ProjectEvaluationResult
 } from "../types";
 
 const FLASH_MODEL = "gemini-3-flash-preview";
@@ -48,7 +48,6 @@ async function callGemini<T = string>(params: {
 
 /**
  * تقييم نموذج ترشيح الشركات
- * Fix: Updated return type to NominationAIResponse to correctly match the internal AI processing logic
  */
 export const evaluateNominationForm = async (data: NominationData): Promise<NominationAIResponse> => {
   const prompt = `حلل بيانات التقدم لمسرعة الأعمال التالية:
@@ -87,7 +86,6 @@ export const evaluateNominationForm = async (data: NominationData): Promise<Nomi
   });
 };
 
-// بقية الوظائف السابقة...
 export const suggestIconsForLevels = async (levels: any[]): Promise<Record<number, string>> => {
   const levelsSummary = levels.map(l => `ID: ${l.id}, Title: ${l.title}, Desc: ${l.description}`).join('\n');
   
@@ -131,61 +129,12 @@ export const generateStartupIdea = async (data: { sector: string, interest: stri
   });
 };
 
-export const generateFounderCV = async (data: { name: string, experience: string, skills: string, vision: string }): Promise<string> => {
-  return callGemini({
-    prompt: `أنت خبير صياغة سير ذاتية للمؤسسين. قم بإنشاء بروفايل مهني جذاب للمؤسس ${data.name}. الخبرات: ${data.experience}. المهارات: ${data.skills}. رؤية المشروع: ${data.vision}. المطلوب: (نبذة احترافية، إبراز المهارات القيادية، ربط الخبرة برؤية المشروع). الرد باللغة العربية.`,
-    systemInstruction: "أنت خبير توظيف تقني وكاتب سير ذاتية للمؤسسين."
-  });
-};
-
-export const generateProjectDetails = async (data: { idea: string }): Promise<string> => {
-  return callGemini({
-    prompt: `حول الفكرة التالية إلى هيكل مشروع متكامل: "${data.idea}". المطلوب: (الرؤية، الرسالة، الأهداف الاستراتيجية، الهوية المقترحة، شرائح العملاء المستهدفة). الرد باللغة العربية.`,
-    systemInstruction: "أنت مستشار تأسيس مشاريع خبير."
-  });
-};
-
-export const generateProductSpecs = async (data: { projectName: string, description: string }): Promise<string> => {
-  return callGemini({
-    prompt: `صمم مواصفات المنتج الأولي (MVP) للمشروع: ${data.projectName}. الوصف: ${data.description}. المطلوب: (المزايا الأساسية، رحلة المستخدم، معايير النجاح التقنية). الرد باللغة العربية.`,
-    systemInstruction: "أنت مدير منتج (Product Manager) خبير في بناء الـ MVP."
-  });
-};
-
-export const generateLeanBusinessPlan = async (data: { startupName: string, industry: string, problem: string, solution: string, targetMarket: string }): Promise<string> => {
-  return callGemini({
-    prompt: `قم بتوليد خطة عمل مرنة لـ ${data.startupName}. المشكلة: ${data.problem}, الحل: ${data.solution}, السوق: ${data.targetMarket}. تشمل: القيمة المقترحة، تحليل السوق، مصادر الإيرادات، وهيكل التكاليف. الرد باللغة العربية.`,
-    systemInstruction: "أنت مستشار أعمال متخصص في منهجية Lean Startup."
-  });
-};
-
-export const generatePitchDeckOutline = async (data: { startupName: string, problem: string, solution: string }): Promise<{ slides: { title: string, content: string }[] }> => {
-  return callGemini({
-    prompt: `صغ هيكلاً لعرض تقديمي (Pitch Deck) لـ ${data.startupName}. 7 شرائح أساسية. المشكلة: ${data.problem}, الحل: ${data.solution}.`,
-    json: true,
-    schema: {
-      type: Type.OBJECT,
-      properties: {
-        slides: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING }
-            },
-            required: ["title", "content"]
-          }
-        }
-      },
-      required: ["slides"]
-    }
-  });
-};
-
-export const evaluateProjectIdea = async (description: string, profile: any): Promise<any> => {
-  return callGemini<any>({
-    prompt: `قم بتقييم فكرة المشروع التالية: "${description}" في قطاع ${profile.sector}. قيم من 20 في: Clarity, Value, Innovation, Market, Readiness.`,
+export const evaluateProjectIdea = async (description: string, profile: any): Promise<ProjectEvaluationResult> => {
+  return callGemini<ProjectEvaluationResult>({
+    prompt: `قم بتقييم فكرة المشروع التالية بصرامة واحترافية: "${description}" في قطاع ${profile.sector}.
+    حدد بوضوح نقاط القوة (Strengths) ونقاط الضعف أو المخاطر (Weaknesses/Risks).
+    قيم من 20 في: Clarity, Value, Innovation, Market, Readiness.`,
+    systemInstruction: "أنت مستشار استثماري خبير في تقييم الأفكار الريادية. كن صريحاً وذكياً في تحليلك.",
     json: true,
     schema: {
       type: Type.OBJECT,
@@ -197,13 +146,17 @@ export const evaluateProjectIdea = async (description: string, profile: any): Pr
         readiness: { type: Type.NUMBER },
         totalScore: { type: Type.NUMBER },
         aiOpinion: { type: Type.STRING },
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
         classification: { type: Type.STRING, enum: ['Green', 'Yellow', 'Red'] }
       },
-      required: ["clarity", "value", "innovation", "market", "readiness", "totalScore", "aiOpinion", "classification"]
+      required: ["clarity", "value", "innovation", "market", "readiness", "totalScore", "aiOpinion", "strengths", "weaknesses", "classification"]
     }
   }).catch(() => ({
     clarity: 10, value: 10, innovation: 10, market: 10, readiness: 10,
     totalScore: 50, aiOpinion: "عذراً، فشل التحليل التلقائي.",
+    strengths: ["الفكرة قابلة للتنفيذ مبدئياً"],
+    weaknesses: ["نقص في التفاصيل الجوهرية للحل"],
     classification: 'Yellow'
   }));
 };
@@ -404,5 +357,75 @@ export const getGovInsights = async (): Promise<any> => {
       },
       required: ["riskyMarkets", "readySectors", "commonFailReasons", "regulatoryGaps"]
     }
+  });
+};
+
+// Fix for ToolsPage.tsx error: Added generateProjectDetails
+export const generateProjectDetails = async (data: any): Promise<string> => {
+  return callGemini({
+    prompt: `حلل تفاصيل المشروع بناءً على المعطيات: ${JSON.stringify(data)}. الرد بالعربية.`,
+    systemInstruction: "أنت خبير في تطوير الأعمال والتحليل الاستراتيجي."
+  });
+};
+
+// Fix for ToolsPage.tsx error: Added generateProductSpecs
+export const generateProductSpecs = async (data: any): Promise<string> => {
+  return callGemini({
+    prompt: `حدد ميزات Core MVP ورحلة المستخدم التقنية لمشروع: ${data.projectName}. الوصف: ${data.description}. الرد بالعربية بأسلوب مهني تقني.`,
+    systemInstruction: "أنت مهندس منتج وخبير في بناء المنتجات الأولية (MVP)."
+  });
+};
+
+// Fix for ToolsPage.tsx error: Added generateLeanBusinessPlan
+export const generateLeanBusinessPlan = async (data: any): Promise<string> => {
+  return callGemini({
+    prompt: `ابنِ خطة عمل استراتيجية مرنة لمشروع ${data.startupName} في قطاع ${data.industry}. 
+    المشكلة: ${data.problem}
+    الحل: ${data.solution}
+    السوق المستهدف: ${data.targetMarket}
+    تأكد من تغطية نموذج الربح، قنوات التوزيع، وتحليل التكاليف. الرد بالعربية.`,
+    systemInstruction: "أنت مستشار استراتيجي متخصص في نماذج الأعمال المرنة."
+  });
+};
+
+// Fix for ToolsPage.tsx error: Added generatePitchDeckOutline
+export const generatePitchDeckOutline = async (data: any): Promise<{ slides: { title: string; content: string }[] }> => {
+  return callGemini<{ slides: { title: string; content: string }[] }>({
+    prompt: `صغ هيكلاً لعرض تقديمي (Pitch Deck) لمشروع ${data.startupName}. 
+    المشكلة: ${data.problem}
+    الحل: ${data.solution}
+    المطلوب 7 شرائح استراتيجية تغطي (المشكلة، الحل، السوق، المنتج، الفريق، النموذج المالي، الطلب الاستثماري). الرد بالعربية.`,
+    systemInstruction: "أنت خبير في تصميم العروض التقديمية للمستثمرين وجذب التمويل. عد النتيجة بتنسيق JSON حصراً.",
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        slides: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              content: { type: Type.STRING }
+            },
+            required: ["title", "content"]
+          }
+        }
+      },
+      required: ["slides"]
+    }
+  });
+};
+
+// Fix for ToolsPage.tsx error: Added generateFounderCV
+export const generateFounderCV = async (data: any): Promise<string> => {
+  return callGemini({
+    prompt: `صمم سيرة ذاتية احترافية ومقنعة لمؤسس شركة ناشئة:
+    الاسم: ${data.name}
+    الخبرة: ${data.experience}
+    المهارات: ${data.skills}
+    رؤية المشروع: ${data.vision}
+    الهدف هو إبراز القدرات القيادية والتقنية والمواءمة الاستثمارية مع المشروع. الرد بالعربية.`,
+    systemInstruction: "أنت خبير في كتابة السير الذاتية لرواد الأعمال والمؤسسين التنفيذيين."
   });
 };

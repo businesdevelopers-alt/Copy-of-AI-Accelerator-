@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { FiltrationStage, ApplicantProfile, FinalResult, UserProfile, LevelData, LEVELS_CONFIG, NominationResult } from './types';
+import { FiltrationStage, ApplicantProfile, FinalResult, UserProfile, LevelData, LEVELS_CONFIG, NominationResult, ProjectEvaluationResult } from './types';
 import { storageService } from './services/storageService';
 import { suggestIconsForLevels } from './services/geminiService';
 import { Registration } from './components/Registration';
 import { Login } from './components/Login';
 import { NominationTest } from './components/Filtration/NominationTest';
+import { ProjectEvaluation } from './components/Filtration/ProjectEvaluation';
 import { AssessmentResult } from './components/Filtration/AssessmentResult';
 import { DevelopmentPlan } from './components/Filtration/DevelopmentPlan';
 import { LandingPage } from './components/LandingPage';
@@ -29,6 +30,7 @@ function App() {
   const [activeLevelId, setActiveLevelId] = useState<number | null>(null);
   const [activeLegal, setActiveLegal] = useState<LegalType>(null);
   const [nominationOutcome, setNominationOutcome] = useState<NominationResult | null>(null);
+  const [projectEvaluation, setProjectEvaluation] = useState<ProjectEvaluationResult | null>(null);
 
   useEffect(() => {
     const session = storageService.getCurrentSession();
@@ -97,6 +99,12 @@ function App() {
       hasCompletedAssessment: false
     });
 
+    // ننتقل أولاً إلى تقييم الفكرة (Idea Validation)
+    setStage(FiltrationStage.PROJECT_EVALUATION);
+  };
+
+  const handleProjectEvaluationComplete = (res: ProjectEvaluationResult) => {
+    setProjectEvaluation(res);
     setStage(FiltrationStage.NOMINATION_TEST);
   };
 
@@ -114,6 +122,7 @@ function App() {
         strategy: res.totalScore * 0.75,
         ethics: 95
       },
+      projectEval: projectEvaluation || undefined,
       isQualified: res.category === 'DIRECT_ADMISSION' || res.category === 'INTERVIEW',
       badges: res.category === 'DIRECT_ADMISSION' ? [{ id: 'b1', name: 'نخبة الرواد', icon: '💎', color: 'blue' }] : [],
       recommendation: res.aiAnalysis
@@ -172,6 +181,20 @@ function App() {
       {stage === FiltrationStage.MENTORSHIP && <MentorshipPage user={userProfile || undefined} onBack={() => setStage(FiltrationStage.DASHBOARD)} />}
       {stage === FiltrationStage.PATH_FINDER && <PathFinder onApproved={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.WELCOME && <Registration onRegister={handleRegister} onStaffLogin={handleStaffLogin} />}
+
+      {stage === FiltrationStage.PROJECT_EVALUATION && userProfile && (
+        <ProjectEvaluation 
+          profile={{
+            codeName: userProfile.startupName,
+            projectStage: 'Idea',
+            sector: userProfile.industry,
+            goal: 'Validation',
+            techLevel: 'Medium'
+          }} 
+          initialText={userProfile.startupDescription}
+          onComplete={handleProjectEvaluationComplete}
+        />
+      )}
 
       {stage === FiltrationStage.NOMINATION_TEST && (
         <NominationTest 

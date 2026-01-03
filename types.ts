@@ -5,6 +5,7 @@ export enum FiltrationStage {
   WELCOME = 'WELCOME',
   LOGIN = 'LOGIN',
   NOMINATION_TEST = 'NOMINATION_TEST',
+  PROJECT_EVALUATION = 'PROJECT_EVALUATION', 
   ASSESSMENT_RESULT = 'ASSESSMENT_RESULT',
   APPLICATION_STATUS = 'APPLICATION_STATUS',
   FINAL_REPORT = 'FINAL_REPORT',
@@ -20,42 +21,23 @@ export enum FiltrationStage {
   MENTORSHIP = 'MENTORSHIP'
 }
 
-export interface MentorProfile {
+export interface Badge {
   id: string;
   name: string;
-  role: string;
-  company: string;
-  specialty: 'Tech' | 'Finance' | 'Growth' | 'Legal' | 'Strategy';
-  bio: string;
-  experience: number;
-  avatar: string;
-  rating: number;
-  tags: string[];
-}
-
-export interface MentorshipRequest {
-  mentorId: string;
-  userId: string;
-  topic: string;
+  icon: string;
+  color: string;
+  levelId: number;
   description: string;
-  preferredTime: string;
 }
 
-export interface UserRecord {
-  uid: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  age: number;
-  birthDate: string;
-  createdAt: string;
-  lastLogin: string;
-  settings: {
-    theme: string;
-    notifications: boolean;
-  };
-}
+export const DIGITAL_SHIELDS: Badge[] = [
+  { id: 'shield_1', name: 'درع المستكشف الذكي', icon: '🛡️', color: 'from-blue-400 to-cyan-500', levelId: 1, description: 'يُمنح لإتمام التحقق من صحة الفكرة.' },
+  { id: 'shield_2', name: 'درع الاستراتيجي', icon: '🛡️', color: 'from-indigo-500 to-purple-600', levelId: 2, description: 'يُمنح لتصميم نموذج عمل مستدام.' },
+  { id: 'shield_3', name: 'درع المحلل الرقمي', icon: '🛡️', color: 'from-emerald-400 to-teal-600', levelId: 3, description: 'يُمنح لفهم عمق السوق والمنافسين.' },
+  { id: 'shield_4', name: 'درع المهندس المبدع', icon: '🛡️', color: 'from-amber-400 to-orange-600', levelId: 4, description: 'يُمنح لبناء أول نسخة وظيفية للمنتج.' },
+  { id: 'shield_5', name: 'درع الممول الذكي', icon: '🛡️', color: 'from-rose-500 to-pink-600', levelId: 5, description: 'يُمنح لإتقان التخطيط المالي والتمويلي.' },
+  { id: 'shield_6', name: 'درع القائد العالمي', icon: '🛡️', color: 'from-slate-700 to-slate-900', levelId: 6, description: 'يُمنح لجاهزية العرض الاستثماري النهائي.' },
+];
 
 export interface UserProfile {
   firstName: string;
@@ -73,7 +55,7 @@ export interface UserProfile {
   name?: string; 
   hasCompletedAssessment?: boolean;
   agreedToTerms?: boolean;
-  agreedToContract?: boolean; // حقل جديد للموافقة على عقد الاحتضان
+  agreedToContract?: boolean;
   signedContractName?: string;
   contractSignedAt?: string;
 }
@@ -112,6 +94,8 @@ export interface ProjectEvaluationResult {
   readiness: number;
   totalScore: number;
   aiOpinion: string;
+  strengths: string[]; 
+  weaknesses: string[]; 
   classification: 'Green' | 'Yellow' | 'Red';
 }
 
@@ -136,18 +120,78 @@ export interface ApplicantProfile {
   techLevel: TechLevelType;
 }
 
-export interface PersonalityOption {
-  text: string;
-  style: 'Visionary' | 'Operational' | 'Balanced';
+export const LEVELS_CONFIG: LevelData[] = [
+  { id: 1, title: 'التحقق من الفكرة', description: 'تأكد من أن فكرتك تحل مشكلة حقيقية وتستحق الاستثمار والجهد.', isCompleted: false, isLocked: false, icon: '💡' },
+  { id: 2, title: 'نموذج العمل التجاري', description: 'ابنِ خطة عمل واضحة تحدد مصادر الدخل، العملاء، وقنوات التوزيع.', isCompleted: false, isLocked: false, icon: '📊' },
+  { id: 3, title: 'تحليل السوق والمنافسين', description: 'افهم حجم السوق ومن هم منافسوك وكيف ستتفوق عليهم بميزتك التنافسية.', isCompleted: false, isLocked: false, icon: '🔎' },
+  { id: 4, title: 'المنتج الأولي (MVP)', description: 'حدد الميزات الأساسية لمنتجك لإطلاقه بأقل التكاليف والحصول على تعليقات العملاء.', isCompleted: false, isLocked: false, icon: '🛠️' },
+  { id: 5, title: 'الخطة المالية والتمويل', description: 'توقع التكاليف، الإيرادات، التدفقات النقدية، وااحتياجات التمويل المستقبلي.', isCompleted: false, isLocked: false, icon: '💰' },
+  { id: 6, title: 'عرض الاستثمار النهائي', description: 'جهز عرضاً تقديمياً احترافياً (Pitch Deck) لجذب المستثمرين.', isCompleted: false, isLocked: false, icon: '🚀' },
+];
+
+// Added missing members for filtration and analysis features
+export interface NominationData {
+  companyName: string;
+  founderName: string;
+  location: string;
+  pitchDeckUrl?: string;
+  hasCommercialRegister: 'YES' | 'NO' | 'IN_PROGRESS';
+  hasTechnicalPartner: boolean;
+  problemStatement: string;
+  targetCustomerType: string[];
+  marketSize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'UNKNOWN';
+  whyNow: string;
+  productStage: 'IDEA' | 'PROTOTYPE' | 'MVP' | 'TRACTION';
+  topFeatures?: string;
+  executionPlan: 'NONE' | 'GENERAL' | 'WEEKLY';
+  userCount: '0' | '1-10' | '11-50' | '50+';
+  revenueModel: 'NOT_SET' | 'SUBSCRIPTION' | 'COMMISSION' | 'ANNUAL' | 'PAY_PER_USE';
+  customerAcquisitionPath?: string;
+  incubationReason?: string;
+  weeklyHours: 'LESS_5' | '5-10' | '10-20' | '20+';
+  agreesToWeeklySession: boolean;
+  agreesToKPIs: boolean;
+  isCommitted10Hours?: boolean;
+  potentialObstacles?: string;
+  currentResources?: string[];
+  tractionEvidence?: string[];
+  demoUrl?: string;
 }
+
+export interface NominationAIResponse {
+  aiScore: number;
+  redFlags: string[];
+  aiAnalysis: string;
+  categorySuggestion: "DIRECT_ADMISSION" | "INTERVIEW" | "PRE_INCUBATION" | "REJECTION";
+}
+
+export interface NominationResult {
+  totalScore: number;
+  category: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
+  redFlags: string[];
+  aiAnalysis: string;
+}
+
+export const SECTORS = [
+  { value: 'Tech', label: 'تقني' },
+  { value: 'SaaS', label: 'برمجيات كخدمة' },
+  { value: 'Fintech', label: 'تقنية مالية' },
+  { value: 'E-commerce', label: 'تجارة إلكترونية' },
+  { value: 'HealthTech', label: 'تقنية صحية' },
+  { value: 'EduTech', label: 'تقنية تعليمية' },
+  { value: 'AgriTech', label: 'تقنية زراعية' },
+  { value: 'Industrial', label: 'صناعي' },
+  { value: 'Other', label: 'آخر' },
+];
 
 export interface PersonalityQuestion {
   id: number;
   situation: string;
-  options: PersonalityOption[];
+  options: { text: string; style: string }[];
 }
 
 export interface AnalyticalQuestion {
+  id: number;
   text: string;
   options: string[];
   correctIndex: number;
@@ -163,6 +207,13 @@ export interface AIAgent {
   category: AgentCategory;
 }
 
+export const AVAILABLE_AGENTS: AIAgent[] = [
+  { id: 'a1', name: 'محلل الرؤية الاستراتيجية', description: 'يحلل وضوح الهدف وقابلية التوسع.', category: 'Vision' },
+  { id: 'a2', name: 'خبير تحليل السوق', description: 'يدرس المنافسين وحجم السوق المستهدف.', category: 'Market' },
+  { id: 'a3', name: 'مصمم شخصيات المستخدمين', description: 'يصمم ملفات تعريف دقيقة للفئات المستهدفة.', category: 'User' },
+  { id: 'a4', name: 'محلل الفرص الاستثمارية', description: 'يقيم جاذبية المشروع للمستثمرين.', category: 'Opportunity' },
+];
+
 export interface ProjectBuildData {
   projectName: string;
   description: string;
@@ -176,18 +227,6 @@ export interface ProjectBuildData {
     pitchDeck?: { title: string; content: string }[];
   };
 }
-
-export const AVAILABLE_AGENTS: AIAgent[] = [
-  { id: 'a1', name: 'محلل الرؤية الاستراتيجي', description: 'يحلل أهداف المشروع بعيدة المدى.', category: 'Vision' },
-  { id: 'a2', name: 'خبير أبحاث السوق', description: 'يحلل المنافسين واتجاهات السوق.', category: 'Market' },
-  { id: 'a3', name: 'أخصائي تجربة المستخدم', description: 'يصمم ملفات تعريف المستخدمين.', category: 'User' },
-  { id: 'a4', name: 'مستكشف الفرص', description: 'يحدد ثغرات النمو المحتملة.', category: 'Opportunity' },
-  { id: 'a5', name: 'مصمم القيمة المضافة', description: 'يصمم عرض القيمة للمستخدمين.', category: 'Vision' },
-  { id: 'a6', name: 'محلل الجدوى المالية', description: 'يحلل تدفقات الإيرادات والتكاليف.', category: 'Opportunity' },
-  { id: 'a7', name: 'خبير التوسع الجغرافي', description: 'يخطط لدخول أسواق جديدة.', category: 'Market' },
-  { id: 'a8', name: 'مدير خارطة الطريق', description: 'يصمم خطة تنفيذ تقنية وزمنية.', category: 'Vision' },
-  { id: 'a9', name: 'أخصائي جذب العملاء', description: 'يصمم استراتيجيات النمو الأولي.', category: 'User' },
-];
 
 export interface FailureSimulation {
   brutalTruth: string;
@@ -203,6 +242,20 @@ export interface GovStats {
   readySectors: { name: string; score: number }[];
   commonFailReasons: { reason: string; percentage: number }[];
   regulatoryGaps: string[];
+}
+
+// Added missing storage and staff portal record types
+export interface UserRecord {
+  uid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  age: number;
+  birthDate: string;
+  createdAt: string;
+  lastLogin: string;
+  settings: { theme: string; notifications: boolean };
 }
 
 export interface StartupRecord {
@@ -225,7 +278,7 @@ export interface ProgressRecord {
   id: string;
   uid: string;
   levelId: number;
-  status: 'AVAILABLE' | 'COMPLETED' | 'LOCKED';
+  status: 'LOCKED' | 'AVAILABLE' | 'COMPLETED';
   score: number;
   completedAt?: string;
 }
@@ -233,68 +286,20 @@ export interface ProgressRecord {
 export interface ActivityLogRecord {
   logId: string;
   uid: string;
-  actionType: 'LOGIN' | 'TEST_SUBMIT' | 'LOGOUT';
+  actionType: 'LOGIN' | 'TEST_SUBMIT' | 'LOGOUT' | 'PROFILE_UPDATE';
   metadata: string;
   timestamp: string;
 }
 
-export interface NominationData {
-  companyName: string;
-  founderName: string;
-  location: string;
-  problemStatement: string;
-  whyNow: string;
-  executionPlan: 'NONE' | 'GENERAL' | 'WEEKLY';
-  potentialObstacles: string;
-  pitchDeckUrl?: string;
-  hasCommercialRegister: 'YES' | 'NO' | 'IN_PROGRESS';
-  hasTechnicalPartner: boolean;
-  isCommitted10Hours: boolean;
-  marketSize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'UNKNOWN';
-  productStage: 'IDEA' | 'PROTOTYPE' | 'MVP' | 'TRACTION';
-  userCount: string;
-  revenueModel: string;
-  weeklyHours: string;
-  agreesToWeeklySession: boolean;
-  agreesToKPIs: boolean;
-  incubationReason: string;
-  targetCustomerType: string[];
-  currentResources: string[];
-  tractionEvidence: string[];
-  demoUrl?: string;
-  topFeatures?: string;
-  customerAcquisitionPath: string;
+export interface MentorProfile {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  specialty: string;
+  bio: string;
+  experience: number;
+  avatar: string;
+  rating: number;
+  tags: string[];
 }
-
-export interface NominationAIResponse {
-  aiScore: number;
-  redFlags: string[];
-  aiAnalysis: string;
-  categorySuggestion: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
-}
-
-export interface NominationResult {
-  totalScore: number;
-  category: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
-  redFlags: string[];
-  aiAnalysis: string;
-}
-
-export const SECTORS = [
-  { value: 'Tech', label: 'تقنية وتكنولوجيا' },
-  { value: 'Health', label: 'صحة وطب' },
-  { value: 'Fintech', label: 'تقنية مالية' },
-  { value: 'Edu', label: 'تعليم' },
-  { value: 'Agri', label: 'زراعة' },
-  { value: 'Retail', label: 'تجزئة' },
-  { value: 'Energy', label: 'طاقة' },
-];
-
-export const LEVELS_CONFIG: LevelData[] = [
-  { id: 1, title: 'التحقق من الفكرة', description: 'تأكد من أن فكرتك تحل مشكلة حقيقية وتستحق الاستثمار والجهد.', isCompleted: false, isLocked: false, icon: '💡' },
-  { id: 2, title: 'نموذج العمل التجاري', description: 'ابنِ خطة عمل واضحة تحدد مصادر الدخل، العملاء، وقنوات التوزيع.', isCompleted: false, isLocked: true, icon: '📊' },
-  { id: 3, title: 'تحليل السوق والمنافسين', description: 'افهم حجم السوق ومن هم منافسوك وكيف ستتفوق عليهم بميزتك التنافسية.', isCompleted: false, isLocked: true, icon: '🔎' },
-  { id: 4, title: 'المنتج الأولي (MVP)', description: 'حدد الميزات الأساسية لمنتجك لإطلاقه بأقل التكاليف والحصول على تعليقات العملاء.', isCompleted: false, isLocked: true, icon: '🛠️' },
-  { id: 5, title: 'الخطة المالية والتمويل', description: 'توقع التكاليف، الإيرادات، التدفقات النقدية، وااحتياجات التمويل المستقبلي.', isCompleted: false, isLocked: true, icon: '💰' },
-  { id: 6, title: 'عرض الاستثمار النهائي', description: 'جهز عرضاً تقديمياً احترافياً (Pitch Deck) لجذب المستثمرين.', isCompleted: false, isLocked: true, icon: '🚀' },
-];

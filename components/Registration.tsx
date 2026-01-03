@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { UserProfile, ApplicantProfile } from '../types';
+import { UserProfile, ApplicantProfile, ProjectEvaluationResult } from '../types';
 import { evaluateProjectIdea } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
 
@@ -30,6 +30,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<ProjectEvaluationResult | null>(null);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -101,10 +102,12 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
         goal: 'Initial Analysis',
         techLevel: 'Medium'
       };
-      await evaluateProjectIdea(formData.startupDescription, tempProfile);
+      const result = await evaluateProjectIdea(formData.startupDescription, tempProfile);
+      setAnalysisResult(result);
       playCelebrationSound();
     } catch (e) {
       playErrorSound();
+      alert("عذراً، فشل التحليل. يرجى التأكد من اتصال الإنترنت.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -291,7 +294,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                         <p><strong>المادة الثالثة: مدة برنامج الاحتضان</strong><br/>مدة برنامج الاحتضان هي (3) أشهر تبدأ من تاريخ توقيع هذا العقد. ويلتزم المحتضَن بالاستمرار في البرنامج حتى نهايته.</p>
                         <p><strong>المادة الرابعة: التزامات المحتضَن</strong><br/>الالتزام الكامل بحضور وتنفيذ جميع متطلبات برنامج الاحتضان، وتزويد الحاضنة بجميع المعلومات والبيانات اللازمة، وعدم التعاقد مع جهة منافسة خلال مدة الاحتضان.</p>
                         <p><strong>المادة الخامسة: التزامات الحاضنة</strong><br/>تقديم الإرشاد، الدعم الفني، الاستشارات، والمتابعة وفق البرنامج المعتمد، وتوفير بيئة احتضان افتراضية مناسبة.</p>
-                        <p><strong>المادة السادسة: مرحلة التسريع (اختيارية)</strong><br/>بعد إتمام الاحتضان بنجاح، يحق للمحتضَن طلب الانضمام لبرنامج التسريع. وفي حال الموافقة، يحق للحاضنة تمويل تطوير المنتج التقني مقابل نسبة 15% من ملكية الشركة أو قيمة مالية يتفق عليها لاحقاً.</p>
+                        <p><strong>المادة السادسة: مرحلة التسريع (اختيارية)</strong><br/>بعد إتمام الاحتضان بنجاح، يحق للمحتضَن طلب الانضمام لبرنامج التسريع. وفي حال الموافقة، يحق للمحتضنة تمويل تطوير المنتج التقني مقابل نسبة 15% من ملكية الشركة أو قيمة مالية يتفق عليها لاحقاً.</p>
                         <p><strong>المادة السابعة: الملكية الفكرية</strong><br/>تعود ملكية الفكرة الأساسية للمشروع للمحتضَن. ولا يحق للمحتضَن استخدام أي أدوات أو منهجيات خاصة بالحاضنة خارج إطار التعاون.</p>
                         <p><strong>المادة الثامنة: السرية</strong><br/>يلتزم الطرفان بالمحافظة على سرية جميع المعلومات والبيانات وعدم إفشائها لأي طرف ثالث.</p>
                         <p><strong>المادة التاسعة: إنهاء العقد</strong><br/>يحق للحاضنة إنهاء العقد في حال إخلال المحتضَن بالتزاماته دون أي التزام مالي أو تعويض.</p>
@@ -376,6 +379,69 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
           </form>
         </div>
       </div>
+
+      {/* Initial AI Validation Result Modal */}
+      {analysisResult && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md animate-fade-in" dir="rtl">
+           <div className="bg-slate-900 rounded-[3rem] max-w-2xl w-full shadow-2xl border border-white/10 overflow-hidden animate-fade-in-up">
+              <div className="bg-slate-800 p-8 md:p-10 border-b border-white/5 flex justify-between items-center">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg">✨</div>
+                    <div>
+                       <h3 className="text-2xl font-black text-white">التحقق المبدئي من الفكرة</h3>
+                       <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mt-1">AI Validation Hub</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setAnalysisResult(null)} className="text-slate-400 hover:text-white transition-colors">✕</button>
+              </div>
+
+              <div className="p-8 md:p-10 space-y-8 overflow-y-auto max-h-[60vh] contract-scroll">
+                 <div className="flex items-center justify-between">
+                    <span className="text-sm font-black text-slate-400 uppercase tracking-widest">درجة الجدوى الأولية</span>
+                    <div className="text-4xl font-black text-blue-500">{analysisResult.totalScore}<span className="text-lg text-slate-600 ml-1">/100</span></div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                       <h4 className="text-xs font-black text-green-500 uppercase tracking-widest pr-2">نقاط القوة</h4>
+                       <div className="space-y-2">
+                          {analysisResult.strengths.map((s, i) => (
+                            <div key={i} className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl text-xs font-medium text-green-100 flex items-start gap-3">
+                               <span className="text-green-500">✓</span> {s}
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                    <div className="space-y-4">
+                       <h4 className="text-xs font-black text-rose-500 uppercase tracking-widest pr-2">مخاطر محتملة</h4>
+                       <div className="space-y-2">
+                          {analysisResult.weaknesses.map((w, i) => (
+                            <div key={i} className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl text-xs font-medium text-rose-100 flex items-start gap-3">
+                               <span className="text-rose-500">!</span> {w}
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="p-6 bg-white/5 border border-white/5 rounded-3xl relative group">
+                    <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3">رأي المستشار الذكي</div>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium italic">"{analysisResult.aiOpinion}"</p>
+                 </div>
+              </div>
+
+              <div className="p-8 md:p-10 bg-slate-800/50 border-t border-white/5 flex flex-col gap-4">
+                 <button 
+                  onClick={() => setAnalysisResult(null)}
+                  className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+                 >
+                   تعديل وصف الفكرة بناءً على النتائج
+                 </button>
+                 <p className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">يمكنك دائماً العودة لهذا التحليل لاحقاً في لوحة التحكم</p>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

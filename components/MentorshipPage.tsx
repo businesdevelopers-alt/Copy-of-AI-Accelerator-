@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MentorProfile, UserProfile } from '../types';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
 
@@ -8,6 +8,15 @@ interface MentorshipPageProps {
   onBack: () => void;
 }
 
+const SPECIALTIES = [
+  { id: 'all', label: 'الكل', icon: '🎯' },
+  { id: 'Tech', label: 'تقني', icon: '💻' },
+  { id: 'Finance', label: 'مالي', icon: '💰' },
+  { id: 'Growth', label: 'نمو وتسويق', icon: '📈' },
+  { id: 'Legal', label: 'قانوني', icon: '⚖️' },
+  { id: 'Strategy', label: 'استراتيجية', icon: '🧩' },
+];
+
 const MOCK_MENTORS: MentorProfile[] = [
   {
     id: 'm1',
@@ -15,7 +24,7 @@ const MOCK_MENTORS: MentorProfile[] = [
     role: 'خبير نمو الشركات الناشئة',
     company: 'GrowthOps Global',
     specialty: 'Growth',
-    bio: 'أكثر من ١٥ عاماً في مساعدة الشركات الناشئة على التوسع في الأسواق الخليجية.',
+    bio: 'أكثر من ١٥ عاماً في مساعدة الشركات الناشئة على التوسع في الأسواق الخليجية وجذب الاستثمارات العالمية.',
     experience: 15,
     avatar: '👨‍💼',
     rating: 4.9,
@@ -27,11 +36,11 @@ const MOCK_MENTORS: MentorProfile[] = [
     role: 'كبير مهندسي البرمجيات',
     company: 'TechFlow',
     specialty: 'Tech',
-    bio: 'متخصصة في بناء البنية التحتية وتطوير المنتجات الأولية (MVP) بكفاءة عالية.',
+    bio: 'متخصصة في بناء البنية التحتية القابلة للتوسع وتطوير المنتجات الأولية (MVP) باستخدام أحدث تقنيات الـ AI.',
     experience: 10,
     avatar: '👩‍💻',
     rating: 4.8,
-    tags: ['هيكلة البرمجيات', 'Cloud', 'AI']
+    tags: ['Cloud', 'AI', 'Full Stack']
   },
   {
     id: 'm3',
@@ -39,11 +48,35 @@ const MOCK_MENTORS: MentorProfile[] = [
     role: 'مستشار مالي واستثماري',
     company: 'Capital Bridges',
     specialty: 'Finance',
-    bio: 'ساعدت أكثر من ٥٠ شركة ناشئة في إغلاق جولات تمويلية ناجحة.',
+    bio: 'ساعدت أكثر من ٥٠ شركة ناشئة في إغلاق جولات تمويلية ناجحة (Seed & Series A).',
     experience: 12,
     avatar: '🏦',
     rating: 5.0,
-    tags: ['تقييم الشركات', 'إغلاق الجولات', 'VC']
+    tags: ['VC', 'Valuation', 'Fintech']
+  },
+  {
+    id: 'm4',
+    name: 'أ. نورة التميمي',
+    role: 'مستشارة قانونية ريادية',
+    company: 'Legalize Hub',
+    specialty: 'Legal',
+    bio: 'خبيرة في هيكلة الشركات الناشئة، اتفاقيات المساهمين، وحماية الملكية الفكرية.',
+    experience: 8,
+    avatar: '👩‍⚖️',
+    rating: 4.7,
+    tags: ['IP', 'Contracts', 'Compliance']
+  },
+  {
+    id: 'm5',
+    name: 'م. عمر بن علي',
+    role: 'محلل استراتيجيات أعمال',
+    company: 'Vision Strategy',
+    specialty: 'Strategy',
+    bio: 'شغوف بمساعدة المؤسسين على بناء نماذج عمل مستدامة وتحديد الميزة التنافسية في الأسواق المزدحمة.',
+    experience: 9,
+    avatar: '🧩',
+    rating: 4.8,
+    tags: ['Lean Startup', 'BMC', 'Pivot']
   }
 ];
 
@@ -52,6 +85,8 @@ export const MentorshipPage: React.FC<MentorshipPageProps> = ({ user, onBack }) 
   const [selectedMentor, setSelectedMentor] = useState<MentorProfile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [filterSpecialty, setFilterSpecialty] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [mentorFormData, setMentorFormData] = useState({
     name: '',
@@ -60,6 +95,15 @@ export const MentorshipPage: React.FC<MentorshipPageProps> = ({ user, onBack }) 
     bio: '',
     linkedin: ''
   });
+
+  const filteredMentors = useMemo(() => {
+    return MOCK_MENTORS.filter(mentor => {
+      const matchSpecialty = filterSpecialty === 'all' || mentor.specialty === filterSpecialty;
+      const matchSearch = mentor.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          mentor.role.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchSpecialty && matchSearch;
+    });
+  }, [filterSpecialty, searchQuery]);
 
   const handleMentorRegistration = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,71 +132,127 @@ export const MentorshipPage: React.FC<MentorshipPageProps> = ({ user, onBack }) 
       <style>{`
         .mentor-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .mentor-card:hover { transform: translateY(-8px); border-color: #3b82f6; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-8 py-5 flex justify-between items-center shadow-sm">
-        <div className="flex items-center gap-6">
-          <button onClick={onBack} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-900 transition-all border border-slate-100 group">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-8 py-5 flex flex-col md:flex-row gap-6 justify-between items-center shadow-sm">
+        <div className="flex items-center gap-6 w-full md:w-auto">
+          <button onClick={onBack} className="p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-900 transition-all border border-slate-100 group shrink-0">
             <svg className="w-6 h-6 transform rotate-180 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-black text-slate-900">منصة الإرشاد الذكي</h1>
+            <h1 className="text-xl font-black text-slate-900 leading-none">منصة الإرشاد الذكي</h1>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">Smart Mentorship Hub</p>
           </div>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-xl">
-           <button onClick={() => setActiveTab('browse')} className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'browse' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>تصفح المرشدين</button>
-           <button onClick={() => setActiveTab('register')} className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'register' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>سجل كمرشد</button>
+
+        {activeTab === 'browse' && (
+          <div className="relative w-full md:w-96">
+             <input 
+              type="text" 
+              placeholder="ابحث عن مرشد بالاسم أو الوظيفة..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:bg-white focus:border-blue-500 transition-all text-sm font-bold"
+             />
+             <span className="absolute left-3 top-3 opacity-30">🔍</span>
+          </div>
+        )}
+
+        <div className="flex bg-slate-100 p-1 rounded-xl shrink-0">
+           <button onClick={() => { setActiveTab('browse'); playPositiveSound(); }} className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'browse' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>تصفح المرشدين</button>
+           <button onClick={() => { setActiveTab('register'); playPositiveSound(); }} className={`px-6 py-2 rounded-lg text-xs font-black transition-all ${activeTab === 'register' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>سجل كمرشد</button>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         {activeTab === 'browse' ? (
           <div className="space-y-12 animate-fade-in">
-             <div className="text-center max-w-2xl mx-auto space-y-4">
-                <h2 className="text-4xl font-black text-slate-900">ابحث عن موجهك القادم</h2>
-                <p className="text-slate-500 font-medium">نخبة من الخبراء والمستشارين جاهزون لنقل مشروعك إلى آفاق جديدة من خلال جلسات إرشادية متخصصة.</p>
+             <div className="flex flex-col items-center text-center max-w-2xl mx-auto space-y-6">
+                <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                  Expert Network
+                </div>
+                <h2 className="text-4xl font-black text-slate-900 leading-tight">ابحث عن موجهك القادم</h2>
+                <p className="text-slate-500 font-medium">نخبة من الخبراء جاهزون لنقل مشروعك إلى آفاق جديدة. اختر التخصص المناسب لتحدياتك الحالية.</p>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {MOCK_MENTORS.map(mentor => (
-                  <div key={mentor.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-100/50 mentor-card flex flex-col justify-between">
-                     <div>
-                        <div className="flex justify-between items-start mb-6">
-                           <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-4xl shadow-inner border border-slate-50">
-                              {mentor.avatar}
-                           </div>
-                           <div className="text-left">
-                              <div className="flex items-center gap-1 text-amber-500 font-black text-sm">
-                                 <span>★</span>
-                                 <span>{mentor.rating}</span>
-                              </div>
-                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Certified Mentor</p>
-                           </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 mb-1">{mentor.name}</h3>
-                        <p className="text-sm font-bold text-blue-600 mb-4">{mentor.role} @ {mentor.company}</p>
-                        <p className="text-slate-500 text-xs leading-relaxed mb-6 line-clamp-3">{mentor.bio}</p>
-                        
-                        <div className="flex flex-wrap gap-2 mb-8">
-                           {mentor.tags.map(tag => (
-                             <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg border border-blue-100">{tag}</span>
-                           ))}
-                        </div>
-                     </div>
-
-                     <button 
-                      onClick={() => { setSelectedMentor(mentor); setShowRequestModal(true); playPositiveSound(); }}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 shadow-lg transition-all active:scale-95"
-                     >
-                        طلب جلسة إرشادية
-                     </button>
-                  </div>
+             {/* Specialty Filters */}
+             <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar justify-center">
+                {SPECIALTIES.map(s => (
+                  <button 
+                    key={s.id}
+                    onClick={() => { setFilterSpecialty(s.id); playPositiveSound(); }}
+                    className={`px-6 py-3 rounded-2xl font-black text-xs transition-all flex items-center gap-3 border-2 shrink-0
+                      ${filterSpecialty === s.id ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-200' : 'bg-white border-white text-slate-500 hover:border-slate-200 shadow-sm'}
+                    `}
+                  >
+                    <span className="text-lg">{s.icon}</span>
+                    {s.label}
+                  </button>
                 ))}
              </div>
+
+             {filteredMentors.length > 0 ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {filteredMentors.map(mentor => (
+                    <div key={mentor.id} className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-100/50 mentor-card flex flex-col justify-between relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                       <div>
+                          <div className="flex justify-between items-start mb-6">
+                             <div className="relative">
+                               <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center text-5xl shadow-inner border border-slate-50">
+                                  {mentor.avatar}
+                               </div>
+                               <div className="absolute -bottom-2 -right-2 bg-green-500 text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm" title="Verified Expert">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>
+                               </div>
+                             </div>
+                             <div className="text-left">
+                                <div className="flex items-center gap-1 text-amber-500 font-black text-sm">
+                                   <span className="text-lg">★</span>
+                                   <span>{mentor.rating.toFixed(1)}</span>
+                                </div>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Expert Rating</p>
+                             </div>
+                          </div>
+                          
+                          <h3 className="text-2xl font-black text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">{mentor.name}</h3>
+                          <div className="flex items-center gap-2 mb-4">
+                             <p className="text-sm font-bold text-slate-600">{mentor.role}</p>
+                             <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                             <p className="text-xs font-black text-blue-500">{mentor.company}</p>
+                          </div>
+                          
+                          <p className="text-slate-500 text-xs leading-relaxed mb-6 line-clamp-3 font-medium">{mentor.bio}</p>
+                          
+                          <div className="flex flex-wrap gap-2 mb-8">
+                             {mentor.tags.map(tag => (
+                               <span key={tag} className="px-3 py-1 bg-slate-50 text-slate-500 text-[10px] font-black rounded-lg border border-slate-100">{tag}</span>
+                             ))}
+                          </div>
+                       </div>
+
+                       <button 
+                        onClick={() => { setSelectedMentor(mentor); setShowRequestModal(true); playPositiveSound(); }}
+                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3"
+                       >
+                          <span>طلب جلسة إرشادية</span>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                       </button>
+                    </div>
+                  ))}
+               </div>
+             ) : (
+               <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
+                  <div className="text-6xl mb-6 opacity-20">🔎</div>
+                  <h3 className="text-xl font-black text-slate-400">لم نجد مرشدين يطابقون بحثك حالياً</h3>
+                  <button onClick={() => { setFilterSpecialty('all'); setSearchQuery(''); }} className="mt-4 text-blue-600 font-bold hover:underline">عرض جميع المرشدين</button>
+               </div>
+             )}
           </div>
         ) : (
           <div className="max-w-3xl mx-auto animate-fade-in-up">
@@ -163,7 +263,7 @@ export const MentorshipPage: React.FC<MentorshipPageProps> = ({ user, onBack }) 
                    <div className="space-y-4">
                       <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl text-3xl">🤝</div>
                       <h2 className="text-4xl font-black text-slate-900">انضم لمجتمع مرشدينا</h2>
-                      <p className="text-slate-500 font-medium leading-relaxed">شارك خبراتك، ساهم في بناء الجيل القادم من الشركات الناشئة، وكن جزءاً من قصة نجاح المبتكرين.</p>
+                      <p className="text-slate-500 font-medium leading-relaxed">شارك خبراتك، ساهم في بناء الجيل القادم من الشركات الناشئة، وكن جزءاً من قصة نجاح المبتكرين في المنطقة.</p>
                    </div>
 
                    <form onSubmit={handleMentorRegistration} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -222,7 +322,7 @@ export const MentorshipPage: React.FC<MentorshipPageProps> = ({ user, onBack }) 
                           <h3 className="text-xl font-black text-slate-900">طلب جلسة مع {selectedMentor.name}</h3>
                           <p className="text-xs font-bold text-blue-600">{selectedMentor.role}</p>
                        </div>
-                       <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-2xl shadow-inner border border-slate-100">
+                       <div className="w-14 h-14 bg-slate-50 rounded-xl flex items-center justify-center text-3xl shadow-inner border border-slate-100">
                           {selectedMentor.avatar}
                        </div>
                     </div>
