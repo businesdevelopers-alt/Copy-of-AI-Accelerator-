@@ -166,6 +166,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         /* Compact List Styles */
         .level-row { transition: all 0.2s ease; border-right: 4px solid transparent; }
         .level-row:not(.is-locked):hover { border-right-color: #3b82f6; transform: scale(1.005); }
+
+        /* Timeline Connector Styles */
+        .step-node { position: relative; z-index: 10; }
+        .timeline-line { position: absolute; top: 18px; right: 0; left: 0; height: 4px; background: #e2e8f0; z-index: 0; }
+        .timeline-line-fill { position: absolute; top: 18px; right: 0; height: 4px; background: #3b82f6; transition: width 1s ease-in-out; }
       `}</style>
 
       {/* Sidebar */}
@@ -210,7 +215,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8">
            {activeNav === 'home' && (
-             <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+             <div className="max-w-5xl mx-auto space-y-10 animate-fade-in pb-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                    <div className="p-6 bg-blue-600 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
                       <div className="relative z-10">
@@ -229,7 +234,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                    </div>
                 </div>
 
-                {/* Bootcamp Section with Refactored Compact List */}
+                {/* Startup Maturity Timeline - Progress Tracking Feature */}
+                <div className="space-y-6">
+                   <h3 className="text-xl font-black flex items-center gap-3">
+                      <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                      خريطة نضج المشروع
+                   </h3>
+                   <div className={`p-8 md:p-10 rounded-[2.5rem] border ${isDark ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-100 shadow-sm'} relative overflow-hidden`}>
+                      <div className="relative">
+                         {/* Horizontal Line Background */}
+                         <div className={`timeline-line ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
+                         <div className="timeline-line-fill" style={{ width: `${Math.max(0, (completedCount - 0.5) / 5.5) * 100}%` }}></div>
+
+                         {/* Steps */}
+                         <div className="flex justify-between relative">
+                            {levels.map((level, idx) => (
+                              <div key={level.id} className="step-node flex flex-col items-center gap-4">
+                                 <div 
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm border-4 transition-all duration-700
+                                      ${level.isCompleted 
+                                        ? 'bg-blue-600 border-white text-white shadow-lg' 
+                                        : (level.isLocked ? 'bg-slate-100 border-white text-slate-300' : 'bg-white border-blue-600 text-blue-600 animate-pulse')
+                                      }
+                                    `}
+                                 >
+                                    {level.isCompleted ? '✓' : idx + 1}
+                                 </div>
+                                 <div className="text-center max-w-[80px]">
+                                    <p className={`text-[10px] font-black leading-tight uppercase ${level.isLocked ? 'text-slate-400' : 'text-slate-900 dark:text-white'}`}>
+                                       {level.title.split(' ')[0]}
+                                    </p>
+                                    {!level.isLocked && !level.isCompleted && (
+                                       <span className="text-[8px] font-bold text-blue-500 animate-pulse">المحطة الحالية</span>
+                                    )}
+                                 </div>
+                              </div>
+                            ))}
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Training Curriculum Compact List */}
                 <div className="space-y-4">
                    <div className="flex justify-between items-center px-2">
                       <h3 className="text-xl font-black">المنهج التدريبي</h3>
