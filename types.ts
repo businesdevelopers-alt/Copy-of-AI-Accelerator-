@@ -190,6 +190,7 @@ export interface LevelData {
   isCompleted: boolean;
   isLocked: boolean;
   icon: string;
+  customColor?: string;
 }
 
 export interface Question {

@@ -6,10 +6,11 @@ const DB_KEYS = {
   STARTUPS: 'db_startups',
   PROGRESS: 'db_progress',
   TASKS: 'db_tasks',
-  SERVICES: 'db_service_requests', // مفتاح جديد
+  SERVICES: 'db_service_requests',
   LOGS: 'db_logs',
   SESSION: 'db_current_session',
-  TEMP_LEVEL_STATE: 'db_temp_level_'
+  TEMP_LEVEL_STATE: 'db_temp_level_',
+  LEVEL_CUSTOMIZATIONS: 'db_level_customs' // مفتاح جديد للتخصيصات
 };
 
 export const storageService = {
@@ -132,6 +133,19 @@ export const storageService = {
   getCurrentSession: () => {
     const session = localStorage.getItem(DB_KEYS.SESSION);
     return session ? JSON.parse(session) : null;
+  },
+
+  // --- Level Customization Operations ---
+  saveLevelCustomization: (uid: string, levelId: number, customization: { icon?: string, customColor?: string }) => {
+    const customs = JSON.parse(localStorage.getItem(DB_KEYS.LEVEL_CUSTOMIZATIONS) || '{}');
+    if (!customs[uid]) customs[uid] = {};
+    customs[uid][levelId] = { ...customs[uid][levelId], ...customization };
+    localStorage.setItem(DB_KEYS.LEVEL_CUSTOMIZATIONS, JSON.stringify(customs));
+  },
+
+  getLevelCustomizations: (uid: string): Record<number, { icon: string, customColor: string }> => {
+    const customs = JSON.parse(localStorage.getItem(DB_KEYS.LEVEL_CUSTOMIZATIONS) || '{}');
+    return customs[uid] || {};
   },
 
   // --- Service Request Operations ---

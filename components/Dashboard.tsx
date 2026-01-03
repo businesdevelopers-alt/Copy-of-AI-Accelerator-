@@ -16,6 +16,7 @@ interface DashboardProps {
   onShowCertificate: () => void;
   onLogout?: () => void;
   onOpenProAnalytics?: () => void;
+  onUpdateLevelUI?: (id: number, icon: string, color: string) => void;
 }
 
 const NAV_ITEMS = [
@@ -28,7 +29,18 @@ const NAV_ITEMS = [
   { id: 'services', label: 'خدمات التنفيذ', icon: '🛠️' }, 
 ];
 
-export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels, onSelectLevel, onShowCertificate, onLogout, onOpenProAnalytics }) => {
+const PRESET_COLORS = [
+  { name: 'أزرق', class: 'bg-blue-600' },
+  { name: 'أخضر', class: 'bg-emerald-600' },
+  { name: 'أحمر', class: 'bg-rose-600' },
+  { name: 'بنفسجي', class: 'bg-indigo-600' },
+  { name: 'برتقالي', class: 'bg-orange-500' },
+  { name: 'ذهبي', class: 'bg-amber-500' },
+  { name: 'وردي', class: 'bg-pink-600' },
+  { name: 'سحابي', class: 'bg-slate-500' },
+];
+
+export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels, onSelectLevel, onShowCertificate, onLogout, onOpenProAnalytics, onUpdateLevelUI }) => {
   const [activeNav, setActiveNav] = useState('home');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => (localStorage.getItem('dashboard_theme_mode') as any) || 'light');
@@ -44,6 +56,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   const [isSaving, setIsSaving] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   
+  // Customization States
+  const [editingLevel, setEditingLevel] = useState<LevelData | null>(null);
+  const [customIcon, setCustomIcon] = useState('');
+  const [customColor, setCustomColor] = useState('');
+
   // Opportunity Lab States
   const [oppResult, setOppResult] = useState<OpportunityAnalysis | null>(null);
   const [isAnalyzingOpp, setIsAnalyzingOpp] = useState(false);
@@ -152,6 +169,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     }
   };
 
+  const handleSaveCustomization = () => {
+    if (editingLevel && onUpdateLevelUI) {
+      onUpdateLevelUI(editingLevel.id, customIcon, customColor);
+      setEditingLevel(null);
+      playPositiveSound();
+    }
+  };
+
   return (
     <div className={`min-h-screen flex ${isDark ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8f9fa] text-slate-900'}`} dir="rtl">
       <style>{`
@@ -164,13 +189,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         @keyframes scan { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
         /* Compact List Styles */
-        .level-row { transition: all 0.2s ease; border-right: 4px solid transparent; }
+        .level-row { transition: all 0.2s ease; border-right: 4px solid transparent; position: relative; }
         .level-row:not(.is-locked):hover { border-right-color: #3b82f6; transform: scale(1.005); }
 
         /* Timeline Connector Styles */
         .step-node { position: relative; z-index: 10; }
         .timeline-line { position: absolute; top: 18px; right: 0; left: 0; height: 4px; background: #e2e8f0; z-index: 0; }
         .timeline-line-fill { position: absolute; top: 18px; right: 0; height: 4px; background: #3b82f6; transition: width 1s ease-in-out; }
+        
+        .edit-btn { opacity: 0; transition: opacity 0.2s; }
+        .level-row:hover .edit-btn { opacity: 1; }
       `}</style>
 
       {/* Sidebar */}
@@ -234,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                    </div>
                 </div>
 
-                {/* Startup Maturity Timeline - Progress Tracking Feature */}
+                {/* Startup Maturity Timeline */}
                 <div className="space-y-6">
                    <h3 className="text-xl font-black flex items-center gap-3">
                       <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
@@ -253,7 +281,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                  <div 
                                     className={`w-10 h-10 rounded-full flex items-center justify-center text-sm border-4 transition-all duration-700
                                       ${level.isCompleted 
-                                        ? 'bg-blue-600 border-white text-white shadow-lg' 
+                                        ? (level.customColor || 'bg-blue-600') + ' border-white text-white shadow-lg' 
                                         : (level.isLocked ? 'bg-slate-100 border-white text-slate-300' : 'bg-white border-blue-600 text-blue-600 animate-pulse')
                                       }
                                     `}
@@ -291,7 +319,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                             className={`level-row p-4 flex items-center justify-between transition-all ${level.isLocked ? 'opacity-40 grayscale cursor-not-allowed is-locked' : 'cursor-pointer hover:bg-slate-50/5'} group`}
                           >
                              <div className="flex items-center gap-4 flex-1 min-w-0">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${level.isCompleted ? 'bg-green-100 text-green-600' : 'bg-slate-50 text-slate-400'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${level.isCompleted ? (level.customColor || 'bg-green-100') + ' text-white' : 'bg-slate-50 text-slate-400'}`}>
                                    {level.isCompleted ? '✓' : level.icon}
                                 </div>
                                 <div className="truncate">
@@ -304,6 +332,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                              </div>
                              
                              <div className="flex items-center gap-4 shrink-0 pr-4">
+                                {!level.isLocked && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setEditingLevel(level); setCustomIcon(level.icon); setCustomColor(level.customColor || ''); playPositiveSound(); }}
+                                    className="edit-btn p-2 rounded-lg bg-slate-100 text-slate-400 hover:text-blue-600 transition-all text-xs"
+                                    title="تخصيص المظهر"
+                                  >
+                                    🎨
+                                  </button>
+                                )}
                                 {level.isLocked ? (
                                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                                       <span className="text-[10px]">🔒</span>
@@ -595,6 +632,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
            )}
         </div>
       </main>
+
+      {/* Level Customization Modal */}
+      {editingLevel && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
+           <div className={`max-w-md w-full p-8 md:p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-900'} shadow-2xl animate-fade-in-up`}>
+              <h3 className="text-2xl font-black mb-6">تخصيص: {editingLevel.title}</h3>
+              
+              <div className="space-y-8">
+                 <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">تغيير الأيقونة (Emoji)</label>
+                    <input 
+                       className={`w-full p-4 text-3xl text-center rounded-2xl border outline-none focus:border-blue-500 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}
+                       value={customIcon}
+                       onChange={e => setCustomIcon(e.target.value.substring(0, 4))} // الحد لـ 1-2 ايموجي
+                       placeholder="💡"
+                    />
+                 </div>
+
+                 <div className="space-y-4">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">اختر لون التمييز</label>
+                    <div className="grid grid-cols-4 gap-3">
+                       {PRESET_COLORS.map(color => (
+                          <button 
+                             key={color.name}
+                             onClick={() => setCustomColor(color.class)}
+                             className={`w-10 h-10 rounded-xl transition-all border-4 ${color.class} ${customColor === color.class ? 'border-white ring-2 ring-blue-500 scale-110' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                             title={color.name}
+                          />
+                       ))}
+                    </div>
+                 </div>
+
+                 <div className="pt-4 flex gap-4">
+                    <button onClick={() => setEditingLevel(null)} className="flex-1 py-4 font-black text-slate-400">إلغاء</button>
+                    <button onClick={handleSaveCustomization} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl">حفظ التغييرات</button>
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Service Request Modal */}
       {selectedService && (

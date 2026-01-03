@@ -57,6 +57,8 @@ function App() {
         });
 
         const userProgress = storageService.getUserProgress(currentUser.uid);
+        const userCustoms = storageService.getLevelCustomizations(currentUser.uid);
+
         const updatedLevels = LEVELS_CONFIG.map((lvl, index) => {
           const progress = userProgress.find(p => p.levelId === lvl.id);
           const isCompleted = progress?.status === 'COMPLETED';
@@ -69,15 +71,19 @@ function App() {
               if (prevLvl?.status === 'COMPLETED') isLocked = false;
             }
           }
-          return { ...lvl, isCompleted, isLocked };
+          
+          // دمج التخصيصات المحفوظة
+          const custom = userCustoms[lvl.id];
+          return { 
+            ...lvl, 
+            isCompleted, 
+            isLocked,
+            icon: custom?.icon || lvl.icon,
+            customColor: custom?.customColor || lvl.customColor
+          };
         });
         
-        // المحافظة على الأيقونات الحالية (المقترحة من AI مسبقاً في الجلسة إذا وجدت)
-        setLevels(prev => updatedLevels.map(lvl => {
-          const existing = prev.find(p => p.id === lvl.id);
-          return existing ? { ...lvl, icon: existing.icon } : lvl;
-        }));
-        
+        setLevels(updatedLevels);
         setStage(FiltrationStage.DASHBOARD);
       }
     }
@@ -87,12 +93,19 @@ function App() {
   useEffect(() => {
     const fetchAIIcons = async () => {
       try {
+        const session = storageService.getCurrentSession();
+        const userCustoms = session ? storageService.getLevelCustomizations(session.uid) : {};
+        
         const iconMap = await suggestIconsForLevels(LEVELS_CONFIG);
         if (Object.keys(iconMap).length > 0) {
-          setLevels(prev => prev.map(lvl => ({
-            ...lvl,
-            icon: iconMap[lvl.id] || lvl.icon
-          })));
+          setLevels(prev => prev.map(lvl => {
+            // لا نغير الأيقونة إذا كان المستخدم قد خصصها يدوياً
+            if (userCustoms[lvl.id]?.icon) return lvl;
+            return {
+              ...lvl,
+              icon: iconMap[lvl.id] || lvl.icon
+            };
+          }));
         }
       } catch (err) {
         console.error("System: AI Icon Enhancement failed.", err);
@@ -128,6 +141,14 @@ function App() {
       });
     });
     setStage(FiltrationStage.DASHBOARD);
+  };
+
+  const updateLevelUI = (id: number, icon: string, color: string) => {
+    const session = storageService.getCurrentSession();
+    if (session) {
+      storageService.saveLevelCustomization(session.uid, id, { icon, customColor: color });
+    }
+    setLevels(prev => prev.map(l => l.id === id ? { ...l, icon, customColor: color } : l));
   };
 
   return (
@@ -212,6 +233,7 @@ function App() {
           onShowCertificate={() => setStage(FiltrationStage.CERTIFICATE)} 
           onLogout={() => { localStorage.removeItem('db_current_session'); setStage(FiltrationStage.LANDING); }} 
           onOpenProAnalytics={() => setStage(FiltrationStage.PROJECT_BUILDER)}
+          onUpdateLevelUI={updateLevelUI}
         />
       )}
 
