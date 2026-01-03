@@ -32,156 +32,71 @@ function App() {
   const [nominationOutcome, setNominationOutcome] = useState<NominationResult | null>(null);
   const [projectEvaluation, setProjectEvaluation] = useState<ProjectEvaluationResult | null>(null);
 
-  // Initialize and Sync Levels based on DB Progress
   useEffect(() => {
     const session = storageService.getCurrentSession();
     if (session) {
       const users = storageService.getAllUsers();
       const currentUser = users.find(u => u.uid === session.uid);
-      if (currentUser) {
-        const startups = storageService.getAllStartups();
-        const startup = startups.find(s => s.ownerId === currentUser.uid);
-        if (startup) {
-          setUserProfile({
-            firstName: currentUser.firstName,
-            lastName: currentUser.lastName,
-            email: currentUser.email,
-            phone: currentUser.phone,
-            startupName: startup.name,
-            startupDescription: startup.description,
-            industry: startup.industry,
-            name: `${currentUser.firstName} ${currentUser.lastName}`,
-            hasCompletedAssessment: startup.status === 'APPROVED'
-          });
+      const startups = storageService.getAllStartups();
+      const startup = startups.find(s => s.ownerId === session.uid);
 
-          // Sync Levels
-          const userProgress = storageService.getUserProgress(currentUser.uid);
-          const updatedLevels = LEVELS_CONFIG.map((lvl, index) => {
-            const progress = userProgress.find(p => p.levelId === lvl.id);
-            const isCompleted = progress?.status === 'COMPLETED';
-            
-            // Logic for locking:
-            // Level 1 (index 0) is always unlocked if the startup is APPROVED.
-            // Level N is unlocked if Level N-1 is COMPLETED.
-            let isLocked = index === 0 ? false : true;
-            if (index > 0) {
-              const prevLvlProgress = userProgress.find(p => p.levelId === LEVELS_CONFIG[index-1].id);
-              if (prevLvlProgress?.status === 'COMPLETED') {
-                isLocked = false;
-              }
-            }
+      if (currentUser && startup) {
+        setUserProfile({
+          firstName: currentUser.firstName,
+          lastName: currentUser.lastName,
+          email: currentUser.email,
+          phone: currentUser.phone,
+          startupName: startup.name,
+          startupDescription: startup.description,
+          industry: startup.industry,
+          name: `${currentUser.firstName} ${currentUser.lastName}`,
+          hasCompletedAssessment: startup.status === 'APPROVED',
+          logo: localStorage.getItem(`logo_${currentUser.uid}`) || undefined
+        });
 
-            return { ...lvl, isCompleted, isLocked };
-          });
-          setLevels(updatedLevels);
+        const userProgress = storageService.getUserProgress(currentUser.uid);
+        const updatedLevels = LEVELS_CONFIG.map((lvl, index) => {
+          const progress = userProgress.find(p => p.levelId === lvl.id);
+          const isCompleted = progress?.status === 'COMPLETED';
           
-          setStage(FiltrationStage.DASHBOARD);
-        }
+          let isLocked = true;
+          if (startup.status === 'APPROVED') {
+            if (index === 0) isLocked = false;
+            else {
+              const prevLvl = userProgress.find(p => p.levelId === LEVELS_CONFIG[index-1].id);
+              if (prevLvl?.status === 'COMPLETED') isLocked = false;
+            }
+          }
+          return { ...lvl, isCompleted, isLocked };
+        });
+        setLevels(updatedLevels);
+        setStage(FiltrationStage.DASHBOARD);
       }
     }
   }, []);
 
-  useEffect(() => {
-    if (stage === FiltrationStage.DASHBOARD && userProfile?.hasCompletedAssessment) {
-      const savedIcons = localStorage.getItem('dashboard_level_icons');
-      const hasAIIcons = localStorage.getItem('dashboard_ai_icons_synced');
-      
-      if (!savedIcons && !hasAIIcons) {
-        suggestIconsForLevels(levels).then(iconMap => {
-          if (Object.keys(iconMap).length > 0) {
-            localStorage.setItem('dashboard_level_icons', JSON.stringify(iconMap));
-            localStorage.setItem('dashboard_ai_icons_synced', 'true');
-            window.dispatchEvent(new Event('storage'));
-          }
-        });
-      }
-    }
-  }, [stage, userProfile, levels]);
-
-  const handleStartFiltration = () => setStage(FiltrationStage.WELCOME);
-  const handleStartPathFinder = () => setStage(FiltrationStage.PATH_FINDER);
-  const handleShowRoadmap = () => setStage(FiltrationStage.ROADMAP);
-  const handleShowTools = () => setStage(FiltrationStage.TOOLS);
-  const handleLoginNav = () => setStage(FiltrationStage.LOGIN);
-  const handleStaffLogin = () => setStage(FiltrationStage.STAFF_PORTAL);
-  const handleShowAchievements = () => setStage(FiltrationStage.ACHIEVEMENTS);
-  const handleShowMentorship = () => setStage(FiltrationStage.MENTORSHIP);
-
   const handleLoginSuccess = (profile: UserProfile) => {
     setUserProfile(profile);
     setStage(FiltrationStage.DASHBOARD);
-    // Reload to trigger level sync
-    window.location.reload();
+    window.location.reload(); 
   };
 
   const handleRegister = (profile: UserProfile) => {
-    const { user, startup } = storageService.registerUser(profile);
-    storageService.logAction(user.uid, 'LOGIN', 'User Registered');
-    
-    setUserProfile({
-      ...profile,
-      name: `${profile.firstName} ${profile.lastName}`,
-      hasCompletedAssessment: false
-    });
-
+    storageService.registerUser(profile);
+    setUserProfile({ ...profile, name: `${profile.firstName} ${profile.lastName}`, hasCompletedAssessment: false });
     setStage(FiltrationStage.PROJECT_EVALUATION);
-  };
-
-  const handleProjectEvaluationComplete = (res: ProjectEvaluationResult) => {
-    setProjectEvaluation(res);
-    setStage(FiltrationStage.NOMINATION_TEST);
-  };
-
-  const handleNominationComplete = (res: NominationResult) => {
-    setNominationOutcome(res);
-    
-    const result: FinalResult = {
-      score: res.totalScore,
-      leadershipStyle: res.category === 'DIRECT_ADMISSION' ? "رائد أعمال متمكن" : "ريادي قيد التطوير",
-      metrics: {
-        readiness: res.totalScore * 0.8,
-        analysis: res.totalScore * 0.9,
-        tech: res.totalScore * 0.7,
-        personality: 85,
-        strategy: res.totalScore * 0.75,
-        ethics: 95
-      },
-      projectEval: projectEvaluation || undefined,
-      isQualified: res.category === 'DIRECT_ADMISSION' || res.category === 'INTERVIEW',
-      badges: res.category === 'DIRECT_ADMISSION' ? [{ id: 'b1', name: 'نخبة الرواد', icon: '💎', color: 'blue' }] : [],
-      recommendation: res.aiAnalysis
-    };
-    
-    setFinalResult(result);
-    setStage(FiltrationStage.ASSESSMENT_RESULT);
-  };
-
-  const finalizeAssessment = () => {
-    if (userProfile && finalResult?.isQualified) {
-       const updated = { ...userProfile, hasCompletedAssessment: true };
-       setUserProfile(updated);
-       const session = storageService.getCurrentSession();
-       if (session) storageService.updateStartupStatus(session.projectId, 'APPROVED');
-       setStage(FiltrationStage.DASHBOARD);
-    } else {
-       setStage(FiltrationStage.DEVELOPMENT_PLAN);
-    }
   };
 
   const handleLevelComplete = (id: number) => {
     const session = storageService.getCurrentSession();
     if (session) {
       storageService.updateProgress(session.uid, id, { status: 'COMPLETED', score: 100, completedAt: new Date().toISOString() });
-      storageService.logAction(session.uid, 'TEST_SUBMIT', `Completed Level ${id}`);
     }
     
     setLevels(prev => {
       const updated = prev.map(l => l.id === id ? { ...l, isCompleted: true } : l);
-      // Logic to unlock the next level
       return updated.map((l, idx) => {
-        if (idx > 0 && updated[idx-1].isCompleted) {
-          return { ...l, isLocked: false };
-        }
+        if (idx > 0 && updated[idx-1].isCompleted) return { ...l, isLocked: false };
         return l;
       });
     });
@@ -192,62 +107,63 @@ function App() {
     <div className="font-sans antialiased text-slate-900">
       {stage === FiltrationStage.LANDING && (
         <LandingPage 
-          onStart={handleStartFiltration} 
-          onPathFinder={handleStartPathFinder} 
+          onStart={() => setStage(FiltrationStage.WELCOME)} 
+          onPathFinder={() => setStage(FiltrationStage.PATH_FINDER)} 
           onSmartFeatures={() => {}} 
           onGovDashboard={() => {}} 
-          onRoadmap={handleShowRoadmap} 
-          onTools={handleShowTools} 
+          onRoadmap={() => setStage(FiltrationStage.ROADMAP)} 
+          onTools={() => setStage(FiltrationStage.TOOLS)} 
           onLegalClick={(type) => setActiveLegal(type)} 
-          onLogin={handleLoginNav}
-          onAchievements={handleShowAchievements}
-          onMentorship={handleShowMentorship}
+          onLogin={() => setStage(FiltrationStage.LOGIN)}
+          onAchievements={() => setStage(FiltrationStage.ACHIEVEMENTS)}
+          onMentorship={() => setStage(FiltrationStage.MENTORSHIP)}
         />
       )}
 
-      {stage === FiltrationStage.LOGIN && (
-        <Login onLoginSuccess={handleLoginSuccess} onBack={() => setStage(FiltrationStage.LANDING)} />
-      )}
-
-      {stage === FiltrationStage.ROADMAP && <RoadmapPage onStart={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
+      {stage === FiltrationStage.LOGIN && <Login onLoginSuccess={handleLoginSuccess} onBack={() => setStage(FiltrationStage.LANDING)} />}
+      {stage === FiltrationStage.ROADMAP && <RoadmapPage onStart={() => setStage(FiltrationStage.WELCOME)} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.TOOLS && <ToolsPage onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.ACHIEVEMENTS && <AchievementsPage onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.MENTORSHIP && <MentorshipPage user={userProfile || undefined} onBack={() => setStage(FiltrationStage.DASHBOARD)} />}
-      {stage === FiltrationStage.PATH_FINDER && <PathFinder onApproved={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
-      {stage === FiltrationStage.WELCOME && <Registration onRegister={handleRegister} onStaffLogin={handleStaffLogin} />}
+      {stage === FiltrationStage.PATH_FINDER && <PathFinder onApproved={() => setStage(FiltrationStage.WELCOME)} onBack={() => setStage(FiltrationStage.LANDING)} />}
+      {stage === FiltrationStage.WELCOME && <Registration onRegister={handleRegister} onStaffLogin={() => setStage(FiltrationStage.STAFF_PORTAL)} />}
 
       {stage === FiltrationStage.PROJECT_EVALUATION && userProfile && (
         <ProjectEvaluation 
-          profile={{
-            codeName: userProfile.startupName,
-            projectStage: 'Idea',
-            sector: userProfile.industry,
-            goal: 'Validation',
-            techLevel: 'Medium'
-          }} 
+          profile={{ codeName: userProfile.startupName, projectStage: 'Idea', sector: userProfile.industry, goal: 'Validation', techLevel: 'Medium' }} 
           initialText={userProfile.startupDescription}
-          onComplete={handleProjectEvaluationComplete}
+          onComplete={(res) => { setProjectEvaluation(res); setStage(FiltrationStage.NOMINATION_TEST); }}
         />
       )}
 
       {stage === FiltrationStage.NOMINATION_TEST && (
         <NominationTest 
-          onComplete={handleNominationComplete} 
-          onReject={(reason) => {
-            alert(`نأسف، تم رفض الطلب بسبب: ${reason}`);
-            setStage(FiltrationStage.LANDING);
-          }}
+          onComplete={(res) => {
+            setNominationOutcome(res);
+            const result: FinalResult = {
+              score: res.totalScore,
+              leadershipStyle: res.category === 'DIRECT_ADMISSION' ? "رائد أعمال متمكن" : "ريادي قيد التطوير",
+              metrics: { readiness: res.totalScore * 0.8, analysis: res.totalScore * 0.9, tech: res.totalScore * 0.7, personality: 85, strategy: res.totalScore * 0.75, ethics: 95 },
+              projectEval: projectEvaluation || undefined,
+              isQualified: res.category === 'DIRECT_ADMISSION' || res.category === 'INTERVIEW',
+              badges: [],
+              recommendation: res.aiAnalysis
+            };
+            setFinalResult(result);
+            setStage(FiltrationStage.ASSESSMENT_RESULT);
+          }} 
+          onReject={(reason) => { alert(`تم رفض الطلب: ${reason}`); setStage(FiltrationStage.LANDING); }}
         />
       )}
       
       {stage === FiltrationStage.ASSESSMENT_RESULT && finalResult && (
-        <AssessmentResult result={finalResult} onContinue={finalizeAssessment} />
+        <AssessmentResult result={finalResult} onContinue={() => {
+          const session = storageService.getCurrentSession();
+          if (session) storageService.updateStartupStatus(session.projectId, 'APPROVED');
+          window.location.reload();
+        }} />
       )}
       
-      {stage === FiltrationStage.DEVELOPMENT_PLAN && finalResult && (
-        <DevelopmentPlan result={finalResult} onRestart={() => setStage(FiltrationStage.NOMINATION_TEST)} />
-      )}
-
       {stage === FiltrationStage.STAFF_PORTAL && <StaffPortal onBack={() => setStage(FiltrationStage.LANDING)} />}
       
       {stage === FiltrationStage.DASHBOARD && userProfile && (
@@ -256,18 +172,13 @@ function App() {
           levels={levels} 
           onSelectLevel={(id) => {
             const lvl = levels.find(l => l.id === id);
-            if (lvl?.isLocked) {
-              playErrorSound();
-              alert('هذه المحطة مغلقة. يجب إكمال المحطة السابقة أولاً.');
-              return;
-            }
+            if (lvl?.isLocked) return alert('هذه المحطة مغلقة.');
             setActiveLevelId(id); 
             setStage(FiltrationStage.LEVEL_VIEW); 
           }} 
           onShowCertificate={() => setStage(FiltrationStage.CERTIFICATE)} 
           onLogout={() => { localStorage.removeItem('db_current_session'); setStage(FiltrationStage.LANDING); }} 
           onOpenProAnalytics={() => setStage(FiltrationStage.PROJECT_BUILDER)}
-          onStartAssessment={() => setStage(FiltrationStage.NOMINATION_TEST)}
         />
       )}
 
@@ -277,35 +188,14 @@ function App() {
           user={userProfile} 
           onComplete={() => handleLevelComplete(activeLevelId)} 
           onBack={() => setStage(FiltrationStage.DASHBOARD)}
-          onRequestMentorship={() => setStage(FiltrationStage.MENTORSHIP)}
         />
       )}
 
       {stage === FiltrationStage.CERTIFICATE && userProfile && <Certificate user={userProfile} onClose={() => setStage(FiltrationStage.DASHBOARD)} />}
 
-      {stage === FiltrationStage.PROJECT_BUILDER && (
-         <AdminDashboard user={userProfile || undefined} levels={levels} metrics={finalResult?.metrics} onBack={() => setStage(FiltrationStage.DASHBOARD)} />
-      )}
-
       <LegalPortal type={activeLegal} onClose={() => setActiveLegal(null)} />
     </div>
   );
 }
-
-const playErrorSound = () => {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.3);
-  } catch (e) {}
-};
 
 export default App;

@@ -79,6 +79,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const shelfRef = useRef<HTMLDivElement>(null);
+  const ideaFileInputRef = useRef<HTMLInputElement>(null);
 
   // Form States
   const [ideaForm, setIdeaForm] = useState({ sector: '', interest: '' });
@@ -112,6 +113,32 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
     }
   };
 
+  const handleIdeaFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      // Simple logic to split by lines if possible, otherwise put all in interest
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+      if (lines.length >= 2) {
+        setIdeaForm({
+          sector: lines[0].trim(),
+          interest: lines.slice(1).join('\n').trim()
+        });
+      } else {
+        setIdeaForm(prev => ({ ...prev, interest: text.trim() }));
+      }
+      playPositiveSound();
+    };
+    reader.onerror = () => {
+      playErrorSound();
+      alert("فشل في قراءة الملف.");
+    };
+    reader.readAsText(file);
+  };
+
   const copyToClipboard = () => {
     const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
     navigator.clipboard.writeText(text);
@@ -121,16 +148,6 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
   const resetTool = () => {
     setActiveTool(null);
     setResult(null);
-  };
-
-  const scrollShelf = (direction: 'left' | 'right') => {
-    if (shelfRef.current) {
-      const scrollAmount = 300;
-      shelfRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
   };
 
   return (
@@ -285,13 +302,40 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                <div className="space-y-8">
                   {activeTool === 'IDEA' && (
                     <div className="space-y-6">
+                      <div className="flex justify-between items-center px-2">
+                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">إدخال البيانات</label>
+                        <button 
+                          onClick={() => ideaFileInputRef.current?.click()}
+                          className="text-[10px] font-black text-blue-600 flex items-center gap-2 hover:bg-blue-50 px-3 py-1 rounded-lg transition-all"
+                        >
+                          <span>📁 رفع ملف نصي (TXT)</span>
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={ideaFileInputRef} 
+                          className="hidden" 
+                          accept=".txt" 
+                          onChange={handleIdeaFileChange} 
+                        />
+                      </div>
+                      
                       <div className="space-y-2">
                         <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">قطاع العمل المفضل</label>
-                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" value={ideaForm.sector} onChange={e => setIdeaForm({...ideaForm, sector: e.target.value})} placeholder="مثال: التقنية المالية، الاستدامة..." />
+                        <input 
+                          className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" 
+                          value={ideaForm.sector} 
+                          onChange={e => setIdeaForm({...ideaForm, sector: e.target.value})} 
+                          placeholder="مثال: التقنية المالية، الاستدامة..." 
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">ما هي اهتماماتك؟</label>
-                        <textarea className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={ideaForm.interest} onChange={e => setIdeaForm({...ideaForm, interest: e.target.value})} placeholder="تحدث عن المشكلات التي تلاحظها أو المهارات التي تملكها..." />
+                        <textarea 
+                          className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" 
+                          value={ideaForm.interest} 
+                          onChange={e => setIdeaForm({...ideaForm, interest: e.target.value})} 
+                          placeholder="تحدث عن المشكلات التي تلاحظها أو المهارات التي تملكها..." 
+                        />
                       </div>
                     </div>
                   )}

@@ -1,21 +1,17 @@
 
 import { UserRecord, StartupRecord, ProgressRecord, ActivityLogRecord, UserProfile, TaskRecord, TASKS_CONFIG } from '../types';
 
-/**
- * خدمة إدارة قاعدة البيانات المحلية (LocalStorage Wrapper)
- */
 const DB_KEYS = {
   USERS: 'db_users',
   STARTUPS: 'db_startups',
   PROGRESS: 'db_progress',
-  TASKS: 'db_tasks', // مفتاح جديد للمهام
+  TASKS: 'db_tasks',
   LOGS: 'db_logs',
   SESSION: 'db_current_session',
-  TEMP_LEVEL_STATE: 'db_temp_level_' // سيتبع بـ userId_levelId
+  TEMP_LEVEL_STATE: 'db_temp_level_'
 };
 
 export const storageService = {
-  // --- Auth & User Operations ---
   registerUser: (profile: UserProfile): { user: UserRecord; startup: StartupRecord } => {
     const uid = `u_${Date.now()}`;
     const newUser: UserRecord = {
@@ -41,16 +37,9 @@ export const storageService = {
       foundersCount: profile.foundersCount || 1,
       technologies: profile.technologies || '',
       stage: 'Idea',
-      metrics: { 
-        readiness: Math.floor(Math.random() * 40) + 30, 
-        analysis: Math.floor(Math.random() * 40) + 30, 
-        tech: 50, 
-        personality: 60, 
-        strategy: 40, 
-        ethics: 90 
-      },
+      metrics: { readiness: 40, analysis: 40, tech: 40, personality: 50, strategy: 40, ethics: 90 },
       aiClassification: 'Yellow',
-      aiOpinion: 'الفكرة واعدة ولكن تحتاج تفصيل في نموذج الربح.',
+      aiOpinion: 'تحت التقييم',
       status: 'PENDING'
     };
 
@@ -61,8 +50,8 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.STARTUPS, JSON.stringify([...startups, newStartup]));
     localStorage.setItem(DB_KEYS.SESSION, JSON.stringify({ uid, projectId: newStartup.projectId }));
 
-    // تهيئة المهام للمستخدم الجديد
-    const tasks = TASKS_CONFIG.map(t => ({ ...t, uid }));
+    // تهيئة المهام فوراً عند التسجيل
+    const tasks = TASKS_CONFIG.map(t => ({ ...t, uid, status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' }));
     const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
     localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...tasks]));
 
@@ -81,9 +70,16 @@ export const storageService = {
 
     localStorage.setItem(DB_KEYS.SESSION, JSON.stringify({ uid: user.uid, projectId: startup.projectId }));
     
-    // Update last login
     user.lastLogin = new Date().toISOString();
     localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
+
+    // التأكد من وجود مهام للمستخدم (حالة التحديثات القديمة)
+    const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
+    const userHasTasks = allTasks.some((t: any) => t.uid === user.uid);
+    if (!userHasTasks) {
+      const newTasks = TASKS_CONFIG.map(t => ({ ...t, uid: user.uid, status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' }));
+      localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...newTasks]));
+    }
 
     return { user, startup };
   },
@@ -91,7 +87,6 @@ export const storageService = {
   seedDemoAccount: (): string => {
     const demoEmail = 'demo@bizdev.ai';
     const users: UserRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
-    
     if (users.some(u => u.email === demoEmail)) return demoEmail;
 
     const uid = 'u_demo_123';
@@ -112,15 +107,15 @@ export const storageService = {
       projectId: 'p_demo_123',
       ownerId: uid,
       name: 'منصة زراعة ذكية',
-      description: 'مشروع تجريبي لتحليل بيانات التربة باستخدام الذكاء الاصطناعي لرفع كفاءة المحاصيل.',
+      description: 'مشروع تجريبي لتحليل بيانات التربة.',
       industry: 'AgriTech',
       foundationYear: 2024,
       foundersCount: 2,
-      technologies: 'IoT, AI, React',
+      technologies: 'React, Node.js',
       stage: 'Prototype',
       metrics: { readiness: 85, analysis: 78, tech: 92, personality: 88, strategy: 70, ethics: 95 },
       aiClassification: 'Green',
-      aiOpinion: 'مشروع متميز ذو جدوى اقتصادية عالية في المنطقة.',
+      aiOpinion: 'مشروع متميز.',
       status: 'APPROVED'
     };
 
@@ -128,26 +123,9 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.USERS, JSON.stringify([...users, newUser]));
     localStorage.setItem(DB_KEYS.STARTUPS, JSON.stringify([...startups, newStartup]));
 
-    // إضافة تقدم تجريبي (المستوى الأول مكتمل)
-    const progressList = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
-    progressList.push({
-      id: 'prog_demo',
-      uid,
-      levelId: 1,
-      status: 'COMPLETED',
-      score: 100,
-      completedAt: new Date().toISOString()
-    });
-    localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
-
-    // إضافة مهام تجريبية
-    const demoTasks = TASKS_CONFIG.map(t => ({ 
-      ...t, 
-      uid, 
-      status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' 
-    }));
+    const tasks = TASKS_CONFIG.map(t => ({ ...t, uid, status: t.levelId === 1 ? 'ASSIGNED' : 'LOCKED' }));
     const allTasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
-    localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...demoTasks]));
+    localStorage.setItem(DB_KEYS.TASKS, JSON.stringify([...allTasks, ...tasks]));
 
     return demoEmail;
   },
@@ -157,8 +135,7 @@ export const storageService = {
     return session ? JSON.parse(session) : null;
   },
 
-  // --- Task Operations ---
-  getUserTasks: (uid: string): (TaskRecord & { uid: string })[] => {
+  getUserTasks: (uid: string): TaskRecord[] => {
     const tasks = JSON.parse(localStorage.getItem(DB_KEYS.TASKS) || '[]');
     return tasks.filter((t: any) => t.uid === uid);
   },
@@ -168,10 +145,7 @@ export const storageService = {
     const index = tasks.findIndex((t: any) => t.uid === uid && t.id === taskId);
     if (index > -1) {
       tasks[index].status = 'SUBMITTED';
-      tasks[index].submission = {
-        content,
-        submittedAt: new Date().toISOString()
-      };
+      tasks[index].submission = { content, submittedAt: new Date().toISOString() };
       localStorage.setItem(DB_KEYS.TASKS, JSON.stringify(tasks));
     }
   },
@@ -185,15 +159,6 @@ export const storageService = {
     }
   },
 
-  // --- Admin Operations ---
-  getAllStartups: (): StartupRecord[] => {
-    return JSON.parse(localStorage.getItem(DB_KEYS.STARTUPS) || '[]');
-  },
-
-  getAllUsers: (): UserRecord[] => {
-    return JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
-  },
-
   updateStartupStatus: (projectId: string, status: StartupRecord['status']) => {
     const startups: StartupRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.STARTUPS) || '[]');
     const index = startups.findIndex(s => s.projectId === projectId);
@@ -203,27 +168,6 @@ export const storageService = {
     }
   },
 
-  // --- Level Auto-Save Operations ---
-  saveLevelProgress: (uid: string, levelId: number, data: any) => {
-    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
-    localStorage.setItem(key, JSON.stringify({
-      ...data,
-      timestamp: new Date().toISOString()
-    }));
-  },
-
-  getLevelProgress: (uid: string, levelId: number) => {
-    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : null;
-  },
-
-  clearLevelProgress: (uid: string, levelId: number) => {
-    const key = `${DB_KEYS.TEMP_LEVEL_STATE}${uid}_${levelId}`;
-    localStorage.removeItem(key);
-  },
-
-  // --- Progress Operations ---
   updateProgress: (uid: string, levelId: number, data: Partial<ProgressRecord>) => {
     const progressList: ProgressRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
     const index = progressList.findIndex(p => p.uid === uid && p.levelId === levelId);
@@ -242,34 +186,22 @@ export const storageService = {
     }
     
     localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
-    // بمجرد التحديث الرسمي، نمسح النسخة المؤقتة
-    storageService.clearLevelProgress(uid, levelId);
-
-    // فتح المهمة المقابلة فوراً
     if (data.status === 'COMPLETED') {
       storageService.unlockTaskForLevel(uid, levelId);
     }
   },
 
   getUserProgress: (uid: string): ProgressRecord[] => {
-    const progressList: ProgressRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
-    return progressList.filter(p => p.uid === uid);
+    const progressList = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
+    return progressList.filter((p: any) => p.uid === uid);
   },
 
-  // --- Activity Log ---
+  getAllStartups: (): StartupRecord[] => JSON.parse(localStorage.getItem(DB_KEYS.STARTUPS) || '[]'),
+  getAllUsers: (): UserRecord[] => JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]'),
   logAction: (uid: string, type: ActivityLogRecord['actionType'], metadata: string) => {
-    const logs: ActivityLogRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.LOGS) || '[]');
-    const newLog: ActivityLogRecord = {
-      logId: `log_${Date.now()}`,
-      uid,
-      actionType: type,
-      metadata,
-      timestamp: new Date().toISOString()
-    };
+    const logs = JSON.parse(localStorage.getItem(DB_KEYS.LOGS) || '[]');
+    const newLog = { logId: `log_${Date.now()}`, uid, actionType: type, metadata, timestamp: new Date().toISOString() };
     localStorage.setItem(DB_KEYS.LOGS, JSON.stringify([newLog, ...logs].slice(0, 100)));
   },
-
-  getAllLogs: (): ActivityLogRecord[] => {
-    return JSON.parse(localStorage.getItem(DB_KEYS.LOGS) || '[]');
-  }
+  getAllLogs: (): ActivityLogRecord[] => JSON.parse(localStorage.getItem(DB_KEYS.LOGS) || '[]')
 };
