@@ -81,6 +81,61 @@ export const storageService = {
     return { user, startup };
   },
 
+  seedDemoAccount: (): string => {
+    const demoEmail = 'demo@bizdev.ai';
+    const users: UserRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
+    
+    if (users.some(u => u.email === demoEmail)) return demoEmail;
+
+    const uid = 'u_demo_123';
+    const newUser: UserRecord = {
+      uid,
+      firstName: 'رائد',
+      lastName: 'تجريبي',
+      email: demoEmail,
+      phone: '0500000000',
+      age: 30,
+      birthDate: '1994-01-01',
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      settings: { theme: 'indigo', notifications: true }
+    };
+
+    const newStartup: StartupRecord = {
+      projectId: 'p_demo_123',
+      ownerId: uid,
+      name: 'منصة زراعة ذكية',
+      description: 'مشروع تجريبي لتحليل بيانات التربة باستخدام الذكاء الاصطناعي لرفع كفاءة المحاصيل.',
+      industry: 'AgriTech',
+      foundationYear: 2024,
+      foundersCount: 2,
+      technologies: 'IoT, AI, React',
+      stage: 'Prototype',
+      metrics: { readiness: 85, analysis: 78, tech: 92, personality: 88, strategy: 70, ethics: 95 },
+      aiClassification: 'Green',
+      aiOpinion: 'مشروع متميز ذو جدوى اقتصادية عالية في المنطقة.',
+      status: 'APPROVED'
+    };
+
+    const startups = JSON.parse(localStorage.getItem(DB_KEYS.STARTUPS) || '[]');
+    localStorage.setItem(DB_KEYS.USERS, JSON.stringify([...users, newUser]));
+    localStorage.setItem(DB_KEYS.STARTUPS, JSON.stringify([...startups, newStartup]));
+
+    // إضافة تقدم تجريبي (المستوى الأول مكتمل)
+    const progressList = JSON.parse(localStorage.getItem(DB_KEYS.PROGRESS) || '[]');
+    progressList.push({
+      id: 'prog_demo',
+      uid,
+      levelId: 1,
+      status: 'COMPLETED',
+      score: 100,
+      completedAt: new Date().toISOString()
+    });
+    localStorage.setItem(DB_KEYS.PROGRESS, JSON.stringify(progressList));
+
+    return demoEmail;
+  },
+
   getCurrentSession: () => {
     const session = localStorage.getItem(DB_KEYS.SESSION);
     return session ? JSON.parse(session) : null;

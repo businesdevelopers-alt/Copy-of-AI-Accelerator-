@@ -11,18 +11,22 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState(''); // Simulated password field
+  const [password, setPassword] = useState(''); 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent, targetEmail?: string) => {
+    if (e) e.preventDefault();
+    
+    const finalEmail = targetEmail || email;
+    if (!finalEmail) return;
+
     setIsLoading(true);
     setError(null);
 
     // Simulate small delay
     setTimeout(() => {
-      const result = storageService.loginUser(email);
+      const result = storageService.loginUser(finalEmail);
       
       if (result) {
         const profile: UserProfile = {
@@ -33,7 +37,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
           startupName: result.startup.name,
           startupDescription: result.startup.description,
           industry: result.startup.industry,
-          name: `${result.user.firstName} ${result.user.lastName}`
+          name: `${result.user.firstName} ${result.user.lastName}`,
+          hasCompletedAssessment: result.startup.status === 'APPROVED'
         };
         
         playPositiveSound();
@@ -44,6 +49,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
       }
       setIsLoading(false);
     }, 1000);
+  };
+
+  const handleDemoLogin = () => {
+    const demoEmail = storageService.seedDemoAccount();
+    setEmail(demoEmail);
+    setPassword('demo123');
+    handleSubmit(undefined, demoEmail);
   };
 
   return (
@@ -115,6 +127,22 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                      </>
                    )}
                  </button>
+
+                 <div className="relative py-4">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                    <div className="relative flex justify-center text-xs font-bold uppercase"><span className="bg-slate-950 px-4 text-slate-500 tracking-widest">أو استكشف كضيف</span></div>
+                 </div>
+
+                 <button 
+                   type="button" 
+                   onClick={handleDemoLogin}
+                   disabled={isLoading}
+                   className="w-full py-5 bg-white/5 hover:bg-white/10 border-2 border-dashed border-white/20 text-blue-400 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-3 active:scale-95"
+                 >
+                   <span>👀 الدخول بحساب تجريبي</span>
+                   <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded text-blue-300">بدون تسجيل</span>
+                 </button>
+
                  <button 
                    type="button" 
                    onClick={onBack}

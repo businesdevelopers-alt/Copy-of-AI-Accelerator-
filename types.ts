@@ -1,5 +1,4 @@
 
-
 export enum FiltrationStage {
   LANDING = 'LANDING',
   PATH_FINDER = 'PATH_FINDER',
@@ -74,6 +73,7 @@ export interface UserProfile {
   name?: string; 
   hasCompletedAssessment?: boolean;
   agreedToTerms?: boolean;
+  agreedToContract?: boolean; // حقل جديد للموافقة على عقد الاحتضان
   signedContractName?: string;
   contractSignedAt?: string;
 }
@@ -238,7 +238,6 @@ export interface ActivityLogRecord {
   timestamp: string;
 }
 
-/* Fix: Added missing interfaces requested by geminiService.ts and NominationTest.tsx */
 export interface NominationData {
   companyName: string;
   founderName: string;

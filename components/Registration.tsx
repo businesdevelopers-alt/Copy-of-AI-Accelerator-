@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { UserProfile, ProjectEvaluationResult, ApplicantProfile } from '../types';
+import { UserProfile, ApplicantProfile } from '../types';
 import { evaluateProjectIdea } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
 
@@ -24,6 +24,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
     foundersCount: 1,
     technologies: '',
     agreedToTerms: false,
+    agreedToContract: false,
     signedContractName: ''
   });
   
@@ -33,7 +34,6 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // Saudi Mobile: 05 followed by 8 digits or 5 followed by 8 digits
     const phoneRegex = /^(05|5)\d{8}$/;
 
     if (!formData.firstName.trim()) newErrors.firstName = 'الاسم الأول مطلوب';
@@ -59,7 +59,11 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
     }
     
     if (!formData.agreedToTerms) {
-      newErrors.agreedToTerms = 'يجب الموافقة على بنود عقد الاحتضان للمتابعة';
+      newErrors.agreedToTerms = 'يجب الموافقة على الشروط والأحكام للمتابعة';
+    }
+
+    if (!formData.agreedToContract) {
+      newErrors.agreedToContract = 'يجب الموافقة على بنود عقد الاحتضان للمتابعة';
     }
 
     const expectedName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
@@ -115,7 +119,6 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
       });
     } else {
       playErrorSound();
-      // Scroll to the first error
       const firstErrorKey = Object.keys(errors)[0];
       const element = document.getElementsByName(firstErrorKey)[0];
       if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -253,7 +256,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                   عقد الاحتضان والتسريع الافتراضي
                </h3>
                
-               <div className={`bg-white text-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden border transition-all ${errors.agreedToTerms || errors.signedContractName ? 'border-rose-500' : 'border-slate-200'}`}>
+               <div className={`bg-white text-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden border transition-all ${errors.agreedToTerms || errors.agreedToContract || errors.signedContractName ? 'border-rose-500' : 'border-slate-200'}`}>
                   <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center">
                      <span className="font-black text-slate-400 text-xs uppercase tracking-widest">Official Legal Document</span>
                      <span className="font-bold text-blue-600 text-xs">تاريخ العقد: {today}</span>
@@ -297,7 +300,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                   </div>
 
                   <div className="p-8 md:p-12 border-t border-slate-100 bg-slate-50/50">
-                     <div className="flex flex-col gap-2 mb-8">
+                     <div className="space-y-4 mb-8">
                         <div className="flex items-center gap-4">
                            <input 
                               type="checkbox" 
@@ -307,9 +310,22 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                               onChange={e => setFormData({...formData, agreedToTerms: e.target.checked})}
                               className={`w-6 h-6 accent-blue-600 cursor-pointer shadow-sm ${errors.agreedToTerms ? 'ring-2 ring-rose-500' : ''}`}
                            />
-                           <label htmlFor="terms" className="text-sm font-black text-slate-900 cursor-pointer select-none">أقر أنا الطرف الثاني بقبول كافة بنود العقد أعلاه والالتزام بها.</label>
+                           <label htmlFor="terms" className="text-sm font-black text-slate-900 cursor-pointer select-none">أوافق على الشروط والأحكام العامة للمنصة وسياسة الخصوصية.</label>
                         </div>
                         {errors.agreedToTerms && <p className="text-[10px] font-bold text-rose-500 pr-10">{errors.agreedToTerms}</p>}
+
+                        <div className="flex items-center gap-4">
+                           <input 
+                              type="checkbox" 
+                              id="contract-agreement"
+                              name="agreedToContract"
+                              checked={formData.agreedToContract} 
+                              onChange={e => setFormData({...formData, agreedToContract: e.target.checked})}
+                              className={`w-6 h-6 accent-blue-600 cursor-pointer shadow-sm ${errors.agreedToContract ? 'ring-2 ring-rose-500' : ''}`}
+                           />
+                           <label htmlFor="contract-agreement" className="text-sm font-black text-slate-900 cursor-pointer select-none">أقر أنا الطرف الثاني بقبول كافة بنود عقد الاحتضان المذكور أعلاه والالتزام بها.</label>
+                        </div>
+                        {errors.agreedToContract && <p className="text-[10px] font-bold text-rose-500 pr-10">{errors.agreedToContract}</p>}
                      </div>
 
                      <div className="space-y-4">
@@ -345,7 +361,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                   <p className="text-xs font-black text-rose-500 mb-3 uppercase tracking-widest">يرجى تصحيح التنبيهات الموضحة في النموذج أعلاه</p>
                   <ul className="text-xs text-rose-400 space-y-1.5 list-disc list-inside font-bold">
                      <li>يرجى التأكد من تعبئة كافة الحقول المطلوبة بشكل صحيح.</li>
-                     <li>تأكد من مطابقة التوقيع الرقمي لاسمك المسجل.</li>
+                     <li>تأكد من مطابقة التوقيع الرقمي لاسمك المسجل والموافقة على كافة البنود.</li>
                   </ul>
                </div>
             )}
