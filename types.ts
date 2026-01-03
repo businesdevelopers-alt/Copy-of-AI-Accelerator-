@@ -17,54 +17,29 @@ export enum FiltrationStage {
   ROADMAP = 'ROADMAP',
   TOOLS = 'TOOLS',
   STAFF_PORTAL = 'STAFF_PORTAL',
-  ACHIEVEMENTS = 'ACHIEVEMENTS'
+  ACHIEVEMENTS = 'ACHIEVEMENTS',
+  MENTORSHIP = 'MENTORSHIP'
 }
 
-export interface NominationData {
-  companyName: string;
-  founderName: string;
-  phone: string;
-  email: string;
-  location: string;
-  websiteUrl?: string;
-  pitchDeckUrl?: string;
-  hasCommercialRegister: 'YES' | 'NO' | 'IN_PROGRESS';
-  hasTechnicalPartner: boolean;
-  isCommitted10Hours: boolean;
-  problemStatement: string;
-  targetCustomerType: string[];
-  currentAlternatives: string;
-  marketSize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'UNKNOWN';
-  whyNow: string;
-  productStage: 'IDEA' | 'PROTOTYPE' | 'MVP' | 'TRACTION';
-  demoUrl?: string;
-  topFeatures: string;
-  executionPlan: 'NONE' | 'GENERAL' | 'WEEKLY';
-  currentResources: string[];
-  userCount: '0' | '1-10' | '11-50' | '50+';
-  tractionEvidence: string[];
-  revenueModel: 'SUBSCRIPTION' | 'COMMISSION' | 'ANNUAL' | 'PAY_PER_USE' | 'NOT_SET';
-  expectedPrice: string;
-  customerAcquisitionPath: string;
-  incubationReason: string;
-  weeklyHours: 'LESS_5' | '5-10' | '10-20' | '20+';
-  agreesToWeeklySession: boolean;
-  agreesToKPIs: boolean;
-  potentialObstacles: string;
+export interface MentorProfile {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  specialty: 'Tech' | 'Finance' | 'Growth' | 'Legal' | 'Strategy';
+  bio: string;
+  experience: number;
+  avatar: string;
+  rating: number;
+  tags: string[];
 }
 
-export interface NominationAIResponse {
-  aiScore: number;
-  redFlags: string[];
-  aiAnalysis: string;
-  categorySuggestion: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
-}
-
-export interface NominationResult {
-  totalScore: number;
-  category: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
-  redFlags: string[];
-  aiAnalysis: string;
+export interface MentorshipRequest {
+  mentorId: string;
+  userId: string;
+  topic: string;
+  description: string;
+  preferredTime: string;
 }
 
 export interface UserRecord {
@@ -98,9 +73,9 @@ export interface UserProfile {
   technologies?: string;
   name?: string; 
   hasCompletedAssessment?: boolean;
-  agreedToTerms?: boolean; // جديد
-  signedContractName?: string; // جديد
-  contractSignedAt?: string; // جديد
+  agreedToTerms?: boolean;
+  signedContractName?: string;
+  contractSignedAt?: string;
 }
 
 export interface LevelData {
@@ -150,7 +125,6 @@ export interface FinalResult {
   recommendation: string;
 }
 
-// Added types for missing exports
 export type ProjectStageType = 'Idea' | 'Prototype' | 'Product';
 export type TechLevelType = 'Low' | 'Medium' | 'High';
 
@@ -262,6 +236,49 @@ export interface ActivityLogRecord {
   actionType: 'LOGIN' | 'TEST_SUBMIT' | 'LOGOUT';
   metadata: string;
   timestamp: string;
+}
+
+/* Fix: Added missing interfaces requested by geminiService.ts and NominationTest.tsx */
+export interface NominationData {
+  companyName: string;
+  founderName: string;
+  location: string;
+  problemStatement: string;
+  whyNow: string;
+  executionPlan: 'NONE' | 'GENERAL' | 'WEEKLY';
+  potentialObstacles: string;
+  pitchDeckUrl?: string;
+  hasCommercialRegister: 'YES' | 'NO' | 'IN_PROGRESS';
+  hasTechnicalPartner: boolean;
+  isCommitted10Hours: boolean;
+  marketSize: 'SMALL' | 'MEDIUM' | 'LARGE' | 'UNKNOWN';
+  productStage: 'IDEA' | 'PROTOTYPE' | 'MVP' | 'TRACTION';
+  userCount: string;
+  revenueModel: string;
+  weeklyHours: string;
+  agreesToWeeklySession: boolean;
+  agreesToKPIs: boolean;
+  incubationReason: string;
+  targetCustomerType: string[];
+  currentResources: string[];
+  tractionEvidence: string[];
+  demoUrl?: string;
+  topFeatures?: string;
+  customerAcquisitionPath: string;
+}
+
+export interface NominationAIResponse {
+  aiScore: number;
+  redFlags: string[];
+  aiAnalysis: string;
+  categorySuggestion: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
+}
+
+export interface NominationResult {
+  totalScore: number;
+  category: 'DIRECT_ADMISSION' | 'INTERVIEW' | 'PRE_INCUBATION' | 'REJECTION';
+  redFlags: string[];
+  aiAnalysis: string;
 }
 
 export const SECTORS = [

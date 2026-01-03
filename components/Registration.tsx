@@ -29,22 +29,44 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showFullContract, setShowFullContract] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Saudi Mobile: 05 followed by 8 digits or 5 followed by 8 digits
     const phoneRegex = /^(05|5)\d{8}$/;
 
     if (!formData.firstName.trim()) newErrors.firstName = 'الاسم الأول مطلوب';
-    if (!formData.lastName.trim()) newErrors.lastName = 'اللقب مطلوب';
-    if (!formData.email.trim() || !emailRegex.test(formData.email)) newErrors.email = 'بريد إلكتروني غير صحيح';
-    if (!formData.phone.trim() || !phoneRegex.test(formData.phone.replace(/\s/g, ''))) newErrors.phone = 'رقم جوال غير صحيح';
+    if (!formData.lastName.trim()) newErrors.lastName = 'اللقب (العائلة) مطلوب';
     if (!formData.startupName.trim()) newErrors.startupName = 'اسم المشروع مطلوب';
+    if (!formData.email.trim()) {
+      newErrors.email = 'البريد الإلكتروني مطلوب';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'تنسيق البريد الإلكتروني غير صحيح';
+    }
     
-    if (!formData.agreedToTerms) newErrors.agreedToTerms = 'يجب الموافقة على بنود عقد الاحتضان';
-    if (!formData.signedContractName || formData.signedContractName.trim() !== `${formData.firstName.trim()} ${formData.lastName.trim()}`) {
-      newErrors.signedContractName = 'يجب كتابة اسمك الكامل (الأول واللقب) بدقة للتوقيع الرقمي';
+    const cleanPhone = formData.phone.replace(/\s/g, '');
+    if (!cleanPhone) {
+      newErrors.phone = 'رقم الجوال مطلوب';
+    } else if (!phoneRegex.test(cleanPhone)) {
+      newErrors.phone = 'رقم الجوال يجب أن يكون سعودياً صحيحاً (مثال: 05xxxxxxxx)';
+    }
+
+    if (!formData.startupDescription.trim()) {
+      newErrors.startupDescription = 'وصف الفكرة مطلوب لتقييم المشروع';
+    } else if (formData.startupDescription.length < 20) {
+      newErrors.startupDescription = 'الوصف قصير جداً، يرجى تقديم تفاصيل أكثر (20 حرفاً على الأقل)';
+    }
+    
+    if (!formData.agreedToTerms) {
+      newErrors.agreedToTerms = 'يجب الموافقة على بنود عقد الاحتضان للمتابعة';
+    }
+
+    const expectedName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+    if (!formData.signedContractName.trim()) {
+      newErrors.signedContractName = 'التوقيع الرقمي مطلوب';
+    } else if (formData.signedContractName.trim() !== expectedName) {
+      newErrors.signedContractName = `التوقيع يجب أن يطابق الاسم المدخل: (${expectedName})`;
     }
 
     setErrors(newErrors);
@@ -53,9 +75,19 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
 
   const handleAnalyzeIdea = async () => {
     if (!formData.startupDescription || formData.startupDescription.length < 20) {
-      setErrors(prev => ({ ...prev, startupDescription: 'الوصف قصير جداً للتحليل' }));
+      setErrors(prev => ({ 
+        ...prev, 
+        startupDescription: 'يرجى كتابة وصف مفصل للفكرة (20 حرفاً على الأقل) قبل التحليل' 
+      }));
+      playErrorSound();
       return;
     }
+    
+    setErrors(prev => {
+      const { startupDescription, ...rest } = prev;
+      return rest;
+    });
+
     setIsAnalyzing(true);
     try {
       const tempProfile: ApplicantProfile = {
@@ -83,6 +115,10 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
       });
     } else {
       playErrorSound();
+      // Scroll to the first error
+      const firstErrorKey = Object.keys(errors)[0];
+      const element = document.getElementsByName(firstErrorKey)[0];
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -94,6 +130,12 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
         .contract-scroll::-webkit-scrollbar { width: 6px; }
         .contract-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
         .contract-scroll { scroll-behavior: smooth; }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
       `}</style>
 
       {/* Side Brand Panel */}
@@ -109,23 +151,13 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
             <span className="text-2xl font-black uppercase tracking-tighter">AI Accelerator</span>
           </div>
           <h1 className="text-5xl font-black leading-tight mb-6">مرحلة <br/><span className="text-blue-500">التعاقد الذكي.</span></h1>
-          <p className="text-lg text-slate-400 max-w-xs">نحن لا نبني مشاريع فقط، نحن نبني التزامات قانونية تضمن نجاحك واستدامة فكرتك.</p>
+          <p className="text-lg text-slate-400 max-w-xs">نضمن لك بيئة قانونية واضحة من اليوم الأول لنركز معاً على بناء المنتج ونمو الشركة.</p>
         </div>
         
         <div className="relative z-10 space-y-6">
            <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl backdrop-blur-md">
               <h4 className="text-blue-400 font-black text-xs uppercase tracking-widest mb-2">النظام القضائي</h4>
               <p className="text-[11px] text-slate-300 leading-relaxed">تخضع هذه الاتفاقية لأنظمة وقوانين المملكة العربية السعودية وتعتبر ملزمة للطرفين فور التوقيع الرقمي.</p>
-           </div>
-           <div className="flex gap-4">
-              <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10 text-center">
-                 <p className="text-xl font-black text-white">100%</p>
-                 <p className="text-[8px] text-slate-500 uppercase font-bold">حماية الملكية</p>
-              </div>
-              <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10 text-center">
-                 <p className="text-xl font-black text-white">رقمي</p>
-                 <p className="text-[8px] text-slate-500 uppercase font-bold">توقيع معتمد</p>
-              </div>
            </div>
         </div>
       </div>
@@ -148,23 +180,68 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest">الاسم الأول</label>
-                  <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-blue-500" value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value})} />
+                  <input 
+                    name="firstName"
+                    className={`w-full p-4 bg-white/5 border rounded-2xl outline-none transition-all ${errors.firstName ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    value={formData.firstName} 
+                    onChange={e => setFormData({...formData, firstName: e.target.value})} 
+                  />
+                  {errors.firstName && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest">اللقب (العائلة)</label>
-                  <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-blue-500" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} />
+                  <input 
+                    name="lastName"
+                    className={`w-full p-4 bg-white/5 border rounded-2xl outline-none transition-all ${errors.lastName ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    value={formData.lastName} 
+                    onChange={e => setFormData({...formData, lastName: e.target.value})} 
+                  />
+                  {errors.lastName && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.lastName}</p>}
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest">اسم المشروع / الشركة الناشئة</label>
-                  <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-blue-500" value={formData.startupName} onChange={e => setFormData({...formData, startupName: e.target.value})} />
+                  <input 
+                    name="startupName"
+                    className={`w-full p-4 bg-white/5 border rounded-2xl outline-none transition-all ${errors.startupName ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    value={formData.startupName} 
+                    onChange={e => setFormData({...formData, startupName: e.target.value})} 
+                  />
+                  {errors.startupName && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.startupName}</p>}
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">وصف الفكرة</label>
+                  <textarea 
+                    name="startupDescription"
+                    className={`w-full h-32 p-4 bg-white/5 border rounded-2xl outline-none transition-all resize-none ${errors.startupDescription ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    value={formData.startupDescription} 
+                    onChange={e => setFormData({...formData, startupDescription: e.target.value})} 
+                  />
+                  {errors.startupDescription && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.startupDescription}</p>}
+                  <button type="button" onClick={handleAnalyzeIdea} disabled={isAnalyzing} className="text-[10px] font-black text-blue-500 hover:text-blue-400 uppercase tracking-widest mt-1">
+                     {isAnalyzing ? 'جاري التحليل...' : '✨ تحليل ذكي مبدئي للفكرة (اختياري)'}
+                  </button>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">الايميل الرسمي</label>
-                  <input type="email" className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-blue-500" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">البريد الإلكتروني الرسمي</label>
+                  <input 
+                    name="email"
+                    type="email" 
+                    className={`w-full p-4 bg-white/5 border rounded-2xl outline-none transition-all ${errors.email ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})} 
+                  />
+                  {errors.email && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">الجوال (السعودية)</label>
-                  <input className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-blue-500" placeholder="05xxxxxxxx" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest">رقم الجوال (السعودية)</label>
+                  <input 
+                    name="phone"
+                    className={`w-full p-4 bg-white/5 border rounded-2xl outline-none transition-all ${errors.phone ? 'border-rose-500 bg-rose-500/5 animate-shake' : 'border-white/10 focus:border-blue-500'}`}
+                    placeholder="05xxxxxxxx" 
+                    value={formData.phone} 
+                    onChange={e => setFormData({...formData, phone: e.target.value})} 
+                  />
+                  {errors.phone && <p className="text-[10px] font-bold text-rose-500 px-1">{errors.phone}</p>}
                 </div>
               </div>
             </div>
@@ -176,7 +253,7 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                   عقد الاحتضان والتسريع الافتراضي
                </h3>
                
-               <div className="bg-white text-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden border border-slate-200">
+               <div className={`bg-white text-slate-900 rounded-[2.5rem] shadow-2xl relative overflow-hidden border transition-all ${errors.agreedToTerms || errors.signedContractName ? 'border-rose-500' : 'border-slate-200'}`}>
                   <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center">
                      <span className="font-black text-slate-400 text-xs uppercase tracking-widest">Official Legal Document</span>
                      <span className="font-bold text-blue-600 text-xs">تاريخ العقد: {today}</span>
@@ -207,47 +284,41 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
 
                      <div className="space-y-6">
                         <p><strong>المادة الأولى: التمهيد</strong><br/>يُعد التمهيد أعلاه جزءًا لا يتجزأ من هذا العقد ومكملًا ومفسرًا له.</p>
-                        
                         <p><strong>المادة الثانية: موضوع العقد</strong><br/>يهدف هذا العقد إلى احتضان المشروع المملوك للطرف الثاني ضمن برنامج احتضان افتراضي تقدمه الحاضنة، وتمكين المحتضَن من تطوير فكرته أو مشروعه الناشئ مهنيًا، تقنيًا، وتشغيليًا.</p>
-
                         <p><strong>المادة الثالثة: مدة برنامج الاحتضان</strong><br/>مدة برنامج الاحتضان هي (3) أشهر تبدأ من تاريخ توقيع هذا العقد. ويلتزم المحتضَن بالاستمرار في البرنامج حتى نهايته.</p>
-
                         <p><strong>المادة الرابعة: التزامات المحتضَن</strong><br/>الالتزام الكامل بحضور وتنفيذ جميع متطلبات برنامج الاحتضان، وتزويد الحاضنة بجميع المعلومات والبيانات اللازمة، وعدم التعاقد مع جهة منافسة خلال مدة الاحتضان.</p>
-
                         <p><strong>المادة الخامسة: التزامات الحاضنة</strong><br/>تقديم الإرشاد، الدعم الفني، الاستشارات، والمتابعة وفق البرنامج المعتمد، وتوفير بيئة احتضان افتراضية مناسبة.</p>
-
                         <p><strong>المادة السادسة: مرحلة التسريع (اختيارية)</strong><br/>بعد إتمام الاحتضان بنجاح، يحق للمحتضَن طلب الانضمام لبرنامج التسريع. وفي حال الموافقة، يحق للحاضنة تمويل تطوير المنتج التقني مقابل نسبة 15% من ملكية الشركة أو قيمة مالية يتفق عليها لاحقاً.</p>
-
                         <p><strong>المادة السابعة: الملكية الفكرية</strong><br/>تعود ملكية الفكرة الأساسية للمشروع للمحتضَن. ولا يحق للمحتضَن استخدام أي أدوات أو منهجيات خاصة بالحاضنة خارج إطار التعاون.</p>
-
                         <p><strong>المادة الثامنة: السرية</strong><br/>يلتزم الطرفان بالمحافظة على سرية جميع المعلومات والبيانات وعدم إفشائها لأي طرف ثالث.</p>
-
                         <p><strong>المادة التاسعة: إنهاء العقد</strong><br/>يحق للحاضنة إنهاء العقد في حال إخلال المحتضَن بالتزاماته دون أي التزام مالي أو تعويض.</p>
-
                         <p><strong>المادة العاشرة: أحكام عامة</strong><br/>يخضع هذا العقد لأنظمة وقوانين المملكة العربية السعودية. أي نزاع يتم حله وديًا، وفي حال تعذّر ذلك يكون الاختصاص للمحاكم المختصة.</p>
-
-                        <p><strong>المادة الحادية عشرة: نسخ العقد</strong><br/>حرر هذا العقد رقمياً وتعتبر النسخة المخزنة في قاعدة بيانات المسرعة حجة على الطرفين.</p>
                      </div>
                   </div>
 
                   <div className="p-8 md:p-12 border-t border-slate-100 bg-slate-50/50">
-                     <div className="flex items-center gap-4 mb-8">
-                        <input 
-                           type="checkbox" 
-                           id="terms"
-                           checked={formData.agreedToTerms} 
-                           onChange={e => setFormData({...formData, agreedToTerms: e.target.checked})}
-                           className="w-6 h-6 accent-blue-600 cursor-pointer shadow-sm"
-                        />
-                        <label htmlFor="terms" className="text-sm font-black text-slate-900 cursor-pointer select-none">أقر أنا الطرف الثاني بقبول كافة بنود العقد أعلاه والالتزام بها.</label>
+                     <div className="flex flex-col gap-2 mb-8">
+                        <div className="flex items-center gap-4">
+                           <input 
+                              type="checkbox" 
+                              id="terms"
+                              name="agreedToTerms"
+                              checked={formData.agreedToTerms} 
+                              onChange={e => setFormData({...formData, agreedToTerms: e.target.checked})}
+                              className={`w-6 h-6 accent-blue-600 cursor-pointer shadow-sm ${errors.agreedToTerms ? 'ring-2 ring-rose-500' : ''}`}
+                           />
+                           <label htmlFor="terms" className="text-sm font-black text-slate-900 cursor-pointer select-none">أقر أنا الطرف الثاني بقبول كافة بنود العقد أعلاه والالتزام بها.</label>
+                        </div>
+                        {errors.agreedToTerms && <p className="text-[10px] font-bold text-rose-500 pr-10">{errors.agreedToTerms}</p>}
                      </div>
 
                      <div className="space-y-4">
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pr-1">التوقيع الرقمي (اكتب اسمك الكامل للمطابقة)</label>
                         <div className="relative group">
                            <input 
+                              name="signedContractName"
                               className={`w-full p-6 bg-white border-2 rounded-[1.5rem] outline-none text-2xl font-serif italic text-blue-900 placeholder-slate-200 transition-all shadow-inner
-                                 ${errors.signedContractName ? 'border-rose-500 bg-rose-50' : 'border-slate-200 focus:border-blue-500'}
+                                 ${errors.signedContractName ? 'border-rose-500 bg-rose-50 animate-shake' : 'border-slate-200 focus:border-blue-500'}
                               `}
                               placeholder="الاسم الأول + اللقب"
                               value={formData.signedContractName}
@@ -256,23 +327,25 @@ export const Registration: React.FC<RegistrationProps> = ({ onRegister, onStaffL
                            {formData.signedContractName && formData.signedContractName.trim() === `${formData.firstName.trim()} ${formData.lastName.trim()}` && formData.firstName !== '' ? (
                               <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-xl animate-fade-in">
                                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg>
-                                 <span className="text-xs font-black uppercase tracking-widest">Verified Signature</span>
+                                 <span className="text-xs font-black uppercase tracking-widest">Verified</span>
                               </div>
                            ) : formData.signedContractName && (
-                              <p className="text-[10px] font-bold text-rose-500 mt-2 pr-2">الاسم لا يطابق البيانات المدخلة في الأعلى (يجب أن يكون: {formData.firstName} {formData.lastName})</p>
+                              <p className="text-[10px] font-bold text-rose-500 mt-2 pr-2">{errors.signedContractName || 'الاسم لا يطابق البيانات المدخلة أعلاه'}</p>
                            )}
+                           {errors.signedContractName && !formData.signedContractName && <p className="text-[10px] font-bold text-rose-500 mt-2 pr-2">{errors.signedContractName}</p>}
                         </div>
                      </div>
                   </div>
                </div>
             </div>
 
-            {/* Error Feedback */}
+            {/* General Error Feedback Box */}
             {Object.keys(errors).length > 0 && (
                <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl animate-shake">
-                  <p className="text-xs font-black text-rose-500 mb-3 uppercase tracking-widest">يرجى تصحيح التنبيهات التالية:</p>
+                  <p className="text-xs font-black text-rose-500 mb-3 uppercase tracking-widest">يرجى تصحيح التنبيهات الموضحة في النموذج أعلاه</p>
                   <ul className="text-xs text-rose-400 space-y-1.5 list-disc list-inside font-bold">
-                     {Object.values(errors).map((err, i) => <li key={i}>{err}</li>)}
+                     <li>يرجى التأكد من تعبئة كافة الحقول المطلوبة بشكل صحيح.</li>
+                     <li>تأكد من مطابقة التوقيع الرقمي لاسمك المسجل.</li>
                   </ul>
                </div>
             )}

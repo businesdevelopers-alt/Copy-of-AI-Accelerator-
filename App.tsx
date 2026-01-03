@@ -18,7 +18,8 @@ import { AdminDashboard } from './components/Filtration/AdminDashboard';
 import { ToolsPage } from './components/ToolsPage';
 import { LegalPortal, LegalType } from './components/LegalPortal';
 import { StaffPortal } from './components/StaffPortal';
-import { AchievementsPage } from './components/AchievementsPage'; // استيراد الصفحة الجديدة
+import { AchievementsPage } from './components/AchievementsPage';
+import { MentorshipPage } from './components/MentorshipPage';
 
 function App() {
   const [stage, setStage] = useState<FiltrationStage>(FiltrationStage.LANDING);
@@ -55,7 +56,6 @@ function App() {
     }
   }, []);
 
-  // AI-Powered Icon Suggestion Logic
   useEffect(() => {
     if (stage === FiltrationStage.DASHBOARD && userProfile?.hasCompletedAssessment) {
       const savedIcons = localStorage.getItem('dashboard_level_icons');
@@ -79,7 +79,8 @@ function App() {
   const handleShowTools = () => setStage(FiltrationStage.TOOLS);
   const handleLoginNav = () => setStage(FiltrationStage.LOGIN);
   const handleStaffLogin = () => setStage(FiltrationStage.STAFF_PORTAL);
-  const handleShowAchievements = () => setStage(FiltrationStage.ACHIEVEMENTS); // دالة التنقل الجديدة
+  const handleShowAchievements = () => setStage(FiltrationStage.ACHIEVEMENTS);
+  const handleShowMentorship = () => setStage(FiltrationStage.MENTORSHIP);
 
   const handleLoginSuccess = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -156,7 +157,8 @@ function App() {
           onTools={handleShowTools} 
           onLegalClick={(type) => setActiveLegal(type)} 
           onLogin={handleLoginNav}
-          onAchievements={handleShowAchievements} // تمرير الدالة الجديدة
+          onAchievements={handleShowAchievements}
+          onMentorship={handleShowMentorship}
         />
       )}
 
@@ -166,7 +168,8 @@ function App() {
 
       {stage === FiltrationStage.ROADMAP && <RoadmapPage onStart={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.TOOLS && <ToolsPage onBack={() => setStage(FiltrationStage.LANDING)} />}
-      {stage === FiltrationStage.ACHIEVEMENTS && <AchievementsPage onBack={() => setStage(FiltrationStage.LANDING)} />} {/* المكون الجديد */}
+      {stage === FiltrationStage.ACHIEVEMENTS && <AchievementsPage onBack={() => setStage(FiltrationStage.LANDING)} />}
+      {stage === FiltrationStage.MENTORSHIP && <MentorshipPage user={userProfile || undefined} onBack={() => setStage(FiltrationStage.DASHBOARD)} />}
       {stage === FiltrationStage.PATH_FINDER && <PathFinder onApproved={handleStartFiltration} onBack={() => setStage(FiltrationStage.LANDING)} />}
       {stage === FiltrationStage.WELCOME && <Registration onRegister={handleRegister} onStaffLogin={handleStaffLogin} />}
 
@@ -203,7 +206,13 @@ function App() {
       )}
 
       {stage === FiltrationStage.LEVEL_VIEW && userProfile && activeLevelId && (
-        <LevelView level={levels.find(l => l.id === activeLevelId)!} user={userProfile} onComplete={() => handleLevelComplete(activeLevelId)} onBack={() => setStage(FiltrationStage.DASHBOARD)} />
+        <LevelView 
+          level={levels.find(l => l.id === activeLevelId)!} 
+          user={userProfile} 
+          onComplete={() => handleLevelComplete(activeLevelId)} 
+          onBack={() => setStage(FiltrationStage.DASHBOARD)}
+          onRequestMentorship={() => setStage(FiltrationStage.MENTORSHIP)}
+        />
       )}
 
       {stage === FiltrationStage.CERTIFICATE && userProfile && <Certificate user={userProfile} onClose={() => setStage(FiltrationStage.DASHBOARD)} />}

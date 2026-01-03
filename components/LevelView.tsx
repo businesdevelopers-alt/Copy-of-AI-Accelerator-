@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LevelData, UserProfile, Question } from '../types';
 import { generateLevelMaterial, generateLevelQuiz, evaluateExerciseResponse } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound, playErrorSound } from '../services/audioService';
+import { AreaChart, Area, ResponsiveContainer, YAxis, XAxis, Tooltip } from 'recharts';
 
 interface LevelTheme {
   id: string;
@@ -49,6 +50,7 @@ interface LevelViewProps {
   user: UserProfile;
   onComplete: () => void;
   onBack: () => void;
+  onRequestMentorship?: () => void; // مضافة لربط نظام الإرشاد
 }
 
 enum Step {
@@ -144,13 +146,9 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
 const AIEngineLoader: React.FC<{ theme: LevelTheme; progress?: number }> = ({ theme, progress = 0 }) => {
   return (
     <div className="relative w-64 h-64 flex items-center justify-center">
-      {/* Background Orbiting Rings */}
       <div className="absolute inset-0 border-[1px] border-slate-200 rounded-full animate-[spin_10s_linear_infinite] opacity-10"></div>
       <div className="absolute inset-4 border-[1px] border-slate-300 rounded-full animate-[spin_7s_linear_infinite_reverse] opacity-10"></div>
-
-      {/* Pulsing AI Aura */}
       <div className={`absolute w-32 h-32 rounded-full ${theme.primary} blur-[60px] opacity-20 animate-pulse`}></div>
-
       <svg viewBox="0 0 200 200" className="w-full h-full relative z-10">
         <defs>
           <filter id="glow-ai-loader">
@@ -162,36 +160,22 @@ const AIEngineLoader: React.FC<{ theme: LevelTheme; progress?: number }> = ({ th
             <stop offset="100%" stopColor="#8b5cf6" />
           </linearGradient>
         </defs>
-        
-        {/* Connection Web */}
         <g opacity="0.2" className={theme.accent}>
            <line x1="100" y1="40" x2="160" y2="100" stroke="currentColor" strokeWidth="1" />
            <line x1="160" y1="100" x2="100" y2="160" stroke="currentColor" strokeWidth="1" />
            <line x1="100" y1="160" x2="40" y2="100" stroke="currentColor" strokeWidth="1" />
            <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="1" />
         </g>
-
-        {/* Central Core */}
         <g filter="url(#glow-ai-loader)">
-           <path 
-             d="M100 75 L121.6 87.5 L121.6 112.5 L100 125 L78.4 112.5 L78.4 87.5 Z" 
-             fill="none" 
-             stroke="url(#loader-grad)" 
-             strokeWidth="4"
-             className="animate-pulse"
-           />
+           <path d="M100 75 L121.6 87.5 L121.6 112.5 L100 125 L78.4 112.5 L78.4 87.5 Z" fill="none" stroke="url(#loader-grad)" strokeWidth="4" className="animate-pulse" />
            <circle cx="100" cy="100" r="8" fill="url(#loader-grad)" className="animate-ping" />
            <circle cx="100" cy="100" r="6" fill="white" />
         </g>
-
-        {/* Scanning Sweep */}
         <g className="animate-[spin_4s_linear_infinite]">
            <circle cx="100" cy="40" r="4" fill="currentColor" className={theme.accent} />
            <line x1="100" y1="40" x2="100" y2="75" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" className={theme.accent} />
         </g>
       </svg>
-      
-      {/* Floating Data Bits */}
       {[...Array(12)].map((_, i) => (
         <div 
           key={i}
@@ -209,7 +193,7 @@ const AIEngineLoader: React.FC<{ theme: LevelTheme; progress?: number }> = ({ th
   );
 };
 
-export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, onBack }) => {
+export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, onBack, onRequestMentorship }) => {
   const [step, setStep] = useState<Step>(Step.LOADING_CONTENT);
   const [content, setContent] = useState<string>('');
   const [exercisePrompt, setExercisePrompt] = useState<string>('');
@@ -274,7 +258,6 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         const data = await generateLevelMaterial(level.id, level.title, user);
         setContent(data.content);
         setExercisePrompt(data.exercise);
-        // Sync transition with progress bar
         setTimeout(() => setStep(Step.LEARN), 4500);
       } catch (err) {
         console.error(err);
@@ -400,6 +383,16 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
     { id: 'quiz', label: 'التقييم النهائي للمستوى', isCompleted: step === Step.COMPLETED, isActive: step === Step.QUIZ },
   ];
 
+  const chartData = useMemo(() => {
+    return [
+      { name: 'بداية', value: 0 },
+      { name: 'تعلم', value: step >= Step.LEARN ? (step === Step.LEARN ? readingProgress : 100) : 0 },
+      { name: 'تطبيق', value: step >= Step.EXERCISE ? (step === Step.EXERCISE ? (exerciseFeedback ? 100 : 50) : 100) : 0 },
+      { name: 'تقييم', value: step >= Step.QUIZ ? (step === Step.QUIZ ? (quizAnswers.filter(a => a !== -1).length / quizQuestions.length) * 100 : 100) : 0 },
+      { name: 'نهاية', value: step === Step.COMPLETED ? 100 : 0 }
+    ];
+  }, [step, readingProgress, exerciseFeedback, quizAnswers, quizQuestions]);
+
   return (
     <div className={`min-h-screen ${activeTheme.bg} flex flex-col font-sans transition-colors duration-500`}>
       <style>{`
@@ -407,9 +400,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
           0% { transform: translateX(100%); }
           100% { transform: translateX(-100%); }
         }
-        .animate-progress-shimmer {
-          animation: progress-shimmer 2s infinite linear;
-        }
+        .animate-progress-shimmer { animation: progress-shimmer 2s infinite linear; }
         @keyframes data-fly {
           0% { transform: translate(0, 0); opacity: 0; }
           20% { opacity: 1; }
@@ -421,9 +412,8 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
           50% { opacity: 1; }
           100% { transform: translateY(150px); opacity: 0; }
         }
-        .animate-scanning {
-          animation: scanning 3s linear infinite;
-        }
+        .animate-scanning { animation: scanning 3s linear infinite; }
+        .hide-axis .recharts-cartesian-axis { display: none; }
       `}</style>
 
       {/* Sticky Global Header */}
@@ -489,7 +479,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
               <div className="relative" ref={profileRef}>
                 <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black shadow-md transform hover:scale-105 transition-transform active:scale-95">
-                   {user.name.charAt(0)}
+                   {user.name?.charAt(0) || 'U'}
                 </button>
                 {isProfileOpen && (
                   <div className="absolute left-0 mt-3 w-64 rounded-[2rem] shadow-2xl bg-white border border-slate-100 p-2 animate-fade-in-up origin-top-left z-50">
@@ -510,26 +500,19 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
       </header>
 
       <div className="flex-1 max-w-5xl mx-auto w-full p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        
         {/* Main Content Column */}
         <div className="flex-1">
           {step === Step.LOADING_CONTENT && (
             <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4 animate-fade-in">
               <div className="relative mb-16">
-                 {/* Scanning Effect Over the Illustration */}
                  <div className="absolute inset-0 z-20 overflow-hidden rounded-[3rem]">
                     <div className="w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_rgba(59,130,246,0.8)] animate-scanning"></div>
                  </div>
-                 
-                 {/* Ghost/Wireframe of the Illustration */}
                  <div className="absolute inset-0 z-10 flex items-center justify-center scale-150">
                     <LevelIllustration levelId={level.id} theme={activeTheme} wireframe={true} />
                  </div>
-
-                 {/* The AI Hub in the Center */}
                  <AIEngineLoader theme={activeTheme} progress={loadingProgress} />
               </div>
-
               <div className="space-y-6 max-w-md mx-auto">
                 <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-slate-100 px-6 py-2 rounded-2xl shadow-xl">
                    <div className="flex gap-1">
@@ -539,19 +522,13 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                    </div>
                    <span className="text-xs font-black text-slate-800 uppercase tracking-widest">توليد المحتوى للمستوى {level.id}</span>
                 </div>
-
                 <div className="h-10">
                    <h3 className="text-2xl font-black text-slate-900 tracking-tight animate-fade-in" key={loadingMessageIdx}>
                      {loadingMessages[loadingMessageIdx]}
                    </h3>
                 </div>
-
-                {/* Intelligent Progress Ring Visualization */}
                 <div className="relative w-full h-2 bg-slate-200/50 rounded-full overflow-hidden border border-slate-100">
-                   <div 
-                    className={`${activeTheme.primary} h-full transition-all duration-300 relative shadow-[0_0_15px_rgba(59,130,246,0.3)]`} 
-                    style={{ width: `${loadingProgress}%` }}
-                   >
+                   <div className={`${activeTheme.primary} h-full transition-all duration-300 relative shadow-[0_0_15px_rgba(59,130,246,0.3)]`} style={{ width: `${loadingProgress}%` }}>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-progress-shimmer"></div>
                    </div>
                 </div>
@@ -574,7 +551,6 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                     <p className="text-white/70 font-bold mt-2">المسار التدريبي للمستوى {level.id}</p>
                  </div>
               </div>
-
               <div className={`bg-slate-50/50 px-8 py-6 border-b ${activeTheme.border}/50 flex flex-col md:flex-row md:items-center gap-4`}>
                  <div className="flex items-center gap-4">
                    <div className={`w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center ${activeTheme.accent} font-black border ${activeTheme.border}`}>
@@ -588,10 +564,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                  <div className={`md:mr-auto flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border ${activeTheme.border} shadow-sm`}>
                    <span className={`text-[10px] font-black ${activeTheme.text} uppercase`}>قراءة: {Math.round(readingProgress)}%</span>
                    <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden relative">
-                      <div 
-                        className={`${activeTheme.primary} h-full transition-all duration-300 relative`} 
-                        style={{ width: `${readingProgress}%` }}
-                      >
+                      <div className={`${activeTheme.primary} h-full transition-all duration-300 relative`} style={{ width: `${readingProgress}%` }}>
                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-progress-shimmer"></div>
                       </div>
                    </div>
@@ -642,18 +615,40 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                   />
                 </div>
                 {exerciseFeedback && (
-                  <div className={`mb-8 p-8 rounded-[2rem] border-2 animate-fade-in ${exerciseFeedback.includes("مقبولة") ? 'bg-green-50 border-green-200 text-green-800' : `${activeTheme.secondary} ${activeTheme.border} ${activeTheme.text}`}`}>
-                    <h4 className="font-black mb-2 flex items-center gap-2">🤖 مراجعة المستشار الذكي:</h4>
-                    <p className="font-medium leading-relaxed">{exerciseFeedback}</p>
+                  <div className="space-y-6">
+                    <div className={`p-8 rounded-[2rem] border-2 animate-fade-in ${exerciseFeedback.includes("مقبولة") ? 'bg-green-50 border-green-200 text-green-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+                      <h4 className="font-black mb-2 flex items-center gap-2">
+                        {exerciseFeedback.includes("مقبولة") ? '🤖 مراجعة المستشار الذكي:' : '⚠️ ملاحظات التحسين:'}
+                      </h4>
+                      <p className="font-medium leading-relaxed">{exerciseFeedback}</p>
+                    </div>
+
+                    {!exerciseFeedback.includes("مقبولة") && (
+                      <div className="bg-blue-600 text-white p-8 rounded-[2.5rem] shadow-xl animate-fade-in-up flex flex-col md:flex-row items-center gap-6">
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl shrink-0">🤝</div>
+                        <div className="flex-1 text-center md:text-right">
+                          <h4 className="text-xl font-black mb-1">هل تواجه صعوبة في هذا التمرين؟</h4>
+                          <p className="text-blue-100 text-sm font-medium">يمكنك طلب جلسة إرشادية فورية مع أحد خبرائنا لمساعدتك في صياغة هذا الجزء من مشروعك.</p>
+                        </div>
+                        <button 
+                          onClick={onRequestMentorship}
+                          className="px-8 py-4 bg-white text-blue-600 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-lg active:scale-95 shrink-0"
+                        >
+                          طلب إرشاد بشري
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-8">
                   {!exerciseFeedback ? (
                     <button onClick={handleExerciseSubmit} disabled={isExerciseSubmitting || !exerciseAnswer.trim()} className="bg-slate-900 hover:bg-black text-white px-10 py-4 rounded-[1.5rem] font-black transition-all shadow-xl active:scale-95 disabled:opacity-50">
                       {isExerciseSubmitting ? 'جاري التحليل...' : 'إرسال للمراجعة'}
                     </button>
-                  ) : (
+                  ) : exerciseFeedback.includes("مقبولة") ? (
                     <button onClick={() => { playPositiveSound(); startQuiz(); window.scrollTo(0,0); }} className="bg-green-600 hover:bg-green-700 text-white px-10 py-4 rounded-[1.5rem] font-black shadow-xl animate-pulse">الانتقال للاختبار</button>
+                  ) : (
+                    <button onClick={() => { setExerciseFeedback(''); setExerciseAnswer(''); }} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-10 py-4 rounded-[1.5rem] font-black transition-all">إعادة المحاولة</button>
                   )}
                 </div>
               </div>
@@ -700,6 +695,23 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                      </div>
                    </div>
                  ))}
+                 
+                 {quizScore !== null && quizScore < (quizQuestions.length * 0.6) && (
+                    <div className="mt-8 bg-orange-50 border-2 border-orange-100 p-8 rounded-[2.5rem] animate-fade-in flex flex-col md:flex-row items-center gap-6">
+                      <div className="text-4xl">💡</div>
+                      <div className="flex-1 text-center md:text-right">
+                        <h4 className="text-lg font-black text-orange-800 mb-1">لم تتجاوز عتبة النجاح (60%)</h4>
+                        <p className="text-orange-700 text-sm font-medium leading-relaxed">تحتاج لمراجعة المادة العلمية مرة أخرى، أو يمكنك طلب المساعدة من مرشدينا لتوضيح المفاهيم الصعبة عليك.</p>
+                      </div>
+                      <button 
+                        onClick={onRequestMentorship}
+                        className="px-8 py-4 bg-orange-600 text-white rounded-2xl font-black text-sm hover:bg-orange-700 shadow-lg transition-all active:scale-95"
+                      >
+                        طلب جلسة إرشادية
+                      </button>
+                    </div>
+                 )}
+
                  <div className="pt-10 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-100">
                     {quizScore !== null ? (
                       <div className="text-2xl font-black text-slate-900">النتيجة النهائية: <span className={quizScore >= (quizQuestions.length * 0.6) ? 'text-green-600' : 'text-rose-600'}>{quizScore} / {quizQuestions.length}</span></div>
@@ -708,8 +720,10 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                     )}
                     {quizScore === null ? (
                       <button onClick={handleQuizSubmit} disabled={quizAnswers.includes(-1)} className={`${activeTheme.primary} hover:opacity-90 disabled:opacity-50 text-white px-12 py-4 rounded-[1.5rem] font-black shadow-xl transition-all`}>تسليم الإجابات</button>
-                    ) : quizScore >= (quizQuestions.length * 0.6) && (
+                    ) : quizScore >= (quizQuestions.length * 0.6) ? (
                       <div className={`flex items-center ${activeTheme.text} font-black animate-pulse`}>جاري الانتقال لصفحة النجاح...</div>
+                    ) : (
+                      <button onClick={() => { setQuizScore(null); setQuizAnswers(new Array(quizQuestions.length).fill(-1)); window.scrollTo(0,0); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black transition-all">إعادة المحاولة</button>
                     )}
                  </div>
                </div>
@@ -733,27 +747,68 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
           )}
         </div>
 
-        {/* Sidebar Checklist */}
+        {/* Sidebar Checklist & Chart */}
         <aside className="hidden xl:block w-72 shrink-0 space-y-6">
-          <div className="sticky top-28 bg-white/50 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/50 shadow-sm overflow-hidden relative">
-             <h4 className="text-sm font-black text-slate-900 mb-6 flex items-center gap-2">
-                <span className="w-2 h-4 bg-blue-600 rounded-full"></span>
-                قائمة مهام المستوى
-             </h4>
-             <div className="space-y-6">
-                {tasks.map((task, idx) => (
-                  <div key={idx} className={`flex gap-4 items-start transition-opacity duration-300 ${task.isActive ? 'opacity-100' : 'opacity-50'}`}>
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border-2 transition-all ${task.isCompleted ? 'bg-green-500 border-green-500 text-white' : task.isActive ? `border-${activeTheme.id}-500 ${activeTheme.accent}` : 'border-slate-200 text-slate-300'}`}>
-                      {task.isCompleted ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                      ) : (
-                        <span className="text-[10px] font-black">{idx + 1}</span>
-                      )}
+          <div className="sticky top-28 space-y-6">
+            <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-white shadow-sm overflow-hidden relative">
+               <h4 className="text-xs font-black text-slate-900 mb-6 flex items-center gap-2">
+                  <span className="w-2 h-4 bg-blue-600 rounded-full"></span>
+                  منحنى الإنجاز (Mastery)
+               </h4>
+               <div className="h-32 w-full mb-6">
+                 <ResponsiveContainer width="100%" height="100%">
+                   <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                     <defs>
+                       <linearGradient id="curveColor" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor={activeTheme.primary.includes('blue') ? '#3b82f6' : activeTheme.primary.includes('emerald') ? '#10b981' : activeTheme.primary.includes('indigo') ? '#6366f1' : '#f43f5e'} stopOpacity={0.3}/>
+                         <stop offset="95%" stopColor={activeTheme.primary.includes('blue') ? '#3b82f6' : activeTheme.primary.includes('emerald') ? '#10b981' : activeTheme.primary.includes('indigo') ? '#6366f1' : '#f43f5e'} stopOpacity={0}/>
+                       </linearGradient>
+                     </defs>
+                     <Tooltip content={({ active, payload }) => {
+                       if (active && payload && payload.length) {
+                         return (
+                           <div className="bg-white border border-slate-100 p-2 rounded-xl shadow-xl text-[10px] font-black">
+                             {payload[0].payload.name}: {Math.round(payload[0].value as number)}%
+                           </div>
+                         );
+                       }
+                       return null;
+                     }} />
+                     <Area 
+                       type="monotone" 
+                       dataKey="value" 
+                       stroke={activeTheme.primary.includes('blue') ? '#3b82f6' : activeTheme.primary.includes('emerald') ? '#10b981' : activeTheme.primary.includes('indigo') ? '#6366f1' : '#f43f5e'} 
+                       strokeWidth={2} 
+                       fillOpacity={1} 
+                       fill="url(#curveColor)" 
+                       animationDuration={1500}
+                     />
+                   </AreaChart>
+                 </ResponsiveContainer>
+               </div>
+               <div className="h-px bg-slate-100 mb-6"></div>
+               <h4 className="text-[10px] font-black text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
+                  قائمة مهام المستوى
+               </h4>
+               <div className="space-y-6">
+                  {tasks.map((task, idx) => (
+                    <div key={idx} className={`flex gap-4 items-start transition-opacity duration-300 ${task.isActive ? 'opacity-100' : 'opacity-50'}`}>
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border-2 transition-all ${task.isCompleted ? 'bg-green-500 border-green-500 text-white' : task.isActive ? `${activeTheme.border.replace('100', '500')} ${activeTheme.accent}` : 'border-slate-200 text-slate-300'}`}>
+                        {task.isCompleted ? (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        ) : (
+                          <span className="text-[10px] font-black">{idx + 1}</span>
+                        )}
+                      </div>
+                      <p className={`text-[11px] font-bold leading-tight ${task.isActive ? 'text-slate-900' : 'text-slate-500'}`}>{task.label}</p>
                     </div>
-                    <p className={`text-[11px] font-bold leading-tight ${task.isActive ? 'text-slate-900' : 'text-slate-500'}`}>{task.label}</p>
-                  </div>
-                ))}
-             </div>
+                  ))}
+               </div>
+            </div>
+            <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl">
+               <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] mb-2">AI Guidance</p>
+               <p className="text-[10px] font-bold leading-relaxed opacity-70">المستشار الذكي يراقب منحنى تعلمك لتحسين التوصيات المستقبلية لمشروعك.</p>
+            </div>
           </div>
         </aside>
       </div>
@@ -769,18 +824,8 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                 : 'هل أنت متأكد من رغبتك في مغادرة المستوى والعودة؟ قد تفقد بعض التقدم غير المحفوظ في التمارين.'}
             </p>
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => setShowExitModal(false)}
-                className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
-              >
-                إلغاء
-              </button>
-              <button 
-                onClick={finalizeExit}
-                className={`py-4 ${activeTheme.primary} text-white rounded-2xl font-black hover:opacity-90 transition-all shadow-lg shadow-slate-200`}
-              >
-                نعم، متأكد
-              </button>
+              <button onClick={() => setShowExitModal(false)} className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all">إلغاء</button>
+              <button onClick={finalizeExit} className={`py-4 ${activeTheme.primary} text-white rounded-2xl font-black hover:opacity-90 transition-all shadow-lg shadow-slate-200`}>نعم، متأكد</button>
             </div>
           </div>
         </div>

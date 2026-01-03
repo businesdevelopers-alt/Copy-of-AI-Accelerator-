@@ -41,7 +41,7 @@ export const AssessmentResult: React.FC<AssessmentResultProps> = ({ result, onCo
         }
         return prev + 1;
       });
-    }, 20);
+    }, 15);
     return () => clearInterval(interval);
   }, [result.score, result.isQualified]);
 
@@ -49,61 +49,77 @@ export const AssessmentResult: React.FC<AssessmentResultProps> = ({ result, onCo
   const fullPath = getRadarPoints({ readiness: 100, analysis: 100, tech: 100, personality: 100, strategy: 100, ethics: 100 });
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4">
-      <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+    <div className="min-h-screen bg-[#020617] text-white flex flex-col items-center justify-center p-6 text-right" dir="rtl">
+      <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
         
-        <div className="flex flex-col items-center animate-fade-in-up">
-           <h2 className="text-2xl font-bold mb-6">مخطط الكفاءة الذكي</h2>
-           <div className="relative w-[320px] h-[320px]">
-             <svg width="320" height="320" viewBox="0 0 300 300" className="drop-shadow-2xl">
-                <polygon points={fullPath} fill="#1e293b" stroke="#334155" strokeWidth="1" />
-                <polygon points={getRadarPoints({ readiness: 75, analysis: 75, tech: 75, personality: 75, strategy: 75, ethics: 75 })} fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="4 2" />
-                <polygon points={getRadarPoints({ readiness: 50, analysis: 50, tech: 50, personality: 50, strategy: 50, ethics: 50 })} fill="none" stroke="#334155" strokeWidth="0.5" strokeDasharray="4 2" />
-                <polygon points={radarPath} fill={result.isQualified ? "rgba(34, 197, 94, 0.4)" : "rgba(239, 68, 68, 0.4)"} stroke={result.isQualified ? "#22c55e" : "#ef4444"} strokeWidth="3" className="transition-all duration-1000 ease-out" />
-                <text x="150" y="35" textAnchor="middle" fill="#94a3b8" fontSize="10">الجاهزية</text>
-                <text x="260" y="90" textAnchor="middle" fill="#94a3b8" fontSize="10">التحليل</text>
-                <text x="260" y="210" textAnchor="middle" fill="#94a3b8" fontSize="10">التقنية</text>
-                <text x="150" y="275" textAnchor="middle" fill="#94a3b8" fontSize="10">الشخصية</text>
-                <text x="40" y="210" textAnchor="middle" fill="#94a3b8" fontSize="10">الاستراتيجية</text>
-                <text x="40" y="90" textAnchor="middle" fill="#94a3b8" fontSize="10">الأخلاقيات</text>
+        {/* Visual Analytics */}
+        <div className="flex flex-col items-center animate-fade-in-up order-2 lg:order-1">
+           <div className="mb-10 text-center">
+              <span className="bg-blue-600/20 text-blue-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-blue-500/20 uppercase tracking-widest mb-4 inline-block">Competency Radar Map</span>
+              <h2 className="text-3xl font-black">تحليل الجاهزية الشامل</h2>
+           </div>
+           <div className="relative w-[340px] h-[340px] group">
+             <div className="absolute inset-0 bg-blue-500/5 rounded-full blur-[80px] -z-0"></div>
+             <svg width="340" height="340" viewBox="0 0 300 300" className="relative z-10 drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+                <polygon points={fullPath} fill="rgba(30, 41, 59, 0.5)" stroke="#334155" strokeWidth="1" />
+                {[75, 50, 25].map(scale => (
+                   <polygon key={scale} points={getRadarPoints({ readiness: scale, analysis: scale, tech: scale, personality: scale, strategy: scale, ethics: scale })} fill="none" stroke="#1e293b" strokeWidth="0.5" strokeDasharray="4 2" />
+                ))}
+                <polygon points={radarPath} fill={result.isQualified ? "rgba(34, 197, 94, 0.25)" : "rgba(239, 68, 68, 0.25)"} stroke={result.isQualified ? "#22c55e" : "#ef4444"} strokeWidth="4" className="transition-all duration-1000 ease-out" />
+                
+                {/* Labels */}
+                <text x="150" y="30" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">الجاهزية</text>
+                <text x="270" y="90" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">التحليل</text>
+                <text x="270" y="210" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">التقنية</text>
+                <text x="150" y="280" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">الشخصية</text>
+                <text x="30" y="210" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">الاستراتيجية</text>
+                <text x="30" y="90" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">الأخلاقيات</text>
              </svg>
            </div>
         </div>
 
-        <div className="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 animate-fade-in-up shadow-2xl relative overflow-hidden">
-           <div className={`absolute top-0 right-0 w-2 h-full ${result.isQualified ? 'bg-green-500' : 'bg-red-500'}`}></div>
+        {/* Decision Summary */}
+        <div className="bg-slate-900/50 p-10 md:p-14 rounded-[3.5rem] border border-white/5 animate-fade-in-up shadow-2xl relative overflow-hidden backdrop-blur-xl order-1 lg:order-2">
+           <div className={`absolute top-0 right-0 w-2.5 h-full ${result.isQualified ? 'bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]'}`}></div>
            
-           <div className="flex justify-between items-center mb-6">
-             <div className="text-slate-400 font-bold uppercase tracking-wider text-xs">نتيجة اختبار القبول</div>
-             <div className={`text-6xl font-black ${result.isQualified ? 'text-green-400' : 'text-red-400'}`}>
-               {animatedScore}<span className="text-xl text-slate-500">/100</span>
+           <div className="flex justify-between items-center mb-10">
+             <div className="text-slate-500 font-black uppercase tracking-widest text-[10px]">Admission Score Verdict</div>
+             <div className={`text-7xl font-black ${result.isQualified ? 'text-green-400' : 'text-red-400'} tracking-tighter`}>
+               {animatedScore}<span className="text-xl text-slate-600 ml-1">/100</span>
              </div>
            </div>
 
-           <div className="mb-8 space-y-4">
-             <h3 className="text-2xl font-black text-white">
-               {result.isQualified ? "🎉 تهانينا! تم قبولك في المسرعة" : "⚠️ تحتاج فكرتك لمزيد من النضج"}
-             </h3>
-             <p className="text-slate-400 text-sm leading-relaxed">
-               {result.isQualified 
-                 ? "لقد تجاوزت عتبة القبول بنجاح. درجاتك في التحليل وجدوى المشروع تؤهلك لبدء المحطات الست في مسرعة بيزنس ديفلوبرز." 
-                 : "لم تصل درجاتك إلى الحد الأدنى المطلوب (70%). نوصيك بمراجعة خطة التطوير المقترحة وإعادة المحاولة بعد تحسين جوانب الضعف."}
-             </p>
-             <div className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center border ${result.isQualified ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-               الحد الأدنى للقبول: 70%
+           <div className="mb-12 space-y-6">
+             <div className={`inline-flex items-center gap-3 px-6 py-2 rounded-2xl font-black text-xs uppercase tracking-widest
+                ${result.isQualified ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}
+             `}>
+               <span className={`w-2 h-2 rounded-full animate-pulse ${result.isQualified ? 'bg-green-400' : 'bg-red-400'}`}></span>
+               {result.isQualified ? "قرار القبول: معتمد للاحتضان" : "قرار القبول: يتطلب تحسين"}
              </div>
+             
+             <h3 className="text-4xl font-black text-white leading-tight">
+               {result.isQualified ? "تهانينا! أنت رائد أعمال مسرعة بيزنس ديفلوبرز" : "تحتاج فكرتك إلى صقل وتطوير أعمق"}
+             </h3>
+             <p className="text-slate-400 text-lg leading-relaxed font-medium">
+               {result.isQualified 
+                 ? "لقد تجاوزت عتبة القبول (70%) بنجاح باهر. مشروعك الآن مؤهل لبدء البرنامج التدريبي الافتراضي المكون من 6 مستويات تفاعلية." 
+                 : "لم تصل درجتك النهائية إلى الحد الأدنى المطلوب. قمنا بإعداد خطة تطوير مخصصة لمساعدتك في معالجة الثغرات وإعادة المحاولة."}
+             </p>
            </div>
 
            <button 
              onClick={onContinue}
-             className={`w-full py-5 rounded-2xl font-black shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 ${
-                result.isQualified 
-                ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-900/20' 
-                : 'bg-red-600 hover:bg-red-700 text-white shadow-red-900/20'
-             }`}
+             className={`w-full py-6 rounded-[2rem] font-black text-xl shadow-2xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4
+               ${result.isQualified 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20' 
+                : 'bg-red-600 hover:bg-red-700 text-white shadow-red-500/20'
+               }`}
            >
-             {result.isQualified ? "استعراض التقرير النهائي" : "عرض خطة التحسين المطلوبة"}
+             <span>{result.isQualified ? "بدء برنامج الاحتضان الآن" : "استلام خطة التحسين"}</span>
+             <svg className="w-7 h-7 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
            </button>
+           
+           <p className="text-center mt-6 text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em]">Business Developers Accelerator Hub • AI Verified Admission</p>
         </div>
       </div>
     </div>
