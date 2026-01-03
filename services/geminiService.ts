@@ -4,7 +4,8 @@ import {
   NominationData,
   NominationResult,
   NominationAIResponse,
-  ProjectEvaluationResult
+  ProjectEvaluationResult,
+  OpportunityAnalysis
 } from "../types";
 
 const FLASH_MODEL = "gemini-3-flash-preview";
@@ -45,6 +46,65 @@ async function callGemini<T = string>(params: {
     throw error;
   }
 }
+
+/**
+ * اكتشاف فرص التوسع والأسواق الجديدة
+ */
+export const discoverOpportunities = async (startupName: string, description: string, industry: string): Promise<OpportunityAnalysis> => {
+  const prompt = `حلل مشروع: ${startupName} في قطاع ${industry}. 
+  الوصف: ${description}.
+  المطلوب: 
+  1. حدد 3 أسواق جغرافية (دول أو مدن) ذات إمكانات عالية للتوسع.
+  2. حدد شريحتين من العملاء غير مخدومين حالياً (Untapped Segments).
+  3. اقترح فكرة "المحيط الأزرق" (Blue Ocean) للتميز.
+  4. قدم إجراءً واحداً سريعاً للبدء (Quick Win).`;
+
+  return callGemini<OpportunityAnalysis>({
+    prompt,
+    systemInstruction: `أنت "مستكشف الفرص" في مسرعة أعمال. مهمتك إيجاد مجالات نمو غير تقليدية.
+    أجب بتنسيق JSON:
+    {
+      "newMarkets": [{"region": "string", "reasoning": "string", "entryBarrier": "Low|Medium|High", "potentialROI": "string"}],
+      "untappedSegments": [{"segmentName": "string", "needs": "string", "strategy": "string"}],
+      "blueOceanIdea": "string",
+      "quickWinAction": "string"
+    }`,
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        newMarkets: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              region: { type: Type.STRING },
+              reasoning: { type: Type.STRING },
+              entryBarrier: { type: Type.STRING },
+              potentialROI: { type: Type.STRING }
+            },
+            required: ["region", "reasoning", "entryBarrier", "potentialROI"]
+          }
+        },
+        untappedSegments: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              segmentName: { type: Type.STRING },
+              needs: { type: Type.STRING },
+              strategy: { type: Type.STRING }
+            },
+            required: ["segmentName", "needs", "strategy"]
+          }
+        },
+        blueOceanIdea: { type: Type.STRING },
+        quickWinAction: { type: Type.STRING }
+      },
+      required: ["newMarkets", "untappedSegments", "blueOceanIdea", "quickWinAction"]
+    }
+  });
+};
 
 /**
  * تقييم نموذج ترشيح الشركات

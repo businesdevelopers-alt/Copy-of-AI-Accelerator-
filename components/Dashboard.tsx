@@ -1,7 +1,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest } from '../types';
+import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest, OpportunityAnalysis } from '../types';
 import { storageService } from '../services/storageService';
+import { discoverOpportunities } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound } from '../services/audioService';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { id: 'startup_profile', label: 'ملف الشركة', icon: '📈' },
   { id: 'bootcamp', label: 'المنهج التدريبي', icon: '📚' },
   { id: 'tasks', label: 'المهام والتسليمات', icon: '📝' },
+  { id: 'opportunity_lab', label: 'مختبر الفرص', icon: '🧭' },
   { id: 'services', label: 'خدمات التنفيذ', icon: '🛠️' }, 
 ];
 
@@ -41,6 +43,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   const [submissionText, setSubmissionText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  
+  // Opportunity Lab States
+  const [oppResult, setOppResult] = useState<OpportunityAnalysis | null>(null);
+  const [isAnalyzingOpp, setIsAnalyzingOpp] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const completedCount = levels.filter(l => l.isCompleted).length;
@@ -131,6 +138,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     }, 1200);
   };
 
+  const handleRunOppAnalysis = async () => {
+    setIsAnalyzingOpp(true);
+    playPositiveSound();
+    try {
+      const result = await discoverOpportunities(userProfile.startupName, userProfile.startupDescription, userProfile.industry);
+      setOppResult(result);
+      playCelebrationSound();
+    } catch (e) {
+      alert("فشل التحليل الاستراتيجي.");
+    } finally {
+      setIsAnalyzingOpp(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen flex ${isDark ? 'bg-[#0f172a] text-slate-100' : 'bg-[#f8f9fa] text-slate-900'}`} dir="rtl">
       <style>{`
@@ -139,6 +160,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         .status-badge { font-size: 9px; font-weight: 900; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; }
         .active-dot { position: relative; }
         .active-dot::after { content: ''; position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; border: 2px solid white; }
+        .radar-scan { animation: scan 3s linear infinite; }
+        @keyframes scan { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Sidebar */}
@@ -219,6 +242,131 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                       ))}
                    </div>
                 </div>
+             </div>
+           )}
+
+           {activeNav === 'opportunity_lab' && (
+             <div className="max-w-6xl mx-auto space-y-12 animate-fade-in pb-20">
+                <div className="text-center space-y-4">
+                   <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black border border-blue-100 uppercase tracking-widest">
+                      AI Opportunity Agent
+                   </div>
+                   <h3 className="text-4xl font-black">مختبر الفرص والنمو</h3>
+                   <p className="text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+                     استخدم وكيل الذكاء الاصطناعي لاكتشاف أسواق جغرافية جديدة أو شرائح عملاء غير مخدومة لمشروعك.
+                   </p>
+                </div>
+
+                {!oppResult && !isAnalyzingOpp && (
+                  <div className="flex flex-col items-center py-20 space-y-10">
+                     <div className="relative w-40 h-40">
+                        <div className="absolute inset-0 border-4 border-slate-200 rounded-full border-dashed"></div>
+                        <div className="absolute inset-0 flex items-center justify-center text-6xl">🧭</div>
+                     </div>
+                     <button 
+                       onClick={handleRunOppAnalysis}
+                       className="px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg shadow-2xl hover:bg-blue-600 transition-all transform active:scale-95 flex items-center gap-4"
+                     >
+                        <span>تفعيل مسح الفرص الاستراتيجي</span>
+                        <svg className="w-6 h-6 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                     </button>
+                  </div>
+                )}
+
+                {isAnalyzingOpp && (
+                   <div className="flex flex-col items-center py-20 space-y-8">
+                      <div className="relative w-48 h-48">
+                         <div className="absolute inset-0 border-8 border-slate-100 rounded-full"></div>
+                         <div className="absolute inset-0 border-8 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                         <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-32 h-32 bg-blue-500/10 rounded-full flex items-center justify-center relative overflow-hidden">
+                               <div className="absolute w-1 h-full bg-blue-500/30 radar-scan"></div>
+                               <span className="text-4xl animate-pulse">🔎</span>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="text-center space-y-2">
+                        <h4 className="text-2xl font-black text-slate-800 animate-pulse">جاري تحليل بيانات السوق العالمي...</h4>
+                        <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Scanning Untapped Ecosystems via Gemini 3 Pro</p>
+                      </div>
+                   </div>
+                )}
+
+                {oppResult && (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-up">
+                    {/* New Markets */}
+                    <div className="lg:col-span-2 space-y-8">
+                       <h4 className="text-xl font-black flex items-center gap-3">
+                          <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                          الأسواق الجغرافية المقترحة
+                       </h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {oppResult.newMarkets.map((m, i) => (
+                            <div key={i} className={`p-8 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative group ${isDark ? 'bg-slate-900 border-slate-800' : ''}`}>
+                               <div className="flex justify-between items-start mb-6">
+                                  <h5 className="text-xl font-black text-blue-600">{m.region}</h5>
+                                  <span className={`text-[9px] font-black px-2 py-1 rounded uppercase ${m.entryBarrier === 'Low' ? 'bg-green-100 text-green-600' : m.entryBarrier === 'Medium' ? 'bg-amber-100 text-amber-600' : 'bg-rose-100 text-rose-600'}`}>عائق: {m.entryBarrier}</span>
+                               </div>
+                               <p className="text-sm text-slate-600 font-medium leading-relaxed mb-6">{m.reasoning}</p>
+                               <div className="pt-6 border-t border-slate-50 flex justify-between items-center">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">العائد المتوقع:</span>
+                                  <span className="text-xs font-black text-emerald-600">{m.potentialROI}</span>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+
+                       <h4 className="text-xl font-black flex items-center gap-3 pt-8">
+                          <span className="w-1.5 h-6 bg-emerald-500 rounded-full"></span>
+                          شرائح العملاء غير المخدومة
+                       </h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {oppResult.untappedSegments.map((s, i) => (
+                            <div key={i} className={`p-8 bg-slate-50 rounded-[3rem] border border-slate-100 ${isDark ? 'bg-slate-800 border-slate-700' : ''}`}>
+                               <h5 className="text-lg font-black text-slate-800 mb-4">{s.segmentName}</h5>
+                               <p className="text-xs text-slate-500 font-bold mb-4">الاحتياج المفقود: {s.needs}</p>
+                               <div className="p-4 bg-white/60 rounded-2xl border border-white">
+                                  <p className="text-xs font-black text-blue-600 mb-1">استراتيجية الوصول:</p>
+                                  <p className="text-[11px] text-slate-700 font-medium">{s.strategy}</p>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+
+                    {/* Blue Ocean & Quick Win */}
+                    <div className="space-y-8">
+                       <div className={`p-10 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden group`}>
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[40px]"></div>
+                          <h4 className="text-lg font-black mb-6 flex items-center gap-3">
+                             <span className="text-2xl">🌊</span>
+                             استراتيجية المحيط الأزرق
+                          </h4>
+                          <p className="text-base font-medium leading-loose italic opacity-95">
+                             "{oppResult.blueOceanIdea}"
+                          </p>
+                       </div>
+
+                       <div className={`p-10 bg-slate-900 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden`}>
+                          <h4 className="text-lg font-black mb-6 flex items-center gap-3">
+                             <span className="text-2xl">⚡</span>
+                             فوز سريع (Quick Win)
+                          </h4>
+                          <p className="text-base font-medium leading-relaxed mb-8">
+                             {oppResult.quickWinAction}
+                          </p>
+                          <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs hover:bg-blue-500 transition-all shadow-lg active:scale-95">تطبيق الإجراء الآن</button>
+                       </div>
+
+                       <button 
+                         onClick={() => { setOppResult(null); playPositiveSound(); }}
+                         className="w-full py-5 border-2 border-dashed border-slate-200 text-slate-400 rounded-[2rem] font-black text-sm hover:border-blue-300 hover:text-blue-500 transition-all"
+                       >
+                          إعادة المسح الاستراتيجي ↺
+                       </button>
+                    </div>
+                  </div>
+                )}
              </div>
            )}
 
@@ -317,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
              </div>
            )}
 
-           {/* Keep existing navigation views */}
+           {/* Keep other views (startup_profile, tasks, etc) */}
            {activeNav === 'startup_profile' && (
              <div className="max-w-3xl mx-auto space-y-8 animate-fade-in">
                 <div className={`p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-sm`}>
@@ -371,10 +519,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                 </div>
              </div>
            )}
-
-           {activeNav !== 'home' && activeNav !== 'startup_profile' && activeNav !== 'tasks' && activeNav !== 'services' && (
-             <div className="flex flex-col items-center justify-center py-40 opacity-20"><span className="text-9xl mb-4">🏗️</span><h3 className="text-2xl font-black">قيد التطوير</h3></div>
-           )}
         </div>
       </main>
 
@@ -402,63 +546,4 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                       >
                          {selectedPackage?.id === pkg.id && <div className="absolute top-4 left-4 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-sm">✓</div>}
                          <h5 className="font-black text-lg">{pkg.name}</h5>
-                         <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">سعر {pkg.price}</p>
-                         <ul className="mt-4 space-y-1">
-                            {pkg.features.map((f, i) => <li key={i} className="text-[9px] font-bold text-slate-500">• {f}</li>)}
-                         </ul>
-                      </button>
-                    ))}
-                 </div>
-
-                 <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest pr-2">تفاصيل إضافية أو ملاحظات</label>
-                    <textarea 
-                      className={`w-full h-32 p-5 rounded-[1.5rem] border outline-none focus:border-blue-500 resize-none font-medium ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}`}
-                      placeholder="اشرح احتياجك بدقة، أو اذكر أي تفاصيل تقنية تساعد فريقنا..."
-                      value={requestDetails}
-                      onChange={e => setRequestDetails(e.target.value)}
-                    />
-                 </div>
-
-                 <div className="flex gap-4">
-                    <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="flex-1 py-4 font-black text-slate-400">إلغاء</button>
-                    <button 
-                      onClick={handleServiceRequest} 
-                      disabled={!selectedPackage || isRequesting} 
-                      className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                    >
-                       {isRequesting ? (
-                         <>
-                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                           <span>جاري الإرسال...</span>
-                         </>
-                       ) : (
-                         <>
-                           <span>تأكيد طلب التنفيذ</span>
-                           <svg className="w-5 h-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} /></svg>
-                         </>
-                       )}
-                    </button>
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* Existing Task Modal */}
-      {selectedTask && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md">
-           <div className={`max-w-xl w-full p-10 rounded-[3rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-2xl`}>
-              <h3 className="text-2xl font-black mb-4">تسليم: {selectedTask.title}</h3>
-              <p className="text-slate-500 text-sm mb-6">{selectedTask.description}</p>
-              <textarea className={`w-full h-64 p-6 rounded-3xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} outline-none focus:border-blue-500 mb-6 font-medium`} placeholder="الصق رابط المخرج أو اكتب تفاصيل التسليم هنا..." value={submissionText} onChange={e => setSubmissionText(e.target.value)} />
-              <div className="flex gap-4">
-                 <button onClick={() => setSelectedTask(null)} className="flex-1 py-4 font-black text-slate-400">إلغاء</button>
-                 <button onClick={handleTaskSubmit} disabled={!submissionText.trim()} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg active:scale-95 transition-all">إرسال للمراجعة</button>
-              </div>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+                         <p className="text-[10px] text-blue-600

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiltrationStage, ApplicantProfile, FinalResult, UserProfile, LevelData, LEVELS_CONFIG, NominationResult, ProjectEvaluationResult } from './types';
 import { storageService } from './services/storageService';
 import { suggestIconsForLevels } from './services/geminiService';
@@ -33,7 +33,8 @@ function App() {
   const [nominationOutcome, setNominationOutcome] = useState<NominationResult | null>(null);
   const [projectEvaluation, setProjectEvaluation] = useState<ProjectEvaluationResult | null>(null);
 
-  useEffect(() => {
+  // وظيفة موحدة لجلب بيانات الجلسة وتحديث واجهة المستخدم
+  const hydrateSession = useCallback(() => {
     const session = storageService.getCurrentSession();
     if (session) {
       const users = storageService.getAllUsers();
@@ -76,10 +77,15 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    hydrateSession();
+  }, [hydrateSession]);
+
   const handleLoginSuccess = (profile: UserProfile) => {
+    // بدلاً من reload، نقوم بتحديث البيانات فوراً
     setUserProfile(profile);
+    hydrateSession();
     setStage(FiltrationStage.DASHBOARD);
-    window.location.reload(); 
   };
 
   const handleRegister = (profile: UserProfile) => {
@@ -166,7 +172,9 @@ function App() {
         <AssessmentResult result={finalResult} onContinue={() => {
           const session = storageService.getCurrentSession();
           if (session) storageService.updateStartupStatus(session.projectId, 'APPROVED');
-          window.location.reload();
+          // بدلاً من reload، نقوم بتحديث البيانات فوراً
+          hydrateSession();
+          setStage(FiltrationStage.DASHBOARD);
         }} />
       )}
       

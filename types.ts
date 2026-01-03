@@ -22,6 +22,22 @@ export enum FiltrationStage {
   INCUBATION_PROGRAM = 'INCUBATION_PROGRAM'
 }
 
+export interface OpportunityAnalysis {
+  newMarkets: {
+    region: string;
+    reasoning: string;
+    entryBarrier: 'Low' | 'Medium' | 'High';
+    potentialROI: string;
+  }[];
+  untappedSegments: {
+    segmentName: string;
+    needs: string;
+    strategy: string;
+  }[];
+  blueOceanIdea: string;
+  quickWinAction: string;
+}
+
 export interface ServicePackage {
   id: string;
   name: string;
@@ -318,6 +334,7 @@ export const AVAILABLE_AGENTS: AIAgent[] = [
   { id: 'a2', name: 'خبير تحليل السوق', description: 'يدرس المنافسين وحجم السوق المستهدف.', category: 'Market' },
   { id: 'a3', name: 'مصمم شخصيات المستخدمين', description: 'يصمم ملفات تعريف دقيقة للفئات المستهدفة.', category: 'User' },
   { id: 'a4', name: 'محلل الفرص الاستثمارية', description: 'يقيم جاذبية المشروع للمستثمرين.', category: 'Opportunity' },
+  { id: 'a5', name: 'مستكشف أسواق التوسع', description: 'يحدد الأسواق الجغرافية والشرائح غير المخدومة.', category: 'Opportunity' },
 ];
 
 export interface ProjectBuildData {
