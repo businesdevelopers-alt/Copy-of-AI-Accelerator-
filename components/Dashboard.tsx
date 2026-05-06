@@ -137,6 +137,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   const [adminResponseText, setAdminResponseText] = useState('');
   const [selectedAdminRequestId, setSelectedAdminRequestId] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<'requests' | 'users' | 'content'>('requests');
+  const [contentCategory, setContentCategory] = useState<'none' | 'services' | 'levels' | 'mentors'>('none');
+  const [siteServices, setSiteServices] = useState<ServiceItem[]>([]);
+  const [siteLevels, setSiteLevels] = useState<LevelData[]>([]);
+  const [siteMentors, setSiteMentors] = useState<any[]>([]);
+
+  // Editing Content states
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [editingMentor, setEditingMentor] = useState<any | null>(null);
+  const [editingSiteLevel, setEditingSiteLevel] = useState<LevelData | null>(null);
 
   // Growth States
   const [growthData, setGrowthData] = useState<{ month: string, users: number, revenue: number }[]>([]);
@@ -144,8 +153,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const completedCount = levels.filter(l => l.isCompleted).length;
-  const progress = (completedCount / levels.length) * 100;
+  const completedCount = siteLevels.filter(l => l.isCompleted).length;
+  const progress = (siteLevels.length > 0 ? (completedCount / siteLevels.length) : 0) * 100;
   const isDark = themeMode === 'dark';
 
   useEffect(() => {
@@ -201,7 +210,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         setAdminUsers(storageService.getAllUsersWithStartups());
       }
     }
-  }, [activeNav, activePlanType]);
+    
+    // Always load content
+    setSiteServices(storageService.getSiteServices(SERVICES_CATALOG));
+    setSiteLevels(storageService.getSiteLevels(levels));
+    setSiteMentors(storageService.getSiteMentors(MOCK_MENTORS));
+  }, [activeNav, activePlanType, levels, userProfile.isAdmin]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -304,6 +318,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     addNotification('تم إرسال الرد للعميل بنجاح', 'success');
   };
 
+  // Content Management Helpers
+  const handleSaveSiteService = (service: ServiceItem) => {
+    const updated = siteServices.map(s => s.id === service.id ? service : s);
+    setSiteServices(updated);
+    storageService.saveSiteServices(updated);
+    setEditingService(null);
+    addNotification('تم تحديث الخدمة بنجاح!', 'success');
+    playPositiveSound();
+  };
+
+  const handleSaveSiteLevel = (level: LevelData) => {
+    const updated = siteLevels.map(l => l.id === level.id ? level : l);
+    setSiteLevels(updated);
+    storageService.saveSiteLevels(updated);
+    setEditingSiteLevel(null);
+    addNotification('تم تحديث المستوى بنجاح!', 'success');
+    playPositiveSound();
+  };
+
+  const handleSaveSiteMentor = (mentor: any) => {
+    const updated = siteMentors.map(m => m.id === mentor.id ? mentor : m);
+    setSiteMentors(updated);
+    storageService.saveSiteMentors(updated);
+    setEditingMentor(null);
+    addNotification('تم تحديث بيانات المرشد بنجاح!', 'success');
+    playPositiveSound();
+  };
+
   const filteredNavItems = NAV_ITEMS.filter(item => {
     const matchesSearch = item.label.includes(searchQuery) || item.id.includes(searchQuery);
     if (!matchesSearch) return false;
@@ -311,7 +353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     return true;
   });
 
-  const filteredLevels = levels.filter(level => 
+  const filteredLevels = siteLevels.filter(level => 
     level.title.includes(searchQuery) || level.description.includes(searchQuery)
   );
 
@@ -538,7 +580,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                      {MOCK_MENTORS.map((mentor, idx) => (
+                      {siteMentors.map((mentor, idx) => (
                         <motion.div 
                           key={mentor.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -914,7 +956,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
                              {/* Steps */}
                              <div className="flex justify-between relative">
-                                {levels.map((level, idx) => (
+                                {siteLevels.map((level, idx) => (
                                   <div key={level.id} className="step-node flex flex-col items-center gap-4">
                                      <div 
                                         className={`w-10 h-10 rounded-full flex items-center justify-center text-sm border-4 transition-all duration-700
@@ -954,7 +996,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                      </div>
                      
                      <div className="grid grid-cols-1 gap-6">
-                        {levels.map((level) => (
+                        {siteLevels.map((level) => (
                           <motion.div 
                             whileHover={{ x: -10 }}
                             key={level.id} 
@@ -1406,7 +1448,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                                   <div className="text-[10px] text-slate-400 mt-0.5">UID: {req.uid}</div>
                                                </td>
                                                <td className="py-6">
-                                                  <div className="font-bold text-xs">{SERVICES_CATALOG.find(s => s.id === req.serviceId)?.title}</div>
+                                                  <div className="font-bold text-xs">{siteServices.find(s => s.id === req.serviceId)?.title}</div>
                                                   <div className="text-[10px] text-blue-500 font-black mt-0.5">{req.packageId === 'p1' || req.id.includes('p1') ? 'باقة أساسية' : 'باقة متقدمة'}</div>
                                                </td>
                                                <td className="py-6">
@@ -1522,48 +1564,116 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                     {adminTab === 'content' && (
                       <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5">
                         <div className="text-right space-y-6">
-                          <h4 className="text-xl font-black mb-10">التحكم بكامل الموقع</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-blue-500/20 transition-all text-right group">
-                              <Layers className="w-8 h-8 text-blue-500 mb-6" />
-                              <h5 className="text-lg font-black mb-2">إدارة المستويات</h5>
-                              <p className="text-xs text-slate-500 leading-relaxed mb-6">تعديل المسميات، الألوان، والأيقونات الخاصة بالمستويات الستة للمسرعة.</p>
+                          <div className="flex justify-between items-center mb-10">
+                            {contentCategory !== 'none' && (
                               <button 
-                                onClick={() => setActiveNav('academy')} 
-                                className="px-6 py-3 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
-                              >فتح المحرر</button>
-                            </div>
-                            
-                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-emerald-500/20 transition-all text-right group">
-                              <Zap className="w-8 h-8 text-emerald-500 mb-6" />
-                              <h5 className="text-lg font-black mb-2">كتالوج الخدمات</h5>
-                              <p className="text-xs text-slate-500 leading-relaxed mb-6">عرض وتعديل قائمة الخدمات التقنية والاستشارية المتاحة لرواد الأعمال.</p>
-                              <button 
-                                onClick={() => setActiveNav('services')} 
-                                className="px-6 py-3 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
-                              >إدارة الخدمات</button>
-                            </div>
-
-                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-all text-right group">
-                              <Users className="w-8 h-8 text-amber-500 mb-6" />
-                              <h5 className="text-lg font-black mb-2">قائمة الموجهين</h5>
-                              <p className="text-xs text-slate-500 leading-relaxed mb-6">إضافة أو تعديل بيانات الخبراء والمستشارين الظاهرين في المنصة.</p>
-                              <button 
-                                onClick={() => setActiveNav('mentors')} 
-                                className="px-6 py-3 bg-amber-600/10 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
-                              >تعديل الموجهين</button>
-                            </div>
-
-                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-purple-500/20 transition-all text-right group">
-                              <Star className="w-8 h-8 text-purple-500 mb-6" />
-                              <h5 className="text-lg font-black mb-2">الإنجازات والدروع</h5>
-                              <p className="text-xs text-slate-500 leading-relaxed mb-6">تخصيص الدروع الرقمية التي يحصل عليها الطلاب عند إتمام المهام.</p>
-                              <button 
-                                onClick={() => setActiveNav('academy')} 
-                                className="px-6 py-3 bg-purple-600/10 text-purple-500 hover:bg-purple-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
-                              >إدارة الأوسمة</button>
-                            </div>
+                                onClick={() => setContentCategory('none')}
+                                className="px-6 py-2 glass rounded-xl text-xs font-black flex items-center gap-2"
+                              >
+                                <span>العودة</span>
+                                <ChevronLeft className="w-4 h-4 rotate-180" />
+                              </button>
+                            )}
+                            <h4 className="text-xl font-black">التحكم بكامل الموقع</h4>
                           </div>
+
+                          {contentCategory === 'none' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-blue-500/20 transition-all text-right group">
+                                <Layers className="w-8 h-8 text-blue-500 mb-6" />
+                                <h5 className="text-lg font-black mb-2">إدارة المستويات</h5>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-6">تعديل المسميات، الألوان، والأيقونات الخاصة بالمستويات الستة للمسرعة.</p>
+                                <button 
+                                  onClick={() => setContentCategory('levels')} 
+                                  className="px-6 py-3 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                                >فتح المحرر</button>
+                              </div>
+                              
+                              <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-emerald-500/20 transition-all text-right group">
+                                <Zap className="w-8 h-8 text-emerald-500 mb-6" />
+                                <h5 className="text-lg font-black mb-2">كتالوج الخدمات</h5>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-6">عرض وتعديل قائمة الخدمات التقنية والاستشارية المتاحة لرواد الأعمال.</p>
+                                <button 
+                                  onClick={() => setContentCategory('services')} 
+                                  className="px-6 py-3 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                                >إدارة الخدمات</button>
+                              </div>
+
+                              <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-all text-right group">
+                                <Users className="w-8 h-8 text-amber-500 mb-6" />
+                                <h5 className="text-lg font-black mb-2">قائمة الموجهين</h5>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-6">إضافة أو تعديل بيانات الخبراء والمستشارين الظاهرين في المنصة.</p>
+                                <button 
+                                  onClick={() => setContentCategory('mentors')} 
+                                  className="px-6 py-3 bg-amber-600/10 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                                >تعديل الموجهين</button>
+                              </div>
+
+                              <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-purple-500/20 transition-all text-right group">
+                                <Star className="w-8 h-8 text-purple-500 mb-6" />
+                                <h5 className="text-lg font-black mb-2">الإنجازات والدروع</h5>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-6">تخصيص الدروع الرقمية التي يحصل عليها الطلاب عند إتمام المهام.</p>
+                                <button 
+                                  onClick={() => setActiveNav('academy')} 
+                                  className="px-6 py-3 bg-purple-600/10 text-purple-500 hover:bg-purple-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                                >إدارة الأوسمة</button>
+                              </div>
+                            </div>
+                          )}
+
+                          {contentCategory === 'services' && (
+                            <div className="space-y-6">
+                              <div className="grid grid-cols-1 gap-4">
+                                {siteServices.map(service => (
+                                  <div key={service.id} className="p-6 glass-dark rounded-3xl border border-white/5 flex justify-between items-center flex-row-reverse">
+                                    <div className="flex items-center gap-4 flex-row-reverse">
+                                      <div className="text-3xl">{service.icon}</div>
+                                      <div className="text-right">
+                                        <div className="font-black text-sm">{service.title}</div>
+                                        <div className="text-[10px] text-slate-500">{service.category}</div>
+                                      </div>
+                                    </div>
+                                    <button 
+                                      onClick={() => setEditingService(service)}
+                                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black"
+                                    >تعديل</button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {contentCategory === 'levels' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {siteLevels.map(level => (
+                                <div key={level.id} className="p-6 glass-dark rounded-3xl border border-white/5 flex flex-col items-end gap-3 text-right">
+                                  <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-xl">{level.icon}</div>
+                                  <div className="font-black text-sm">{level.title}</div>
+                                  <p className="text-[10px] text-slate-500 line-clamp-2">{level.description}</p>
+                                  <button 
+                                    onClick={() => setEditingSiteLevel(level)}
+                                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black w-full"
+                                  >تعديل المستوى</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {contentCategory === 'mentors' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {siteMentors.map(mentor => (
+                                <div key={mentor.id} className="p-6 glass-dark rounded-3xl border border-white/5 flex flex-col items-end gap-3 text-right">
+                                  <div className="text-3xl">{mentor.avatar}</div>
+                                  <div className="font-black text-sm">{mentor.name}</div>
+                                  <div className="text-[10px] text-blue-500 font-bold">{mentor.role} @ {mentor.company}</div>
+                                  <button 
+                                    onClick={() => setEditingMentor(mentor)}
+                                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-black w-full"
+                                  >تعديل البيانات</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1588,7 +1698,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                      </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {SERVICES_CATALOG.map((service, idx) => (
+                        {siteServices.map((service, idx) => (
                           <motion.div 
                             key={service.id} 
                             initial={{ opacity: 0, y: 20 }}
@@ -1647,7 +1757,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                </thead>
                                <tbody className="divide-y divide-white/5">
                                   {userRequests.map(req => {
-                                    const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
+                                    const svc = siteServices.find(s => s.id === req.serviceId);
                                     const pkg = svc?.packages.find(p => p.id === req.packageId);
                                     return (
                                       <Fragment key={req.id}>
@@ -1874,8 +1984,147 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                            <ul className="mt-4 space-y-3">
                               {pkg.features.map((f, i) => (
                                 <li key={i} className="text-xs font-bold text-slate-500 flex items-center gap-2 justify-end">
-                                  <span>{f}</span>
-                                  <div className="w-1.5 h-1.5 bg-slate-700 rounded-full" />
+                                  <span>{        {/* Content Editor Modal: Services */}
+        {editingService && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl text-right font-sans">
+             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl w-full p-10 rounded-[3rem] glass-dark border border-white/10 shadow-3xl">
+                <h3 className="text-2xl font-black mb-6">تعديل الخدمة</h3>
+                <div className="space-y-4">
+                  <div dir="rtl">
+                    <label className="text-[10px] font-black text-slate-500 block mb-2">اسم الخدمة</label>
+                    <input 
+                      type="text" 
+                      value={editingService.title} 
+                      onChange={e => setEditingService({...editingService, title: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 text-right"
+                    />
+                  </div>
+                  <div dir="rtl">
+                    <label className="text-[10px] font-black text-slate-500 block mb-2">الوصف</label>
+                    <textarea 
+                      value={editingService.description} 
+                      onChange={e => setEditingService({...editingService, description: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 h-24 text-right"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div dir="rtl">
+                      <label className="text-[10px] font-black text-slate-500 block mb-2">الأيقونة (Emoji)</label>
+                      <input 
+                        type="text" 
+                        value={editingService.icon} 
+                        onChange={e => setEditingService({...editingService, icon: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 text-center text-2xl"
+                      />
+                    </div>
+                    <div dir="rtl">
+                      <label className="text-[10px] font-black text-slate-500 block mb-2">التصنيف</label>
+                      <select 
+                        value={editingService.category} 
+                        onChange={e => setEditingService({...editingService, category: e.target.value as any})}
+                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 appearance-none text-right"
+                      >
+                        <option value="Design">Design</option>
+                        <option value="Tech">Tech</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Legal">Legal</option>
+                        <option value="Marketing">Marketing</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-8">
+                  <button onClick={() => setEditingService(null)} className="flex-1 py-4 font-black text-slate-500">إلغاء</button>
+                  <button onClick={() => handleSaveSiteService(editingService)} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black">حفظ التعديلات</button>
+                      <div dir="rtl">
+                      <label className="text-[10px] font-black text-slate-500 block mb-2">الشركة</label>
+                      <input 
+                        type="text" 
+                        value={editingMentor.company} 
+                        onChange={e => setEditingMentor({...editingMentor, company: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 text-right"
+                      />
+                    </div>
+                    <div dir="rtl">
+                      <label className="text-[10px] font-black text-slate-500 block mb-2">التخصص</label>
+                      <input 
+                        type="text" 
+                        value={editingMentor.specialty} 
+                        onChange={e => setEditingMentor({...editingMentor, specialty: e.target.value})}
+                        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 text-right"
+                      />
+                    </div>
+                  </div>
+                  <div dir="rtl">
+                    <label className="text-[10px] font-black text-slate-500 block mb-2">العرض التقديمي (Avatar/Emoji)</label>
+                    <input 
+                      type="text" 
+                      value={editingMentor.avatar} 
+                      onChange={e => setEditingMentor({...editingMentor, avatar: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl font-medium outline-none focus:border-blue-500 text-center text-3xl"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-8">
+                  <button onClick={() => setEditingMentor(null)} className="flex-1 py-4 font-black text-slate-500">إلغاء</button>
+                  <button onClick={() => handleSaveSiteMentor(editingMentor)} className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black">حفظ البيانات</button>
+                </div>
+             </motion.div>
+          </div>
+        )}
+
+        {/* Task Submission Modal */}
+        {selectedTask && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-xl text-right font-sans">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="max-w-2xl w-full p-12 rounded-[4.5rem] glass-dark border-slate-900/10 dark:border-white/10 shadow-3xl"
+            >
+               <div className="flex justify-between items-start mb-8">
+                  <button onClick={() => setSelectedTask(null)} className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">✕</button>
+                   <div>
+                      <h3 className="text-4xl font-black mb-1 tracking-tighter">{selectedTask.title}</h3>
+                      <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em]">Deliverable Submission</p>
+                   </div>
+                </div>
+
+                <div className="space-y-10" dir="rtl">
+                   <textarea 
+                      className="w-full h-56 bg-white/5 border border-white/10 p-8 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all resize-none font-medium text-lg leading-relaxed text-right"
+                      placeholder="الصق رابط المخرج (Google Drive, Figma, GitHub) أو صف مخرجاتك هنا بالتفصيل..."
+                      value={submissionText}
+                      onChange={e => setSubmissionText(e.target.value)}
+                   />
+                   
+                   <div className="flex gap-6">
+                      <button onClick={() => setSelectedTask(null)} className="flex-1 py-6 font-black text-slate-500 hover:text-slate-900 transition-colors text-lg">إلغاء</button>
+                      <button 
+                        onClick={() => handleTaskSubmit()} 
+                        disabled={!submissionText.trim()}
+                        className="flex-[2] py-6 bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed text-white rounded-[2rem] font-black shadow-2xl transition-all active:scale-95 text-lg"
+                      >
+                         إرسال للمراجعة النهائية
+                      </button>
+                   </div>
+                </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+    </div>
+  );
+};
+
+export default Dashboard;
+�انات</button>
+                </div>
+             </motion.div>
+          </div>
+        )}
+       </AnimatePresence>
+                                 <div className="w-1.5 h-1.5 bg-slate-700 rounded-full" />
                                 </li>
                               ))}
                            </ul>

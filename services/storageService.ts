@@ -11,12 +11,36 @@ const DB_KEYS = {
   SESSION: 'db_current_session',
   TEMP_LEVEL_STATE: 'db_temp_level_',
   LEVEL_CUSTOMIZATIONS: 'db_level_customs',
-  AI_ANALYSIS: 'db_ai_analysis'
+  AI_ANALYSIS: 'db_ai_analysis',
+  DYNAMIC_SERVICES: 'db_site_services',
+  DYNAMIC_LEVELS: 'db_site_levels',
+  DYNAMIC_MENTORS: 'db_site_mentors'
 };
 
 export const storageService = {
-  // ... existing methods ...
-  
+  // Content Management
+  getSiteServices: (defaultServices: any[]): any[] => {
+    const saved = localStorage.getItem(DB_KEYS.DYNAMIC_SERVICES);
+    return saved ? JSON.parse(saved) : defaultServices;
+  },
+  saveSiteServices: (services: any[]) => {
+    localStorage.setItem(DB_KEYS.DYNAMIC_SERVICES, JSON.stringify(services));
+  },
+  getSiteLevels: (defaultLevels: any[]): any[] => {
+    const saved = localStorage.getItem(DB_KEYS.DYNAMIC_LEVELS);
+    return saved ? JSON.parse(saved) : defaultLevels;
+  },
+  saveSiteLevels: (levels: any[]) => {
+    localStorage.setItem(DB_KEYS.DYNAMIC_LEVELS, JSON.stringify(levels));
+  },
+  getSiteMentors: (defaultMentors: any[]): any[] => {
+    const saved = localStorage.getItem(DB_KEYS.DYNAMIC_MENTORS);
+    return saved ? JSON.parse(saved) : defaultMentors;
+  },
+  saveSiteMentors: (mentors: any[]) => {
+    localStorage.setItem(DB_KEYS.DYNAMIC_MENTORS, JSON.stringify(mentors));
+  },
+
   saveAIAnalysis: (uid: string, type: 'swot' | 'growth' | 'opportunity', data: any) => {
     const analysis = JSON.parse(localStorage.getItem(DB_KEYS.AI_ANALYSIS) || '{}');
     if (!analysis[uid]) analysis[uid] = {};
