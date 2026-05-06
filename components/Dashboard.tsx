@@ -19,11 +19,14 @@ import {
   BarChart,
   Layout,
   ArrowRight,
-  Rocket
+  Rocket,
+  Bell,
+  Menu,
+  Layers
 } from 'lucide-react';
-import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest, OpportunityAnalysis } from '../types';
+import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest, OpportunityAnalysis, MOCK_MENTORS, ProjectBuildData } from '../types';
 import { storageService } from '../services/storageService';
-import { discoverOpportunities } from '../services/geminiService';
+import { discoverOpportunities, generateSWOTAnalysis, generateGrowthProjection, runProjectAgents } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound } from '../services/audioService';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -42,9 +45,13 @@ interface DashboardProps {
 
 const NAV_ITEMS = [
   { id: 'home', label: 'الرئيسية', icon: <Home className="w-5 h-5" /> },
+  { id: 'mentorship', label: 'الإرشاد والموجّهين', icon: <Calendar className="w-5 h-5" /> },
+  { id: 'growth', label: 'تحليل النمو', icon: <BarChart className="w-5 h-5" /> },
+  { id: 'swot', label: 'تحليل SWOT', icon: <Layout className="w-5 h-5" /> },
   { id: 'bootcamp', label: 'المنهج التدريبي', icon: <BookOpen className="w-5 h-5" /> },
   { id: 'tasks', label: 'المهام', icon: <CheckSquare className="w-5 h-5" /> },
   { id: 'opportunity_lab', label: 'مختبر الفرص', icon: <Compass className="w-5 h-5" /> },
+  { id: 'project_builder', label: 'بناء المشروع (AI)', icon: <Layers className="w-5 h-5" /> },
   { id: 'services', label: 'الخدمات', icon: <Settings className="w-5 h-5" /> }, 
   { id: 'startup_profile', label: 'ملف الشركة', icon: <Briefcase className="w-5 h-5" /> },
 ];
@@ -61,7 +68,25 @@ const PRESET_COLORS = [
 ];
 
 export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels, onSelectLevel, onShowCertificate, onLogout, onOpenProAnalytics, onUpdateLevelUI }) => {
+  const [notifications, setNotifications] = useState<{id: string, text: string, type: 'success' | 'info'}[]>([]);
+
+  const addNotification = (text: string, type: 'success' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substring(7);
+    setNotifications(prev => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'صباح الخير';
+    if (hour < 18) return 'مساء الخير';
+    return 'ليلة سعيدة';
+  };
+
   const [activeNav, setActiveNav] = useState('home');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => (localStorage.getItem('dashboard_theme_mode') as any) || 'light');
   
@@ -83,7 +108,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
   // Opportunity Lab States
   const [oppResult, setOppResult] = useState<OpportunityAnalysis | null>(null);
+  const [projectBuild, setProjectBuild] = useState<ProjectBuildData | null>(null);
+  const [isBuildingProject, setIsBuildingProject] = useState(false);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>(['a1', 'a2']);
   const [isAnalyzingOpp, setIsAnalyzingOpp] = useState(false);
+
+  // SWOT States
+  const [swotResult, setSwotResult] = useState<{ strengths: string[], weaknesses: string[], opportunities: string[], threats: string[] } | null>(null);
+  const [isAnalyzingSWOT, setIsAnalyzingSWOT] = useState(false);
+
+  // Growth States
+  const [growthData, setGrowthData] = useState<{ month: string, users: number, revenue: number }[]>([]);
+  const [isSimulatingGrowth, setIsSimulatingGrowth] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,6 +146,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
           logo: localStorage.getItem(`logo_${session.uid}`) || undefined
         }));
       }
+
+      // Load AI Analysis Results
+      const savedSwot = storageService.getAIAnalysis(session.uid, 'swot');
+      if (savedSwot) setSwotResult(savedSwot);
+      
+      const savedGrowth = storageService.getAIAnalysis(session.uid, 'growth');
+      if (savedGrowth) setGrowthData(savedGrowth);
+
+      const savedOpp = storageService.getAIAnalysis(session.uid, 'opportunity');
+      if (savedOpp) setOppResult(savedOpp);
+
+      const savedProjectBuild = storageService.getAIAnalysis(session.uid, 'project_build' as any);
+      if (savedProjectBuild) setProjectBuild({
+        projectName: currentStartup?.name || '',
+        description: currentStartup?.description || '',
+        quality: 'Professional',
+        selectedAgents: [],
+        results: savedProjectBuild
+      });
     }
   }, [activeNav]);
 
@@ -144,7 +199,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     setTimeout(() => {
       setIsSaving(false);
       playCelebrationSound();
-      alert('تم حفظ بيانات الشركة.');
+      addNotification('تم تحديث بيانات الشركة بنجاح!', 'success');
     }, 800);
   };
 
@@ -171,9 +226,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
       setSelectedPackage(null);
       setRequestDetails('');
       playCelebrationSound();
-      alert('تم إرسال طلب الخدمة بنجاح، سيقوم مستشارنا بالتواصل معك لمناقشة التفاصيل.');
+      addNotification('تم إرسال طلب الخدمة بنجاح، فريقنا سيتواصل معك.', 'success');
     }, 1200);
   };
+
+  const handleRunProjectBuilder = async () => {
+    if (selectedAgents.length === 0) return addNotification('يرجى اختيار عميل ذكي واحد على الأقل.', 'info');
+    setIsBuildingProject(true);
+    playPositiveSound();
+    try {
+      const result = await runProjectAgents(userProfile.startupName, userProfile.startupDescription, selectedAgents);
+      setProjectBuild({
+        projectName: userProfile.startupName,
+        description: userProfile.startupDescription,
+        quality: 'Professional',
+        selectedAgents,
+        results: result
+      });
+      const session = storageService.getCurrentSession();
+      if (session) storageService.saveAIAnalysis(session.uid, 'project_build' as any, result);
+      playCelebrationSound();
+      addNotification('تم بناء استراتيجية المشروع بنجاح!', 'success');
+    } catch (e) {
+      addNotification('فشل بناء استراتيجية المشروع.', 'info');
+    } finally {
+      setIsBuildingProject(false);
+    }
+  };
+
+  const filteredNavItems = NAV_ITEMS.filter(item => 
+    item.label.includes(searchQuery) || item.id.includes(searchQuery)
+  );
+
+  const filteredLevels = levels.filter(level => 
+    level.title.includes(searchQuery) || level.description.includes(searchQuery)
+  );
 
   const handleRunOppAnalysis = async () => {
     setIsAnalyzingOpp(true);
@@ -181,13 +268,57 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     try {
       const result = await discoverOpportunities(userProfile.startupName, userProfile.startupDescription, userProfile.industry);
       setOppResult(result);
+      const session = storageService.getCurrentSession();
+      if (session) storageService.saveAIAnalysis(session.uid, 'opportunity', result);
       playCelebrationSound();
+      addNotification('تم العثور على فرص نمو واعدة لمشروعك!', 'success');
     } catch (e) {
-      alert("فشل التحليل الاستراتيجي.");
+      addNotification("فشل التحليل الاستراتيجي للفرص.", 'info');
     } finally {
       setIsAnalyzingOpp(false);
     }
   };
+
+  const handleRunSWOT = async () => {
+    setIsAnalyzingSWOT(true);
+    playPositiveSound();
+    try {
+      const result = await generateSWOTAnalysis(userProfile.startupName, userProfile.startupDescription, userProfile.industry);
+      setSwotResult(result);
+      const session = storageService.getCurrentSession();
+      if (session) storageService.saveAIAnalysis(session.uid, 'swot', result);
+      playCelebrationSound();
+      addNotification('تم الانتهاء من تحليل SWOT بنجاح!', 'success');
+    } catch (e) {
+      addNotification('حدث خطأ أثناء إجراء التحليل.', 'info');
+    } finally {
+      setIsAnalyzingSWOT(false);
+    }
+  };
+
+  const handleSimulateGrowth = async () => {
+    setIsSimulatingGrowth(true);
+    playPositiveSound();
+    try {
+      const result = await generateGrowthProjection(userProfile.startupName, userProfile.startupDescription, userProfile.industry);
+      setGrowthData(result.months);
+      const session = storageService.getCurrentSession();
+      if (session) storageService.saveAIAnalysis(session.uid, 'growth', result.months);
+      playCelebrationSound();
+      addNotification('تم إنشاء محاكاة النمو بنجاح!', 'success');
+    } catch (e) {
+      addNotification('فشل محاكاة النمو، حاول مرة أخرى.', 'info');
+    } finally {
+      setIsSimulatingGrowth(false);
+    }
+  };
+
+  const AVAILABLE_AGENTS_DASHBOARD = [
+    { id: 'a1', name: 'محلل الرؤية', icon: '🔭', desc: 'تحديد وضوح الهدف وقابلية التوسع.' },
+    { id: 'a2', name: 'خبير السوق', icon: '🏢', desc: 'تحليل المنافسين والطلب الحالي.' },
+    { id: 'a3', name: 'مصمم المستخدمين', icon: '👥', desc: 'بناء ملفات تعريف دقيقة للعملاء.' },
+    { id: 'a4', name: 'محلل الفرص', icon: '💰', desc: 'تقييم الجاهزية الاستثمارية للنمو.' },
+  ];
 
   const handleSaveCustomization = () => {
     if (editingLevel && onUpdateLevelUI) {
@@ -198,15 +329,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   };
 
   return (
-    <div className={`min-h-screen flex ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} font-sans`} dir="rtl">
+    <div className={`min-h-screen flex ${isDark ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900'} font-sans`} dir="rtl">
       <div className="fixed inset-0 -z-10 bg-mesh opacity-30" />
 
+      {/* Notifications Portal */}
+      <div className="fixed top-6 right-6 z-[100] pointer-events-none space-y-4">
+        <AnimatePresence>
+          {notifications.map(n => (
+            <motion.div
+              key={n.id}
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 100, opacity: 0 }}
+              className={`p-4 rounded-2xl shadow-2xl border flex items-center gap-3 glass-dark min-w-[300px] pointer-events-auto ${n.type === 'success' ? 'border-emerald-500/20' : 'border-blue-500/20'}`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${n.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
+                {n.type === 'success' ? '✓' : 'ℹ'}
+              </div>
+              <p className="text-sm font-bold">{n.text}</p>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 right-0 z-50 w-72 lg:static transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} ${isDark ? 'bg-slate-900/50 border-white/5' : 'bg-white border-slate-200'} border-l backdrop-blur-xl flex flex-col shadow-2xl`}>
-        <div className="p-8 text-center border-b border-white/5">
+      <aside className={`fixed inset-y-0 right-0 z-50 w-72 lg:static transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} ${isDark ? 'bg-slate-900/50 border-slate-900/5 dark:border-white/5' : 'bg-white border-slate-200'} border-l backdrop-blur-xl flex flex-col shadow-2xl`}>
+        <div className="p-8 text-center border-b border-slate-900/5 dark:border-white/5">
           <motion.div 
             whileHover={{ scale: 1.05, rotate: -2 }}
-            className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-600/30 overflow-hidden border-4 border-white/10"
+            className="w-20 h-20 mx-auto mb-4 bg-blue-600 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-blue-600/30 overflow-hidden border-4 border-slate-900/10 dark:border-white/10"
           >
             {userProfile.logo ? (
               <img src={userProfile.logo} className="w-full h-full object-cover" />
@@ -222,11 +373,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         </div>
         
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-          {NAV_ITEMS.map(item => (
+          {filteredNavItems.map(item => (
             <button 
               key={item.id} 
               onClick={() => { setActiveNav(item.id); setIsMobileMenuOpen(false); }} 
-              className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all group ${activeNav === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+              className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all group ${activeNav === item.id ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-900/5 dark:bg-white/5 hover:text-slate-200'}`}
             >
               <div className="flex items-center gap-4">
                 <span className={`transition-transform duration-300 ${activeNav === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
@@ -241,10 +392,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
           ))}
         </nav>
 
-        <div className="p-6 border-t border-white/5 space-y-3">
+        <div className="p-6 border-t border-slate-900/5 dark:border-white/5 space-y-3">
           <button 
             onClick={() => { const n = isDark ? 'light' : 'dark'; setThemeMode(n); localStorage.setItem('dashboard_theme_mode', n); }} 
-            className="w-full flex items-center justify-center gap-3 p-3.5 rounded-2xl border border-white/5 text-xs font-black hover:bg-white/5 transition-all"
+            className="w-full flex items-center justify-center gap-3 p-3.5 rounded-2xl border border-slate-900/5 dark:border-white/5 text-xs font-black hover:bg-slate-900/5 dark:bg-white/5 transition-all"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             <span>{isDark ? 'الوضع النهاري' : 'الوضع الليلي'}</span>
@@ -257,26 +408,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 glass-dark z-40">
-           <div className="flex items-center gap-4">
-             <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 glass rounded-xl">
-               <Layout className="w-5 h-5" />
-             </button>
-             <h2 className="font-black text-2xl tracking-tighter uppercase">
-               {NAV_ITEMS.find(i => i.id === activeNav)?.label}
-             </h2>
-           </div>
-           
-           <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-2 px-4 py-2 glass rounded-xl border-white/5">
-                <Search className="w-4 h-4 text-slate-500" />
-                <input type="text" placeholder="بحث سريع..." className="bg-transparent border-none outline-none text-xs font-bold w-32" />
+        <header className="h-20 border-b border-slate-900/5 dark:border-white/5 flex items-center justify-between px-8 glass-dark z-40">
+          <div className="flex items-center gap-6">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 glass rounded-xl">
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex flex-col text-right">
+              <h2 className="text-sm font-black text-slate-800 dark:text-white leading-none mb-1">{getGreeting()}، {userProfile.name} 👋</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+             <div className="hidden md:flex items-center gap-2 px-4 py-2 glass rounded-xl border-slate-900/5 dark:border-white/5 group focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                <Search className="w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="ابحث عن أداة أو ملف..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-xs font-bold w-48 text-right focus:ring-0"
+                />
              </div>
-             <button onClick={onOpenProAnalytics} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2">
-               <BarChart className="w-4 h-4" />
-               <span>تحليلات PRO</span>
+             
+             <button 
+               className="p-2.5 glass rounded-xl hover:bg-white/10 transition-all relative group/notify"
+               onClick={() => addNotification('لا توجد تنبيهات جديدة حالياً', 'info')}
+             >
+                <div className="w-2 h-2 bg-rose-500 rounded-full absolute top-2 right-2 border-2 border-slate-900 shadow-sm" />
+                <Bell className="w-4 h-4 text-slate-500 group-hover/notify:text-blue-600" />
              </button>
-           </div>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-10">
@@ -288,8 +450,319 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                exit={{ opacity: 0, y: -10 }}
                className="min-h-full"
              >
+                {activeNav === 'mentorship' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="text-right space-y-4">
+                      <h3 className="text-4xl font-black">شبكة الموجّهين والخبراء</h3>
+                      <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+                        تواصل مع رواد أعمال ومستثمرين وخبراء تقنيين لمساعدتك في تخطي عوائق النمو وتسريع نجاح مشروعك.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {MOCK_MENTORS.map((mentor, idx) => (
+                        <motion.div 
+                          key={mentor.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 relative overflow-hidden group text-right flex flex-col justify-between"
+                        >
+                           <div className="relative z-10">
+                              <div className="flex justify-between items-start mb-8">
+                                 <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-5xl shadow-2xl shadow-blue-600/20 group-hover:scale-110 transition-transform duration-500">
+                                    {mentor.avatar}
+                                 </div>
+                                 <div className="flex flex-col items-end">
+                                    <span className="text-xs font-black text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full mb-2">⭐ {mentor.rating}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{mentor.experience} سنوات خبرة</span>
+                                 </div>
+                              </div>
+                              
+                              <h4 className="text-2xl font-black mb-1">{mentor.name}</h4>
+                              <p className="text-xs font-bold text-blue-400 mb-4 uppercase tracking-tighter">{mentor.role} @ {mentor.company}</p>
+                              
+                              <div className="flex flex-wrap gap-2 justify-end mb-6">
+                                 {mentor.tags.map(tag => (
+                                   <span key={tag} className="text-[9px] font-black bg-slate-900/5 dark:bg-white/5 px-2.5 py-1 rounded-lg text-slate-500">#{tag}</span>
+                                 ))}
+                              </div>
+
+                              <p className="text-sm text-slate-500 font-medium leading-relaxed mb-10 h-24 overflow-hidden text-right">
+                                 {mentor.bio}
+                              </p>
+                           </div>
+
+                           <button 
+                             onClick={() => addNotification(`تم تسجيل طلب حجز جلسة مع ${mentor.name}، سنرسل لك الموعد قريباً.`, 'success')}
+                             className="w-full py-5 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl font-black text-sm transition-all shadow-2xl flex items-center justify-center gap-3 active:scale-95"
+                           >
+                              <Calendar className="w-4 h-4" />
+                              <span>حجز جلسة استشارية</span>
+                           </button>
+
+                           <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-colors" />
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <div className="p-12 glass rounded-[4rem] border-slate-900/5 dark:border-white/5 bg-gradient-to-br from-indigo-600/5 to-blue-600/5 text-center space-y-6">
+                       <h4 className="text-2xl font-black italic">"لا أحد ينجح بمفرده في ريادة الأعمال."</h4>
+                       <p className="text-slate-500 font-medium">نحن نوفر لك جلسة إرشادية واحدة مجانية شهرياً كجزء من البرنامج التدريبي.</p>
+                       <button className="px-10 py-4 border-2 border-blue-600/30 text-blue-500 hover:bg-blue-600 hover:text-white rounded-full font-black transition-all">طلب جلسة طارئة (Fast Track)</button>
+                    </div>
+                  </div>
+                )}
+                {activeNav === 'growth' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                      <div className="text-right">
+                        <h3 className="text-4xl font-black mb-2">توقعات النمو المتقدمة</h3>
+                        <p className="text-slate-500 font-medium leading-relaxed">محاكاة ذكية لنمو المستخدمين والإيرادات بناءً على قطاع {userProfile.industry}.</p>
+                      </div>
+                      <button 
+                        onClick={handleSimulateGrowth}
+                        disabled={isSimulatingGrowth}
+                        className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-[2rem] font-black shadow-2xl shadow-blue-600/30 transition-all flex items-center gap-3 disabled:opacity-50"
+                      >
+                        {isSimulatingGrowth ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                        ) : (
+                          <>
+                            <Rocket className="w-5 h-5" />
+                            <span>توليد محاكاة النمو</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                      {!growthData.length && !isSimulatingGrowth && (
+                        <div className="flex flex-col items-center justify-center py-32 glass rounded-[4rem] border-slate-900/5 dark:border-white/5">
+                           <div className="w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center mb-8">
+                             <BarChart className="w-12 h-12 text-blue-600" />
+                           </div>
+                           <h4 className="text-2xl font-black mb-4">لا توجد محاكاة حالياً</h4>
+                           <p className="text-slate-500 max-w-sm text-center font-medium leading-relaxed mb-10">
+                             قم ببدء محاكاة النمو لرؤية المسار المتوقع لمشروعك خلال الـ 12 شهراً القادمة.
+                           </p>
+                           <button 
+                             onClick={handleSimulateGrowth}
+                             className="px-12 py-5 bg-blue-600 text-white rounded-[2rem] font-black shadow-2xl hover:bg-blue-500 transition-all flex items-center gap-3"
+                           >
+                             <Rocket className="w-5 h-5" />
+                             <span>بدء المحاكاة الآن</span>
+                           </button>
+                        </div>
+                      )}
+
+                    {growthData.length > 0 && (
+                      <div className="grid grid-cols-1 gap-10">
+                        <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 shadow-xl h-[500px]">
+                          <h4 className="text-xl font-black mb-10 text-right">توقعات الإيرادات الشهرية ($)</h4>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={growthData}>
+                              <defs>
+                                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} vertical={false} />
+                              <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} fontVariant="black" axisLine={false} tickLine={false} />
+                              <YAxis stroke="#94a3b8" fontSize={10} fontVariant="black" axisLine={false} tickLine={false} />
+                              <RechartsTooltip 
+                                contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                itemStyle={{ color: '#2563eb', fontWeight: 'bold' }}
+                                labelStyle={{ color: '#64748b', fontWeight: 'bold' }}
+                              />
+                              <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                           <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 shadow-xl h-[400px]">
+                              <h4 className="text-xl font-black mb-10 text-right">توقعات نمو المستخدمين</h4>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={growthData}>
+                                  <defs>
+                                    <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                  </defs>
+                                  <XAxis dataKey="month" hide />
+                                  <Area type="stepAfter" dataKey="users" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                                  <RechartsTooltip 
+                                    contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', borderRadius: '1rem', border: 'none' }}
+                                  />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                           </div>
+                           
+                           <div className="flex flex-col justify-center space-y-6">
+                              <div className="p-8 bg-blue-600/10 rounded-[2.5rem] border border-blue-600/20">
+                                 <h5 className="font-black text-blue-500 mb-2">إجمالي الإيرادات المتوقعة (عام)</h5>
+                                 <p className="text-4xl font-black text-slate-900 dark:text-white">
+                                    ${growthData.reduce((acc, curr) => acc + curr.revenue, 0).toLocaleString()}
+                                 </p>
+                              </div>
+                              <div className="p-8 bg-emerald-600/10 rounded-[2.5rem] border border-emerald-600/20">
+                                 <h5 className="font-black text-emerald-500 mb-2">قاعدة المستخدمين المستهدفة</h5>
+                                 <p className="text-4xl font-black text-slate-900 dark:text-white">
+                                    {growthData[growthData.length - 1]?.users.toLocaleString()} مستخدم
+                                 </p>
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeNav === 'swot' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-4xl font-black">التحليل الرباعي الذكي (SWOT)</h3>
+                      <p className="text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+                        اكتشف نقاط القوة والضعف الداخلية، واقتنص الفرص وواجه التهديدات الخارجية بمساعدة الذكاء الاصطناعي.
+                      </p>
+                      {!swotResult && !isAnalyzingSWOT && (
+                        <button 
+                          onClick={handleRunSWOT}
+                          className="mt-6 px-12 py-5 bg-slate-900 text-white rounded-[2.5rem] font-black shadow-2xl hover:bg-indigo-600 transition-all transform active:scale-95"
+                        >
+                          بدء التحليل الاستراتيجي
+                        </button>
+                      )}
+                    </div>
+
+                    {isAnalyzingSWOT && (
+                      <div className="flex flex-col items-center py-20 animate-pulse">
+                         <Layout className="w-20 h-20 text-blue-600 mb-6" />
+                         <p className="text-xl font-black text-slate-400 uppercase tracking-widest">Constructing Strategic Matrix...</p>
+                      </div>
+                    )}
+
+                    {!swotResult && !isAnalyzingSWOT && (
+                      <div className="flex flex-col items-center justify-center py-32 glass rounded-[4rem] border-slate-900/5 dark:border-white/5 bg-gradient-to-tr from-indigo-500/5 to-transparent">
+                         <div className="w-24 h-24 bg-indigo-600/10 rounded-full flex items-center justify-center mb-8">
+                           <Layout className="w-12 h-12 text-indigo-600" />
+                         </div>
+                         <h4 className="text-2xl font-black mb-4">حلل ميزتك التنافسية</h4>
+                         <p className="text-slate-500 max-w-sm text-center font-medium leading-relaxed mb-10">
+                           استخدم تحليل SWOT لفهم نقاط القوة والضعف الداخلية لمشروعك، وتحديد الفرص والتهديدات في السوق.
+                         </p>
+                         <button 
+                           onClick={handleRunSWOT}
+                           className="px-12 py-5 bg-indigo-600 text-white rounded-[2rem] font-black shadow-2xl hover:bg-indigo-500 transition-all flex items-center gap-3"
+                         >
+                           <Zap className="w-5 h-5" />
+                           <span>تشغيل المحلل الاستراتيجي</span>
+                         </button>
+                      </div>
+                    )}
+
+                    {swotResult && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-slide-up">
+                        {/* Strengths */}
+                        <div className="p-10 bg-emerald-50 rounded-[3.5rem] border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30 group">
+                          <h4 className="text-2xl font-black text-emerald-600 mb-6 flex items-center gap-4">
+                            <span className="w-10 h-10 bg-emerald-600 text-white rounded-2xl flex items-center justify-center text-lg">S</span>
+                            نقاط القوة
+                          </h4>
+                          <ul className="space-y-4">
+                            {swotResult.strengths.map((item, i) => (
+                              <li key={i} className="flex items-start gap-4 text-slate-700 dark:text-slate-300 font-medium">
+                                <span className="text-emerald-500 mt-1">✦</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Weaknesses */}
+                        <div className="p-10 bg-rose-50 rounded-[3.5rem] border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 group">
+                          <h4 className="text-2xl font-black text-rose-600 mb-6 flex items-center gap-4">
+                            <span className="w-10 h-10 bg-rose-600 text-white rounded-2xl flex items-center justify-center text-lg">W</span>
+                            نقاط الضعف
+                          </h4>
+                          <ul className="space-y-4">
+                            {swotResult.weaknesses.map((item, i) => (
+                              <li key={i} className="flex items-start gap-4 text-slate-700 dark:text-slate-300 font-medium">
+                                <span className="text-rose-500 mt-1">✦</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Opportunities */}
+                        <div className="p-10 bg-blue-50 rounded-[3.5rem] border border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30 group">
+                          <h4 className="text-2xl font-black text-blue-600 mb-6 flex items-center gap-4">
+                            <span className="w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center text-lg">O</span>
+                            الفرص
+                          </h4>
+                          <ul className="space-y-4">
+                            {swotResult.opportunities.map((item, i) => (
+                              <li key={i} className="flex items-start gap-4 text-slate-700 dark:text-slate-300 font-medium">
+                                <span className="text-blue-500 mt-1">✦</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* Threats */}
+                        <div className="p-10 bg-amber-50 rounded-[3.5rem] border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30 group">
+                          <h4 className="text-2xl font-black text-amber-600 mb-6 flex items-center gap-4">
+                            <span className="w-10 h-10 bg-amber-600 text-white rounded-2xl flex items-center justify-center text-lg">T</span>
+                            التهديدات
+                          </h4>
+                          <ul className="space-y-4">
+                            {swotResult.threats.map((item, i) => (
+                              <li key={i} className="flex items-start gap-4 text-slate-700 dark:text-slate-300 font-medium">
+                                <span className="text-amber-500 mt-1">✦</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {activeNav === 'home' && (
                   <div className="max-w-6xl mx-auto space-y-12 pb-12">
+                    {/* Daily Mission Banner */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-1 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 rounded-[3.5rem] shadow-2xl"
+                    >
+                      <div className="p-10 bg-slate-900 text-white rounded-[3.2rem] relative overflow-hidden group">
+                         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                            <div className="text-right">
+                               <div className="flex items-center gap-3 mb-4">
+                                  <span className="px-3 py-1 bg-blue-500 rounded-full text-[10px] font-black uppercase tracking-widest">مهمة اليوم</span>
+                                  <div className="h-px bg-white/20 w-12" />
+                               </div>
+                               <h3 className="text-3xl font-black mb-2">أكمل ملفك التعريفي الذكي 🚀</h3>
+                               <p className="text-slate-400 font-medium leading-relaxed max-w-lg">
+                                  ملفك التعريفي هو الوقود الذي يغذي أدوات الذكاء الاصطناعي لدينا. أكمله بنسبة 100% للحصول على أدق التحليلات.
+                               </p>
+                            </div>
+                            <button 
+                              onClick={() => { setActiveNav('startup_profile'); addNotification('سننتقل الآن لإكمال الملف التعريفي', 'info'); }}
+                              className="px-12 py-5 bg-white text-slate-900 rounded-[2rem] font-black text-sm hover:bg-blue-600 hover:text-white transition-all shadow-3xl active:scale-95 shrink-0"
+                            >
+                              اذهب إلى الملف الشخصي
+                            </button>
+                         </div>
+                         <Zap className="absolute -bottom-10 -left-10 w-64 h-64 text-white/5 -rotate-12 transition-transform group-hover:rotate-0 duration-700 pointer-events-none" />
+                      </div>
+                    </motion.div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                        <motion.div 
                          initial={{ opacity: 0, scale: 0.9 }}
@@ -297,7 +770,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                          transition={{ delay: 0.1 }}
                          className="p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] text-white shadow-2xl relative overflow-hidden"
                        >
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[40px]" />
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-900/10 dark:bg-white/10 rounded-full blur-[40px]" />
                           <div className="relative z-10 flex flex-col justify-between h-full">
                             <div>
                               <p className="text-[11px] font-black uppercase opacity-60 tracking-[0.2em]">نسبة الإنجاز المحققة</p>
@@ -321,7 +794,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                          initial={{ opacity: 0, scale: 0.9 }}
                          animate={{ opacity: 1, scale: 1 }}
                          transition={{ delay: 0.2 }}
-                         className="p-8 glass rounded-[3rem] border-white/5 relative overflow-hidden group"
+                         className="p-8 glass rounded-[3rem] border-slate-900/5 dark:border-white/5 relative overflow-hidden group"
                        >
                           <Award className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 -rotate-12 transition-transform group-hover:rotate-0 duration-700" />
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">الأوسمة الرقمية</p>
@@ -331,7 +804,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                           </h3>
                           <div className="mt-6 flex gap-2">
                              {Array.from({length: 6}).map((_, i) => (
-                               <div key={i} className={`w-2 h-2 rounded-full ${i < completedCount ? 'bg-blue-500' : 'bg-white/10'}`} />
+                               <div key={i} className={`w-2 h-2 rounded-full ${i < completedCount ? 'bg-blue-500' : 'bg-slate-900/10 dark:bg-white/10'}`} />
                              ))}
                           </div>
                        </motion.div>
@@ -340,7 +813,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                          initial={{ opacity: 0, scale: 0.9 }}
                          animate={{ opacity: 1, scale: 1 }}
                          transition={{ delay: 0.3 }}
-                         className="p-8 glass rounded-[3rem] border-white/5 relative overflow-hidden group"
+                         className="p-8 glass rounded-[3rem] border-slate-900/5 dark:border-white/5 relative overflow-hidden group"
                        >
                           <Zap className="absolute -bottom-4 -right-4 w-32 h-32 text-white/5 -rotate-12 transition-transform group-hover:rotate-0 duration-700" />
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">الخدمات النشطة</p>
@@ -390,61 +863,65 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                        </div>
                     </div>
 
-                    {/* Training Curriculum Compact List */}
-                    <div className="space-y-4">
-                       <div className="flex justify-between items-center px-2">
-                          <h3 className="text-xl font-black">المنهج التدريبي</h3>
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{completedCount} من {levels.length} مكتمل</span>
-                       </div>
-                       
-                       <div className={`rounded-[2rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} shadow-sm overflow-hidden`}>
-                          <div className="divide-y divide-slate-100/10">
-                            {levels.map((level) => (
-                              <div 
-                                key={level.id} 
-                                onClick={() => !level.isLocked && onSelectLevel(level.id)} 
-                                className={`level-row p-4 flex items-center justify-between transition-all ${level.isLocked ? 'opacity-40 grayscale cursor-not-allowed is-locked' : 'cursor-pointer hover:bg-slate-50/5'} group`}
-                              >
-                                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${level.isCompleted ? (level.customColor || 'bg-green-100') + ' text-white' : 'bg-slate-50 text-slate-400'}`}>
-                                       {level.isCompleted ? '✓' : level.icon}
-                                    </div>
-                                    <div className="truncate">
-                                      <h4 className="font-black text-sm text-slate-800 group-hover:text-blue-600 transition-colors dark:text-slate-100">
-                                        <span className="text-slate-400 text-[10px] font-bold ml-2">0{level.id}.</span>
-                                        {level.title}
-                                      </h4>
-                                      <p className="text-[11px] text-slate-500 truncate mt-0.5">{level.description}</p>
-                                    </div>
-                                 </div>
-                                 
-                                 <div className="flex items-center gap-4 shrink-0 pr-4">
-                                    {!level.isLocked && (
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); setEditingLevel(level); setCustomIcon(level.icon); setCustomColor(level.customColor || ''); playPositiveSound(); }}
-                                        className="edit-btn p-2 rounded-lg bg-slate-100 text-slate-400 hover:text-blue-600 transition-all text-xs"
-                                        title="تخصيص المظهر"
-                                      >
-                                        🎨
-                                      </button>
-                                    )}
-                                    {level.isLocked ? (
-                                       <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                                          <span className="text-[10px]">🔒</span>
-                                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">مغلق</span>
-                                       </div>
-                                    ) : (
-                                       <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${level.isCompleted ? 'bg-green-50 border-green-100 text-green-600' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
-                                          <span className="text-[10px]">{level.isCompleted ? '●' : '→'}</span>
-                                          <span className="text-[9px] font-black uppercase tracking-tighter">{level.isCompleted ? 'مكتمل' : 'دخول'}</span>
-                                       </div>
-                                    )}
-                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                       </div>
-                    </div>
+
+                  </div>
+                )}
+                {activeNav === 'bootcamp' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                     <div className="text-right space-y-4 mb-10">
+                        <h3 className="text-4xl font-black italic">أكاديمية بيزنس ديفلوبرز</h3>
+                        <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+                           رحلة متكاملة من ٦ محطات رئيسية تأخذك من فكرة مشروعك إلى الجاهزية المطلقة للعرض على المستثمرين.
+                        </p>
+                     </div>
+                     
+                     <div className="grid grid-cols-1 gap-6">
+                        {levels.map((level) => (
+                          <motion.div 
+                            whileHover={{ x: -10 }}
+                            key={level.id} 
+                            onClick={() => !level.isLocked && onSelectLevel(level.id)} 
+                            className={`p-10 glass rounded-[3.5rem] border-slate-900/5 dark:border-white/5 flex flex-col md:flex-row items-center justify-between transition-all ${level.isLocked ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:border-blue-500/30'} group relative overflow-hidden`}
+                          >
+                             <div className="flex items-center gap-8 flex-1 min-w-0 text-right w-full md:w-auto flex-row-reverse">
+                                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl shrink-0 shadow-2xl ${level.isCompleted ? (level.customColor || 'bg-emerald-500') + ' text-white' : 'bg-slate-900/5 dark:bg-white/5 text-slate-400'}`}>
+                                   {level.isCompleted ? '✓' : level.icon}
+                                </div>
+                                <div className="truncate flex-1">
+                                  <h4 className="font-black text-2xl text-slate-800 dark:text-slate-100 group-hover:text-blue-600 transition-colors">
+                                    {level.title}
+                                    <span className="text-blue-500/30 text-xs font-black mr-4 uppercase tracking-[0.3em]">Module 0{level.id}</span>
+                                  </h4>
+                                  <p className="text-sm text-slate-500 font-medium mt-2 leading-relaxed">{level.description}</p>
+                                </div>
+                             </div>
+                             
+                             <div className="flex items-center gap-6 shrink-0 mt-6 md:mt-0">
+                                {!level.isLocked && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); setEditingLevel(level); setCustomIcon(level.icon); setCustomColor(level.customColor || ''); playPositiveSound(); }}
+                                    className="p-4 rounded-2xl bg-slate-900/5 dark:bg-white/5 text-slate-400 hover:text-blue-600 transition-all text-xl"
+                                    title="تخصيص المظهر"
+                                  >
+                                    🎨
+                                  </button>
+                                )}
+                                {level.isLocked ? (
+                                   <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                      <Lock className="w-4 h-4 text-slate-400" />
+                                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest">مغلق</span>
+                                   </div>
+                                ) : (
+                                   <button className={`flex items-center gap-3 px-8 py-4 rounded-2xl border font-black text-sm transition-all shadow-xl ${level.isCompleted ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-500/20' : 'bg-blue-600 border-blue-500 text-white shadow-blue-600/20'}`}>
+                                      <span>{level.isCompleted ? 'مراجعة المحتوى' : 'بدء المحطة'}</span>
+                                      <ArrowRight className="w-4 h-4 rotate-180" />
+                                   </button>
+                                )}
+                             </div>
+                             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl group-hover:bg-blue-600/10 transition-colors" />
+                          </motion.div>
+                        ))}
+                     </div>
                   </div>
                 )}
 
@@ -538,7 +1015,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
                          <div className="space-y-8">
                             <div className={`p-10 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden group`}>
-                               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[40px]"></div>
+                               <div className="absolute top-0 right-0 w-32 h-32 bg-slate-900/10 dark:bg-white/10 rounded-full blur-[40px]"></div>
                                <h4 className="text-lg font-black mb-6 flex items-center gap-3">
                                   <span className="text-2xl">🌊</span>
                                   استراتيجية المحيط الأزرق
@@ -556,7 +1033,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                <p className="text-base font-medium leading-relaxed mb-8">
                                   {oppResult.quickWinAction}
                                </p>
-                               <button className="w-full py-4 bg-white/5 border border-white/10 hover:border-blue-500/50 rounded-2xl font-black text-xs transition-all active:scale-95">
+                               <button 
+                                 onClick={() => addNotification(`طلب تنفيذ: ${oppResult.quickWinAction} قيد المراجعة.`, 'success')}
+                                 className="w-full py-4 bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 hover:border-blue-500/50 rounded-2xl font-black text-xs transition-all active:scale-95"
+                               >
                                    ابدأ التنفيذ الآن
                                 </button>
                              </div>
@@ -566,9 +1046,104 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                   </div>
                 )}
 
+                {activeNav === 'project_builder' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="text-right space-y-4">
+                      <h3 className="text-4xl font-black">بناء الاستراتيجية بالذكاء الاصطناعي</h3>
+                      <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+                        اختر "الوكلاء الأذكياء" الذين تود إشراكهم في تحليل وبناء مشروعك الاستراتيجي. يساعدك هذا النظام على توليد رؤية تقنية وتجارية متكاملة.
+                      </p>
+                    </div>
+
+                    {!projectBuild ? (
+                      <div className="glass p-12 rounded-[4rem] text-center space-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {AVAILABLE_AGENTS_DASHBOARD.map(agent => (
+                            <button
+                              key={agent.id}
+                              onClick={() => {
+                                setSelectedAgents(prev => 
+                                  prev.includes(agent.id) ? prev.filter(id => id !== agent.id) : [...prev, agent.id]
+                                );
+                              }}
+                              className={`p-8 rounded-[3rem] border transition-all text-right flex flex-col items-end gap-4 ${
+                                selectedAgents.includes(agent.id) 
+                                  ? 'bg-blue-600 border-blue-600 text-white shadow-2xl shadow-blue-600/30 ring-4 ring-blue-500/10' 
+                                  : 'bg-white/50 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-blue-500/50'
+                              }`}
+                            >
+                              <span className="text-4xl">{agent.icon}</span>
+                              <div>
+                                <h4 className="font-black text-lg mb-1">{agent.name}</h4>
+                                <p className={`text-[10px] font-bold leading-relaxed ${selectedAgents.includes(agent.id) ? 'text-white/80' : 'text-slate-500'}`}>
+                                  {agent.desc}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+
+                        <button
+                          onClick={handleRunProjectBuilder}
+                          disabled={isBuildingProject}
+                          className={`px-12 py-6 bg-slate-900 dark:bg-blue-600 text-white rounded-[2rem] font-black hover:scale-105 transition-all shadow-2xl flex items-center gap-4 mx-auto ${isBuildingProject ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isBuildingProject ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>جاري التحليل الاستراتيجي...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-6 h-6 fill-white" />
+                              <span>ابدأ بناء المشروع الآن</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                         <div className="space-y-8">
+                            <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                               <h4 className="text-xl font-black mb-6 text-blue-500 border-b border-blue-500/10 pb-4">الرؤية الاستراتيجية</h4>
+                               <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 italic">
+                                  {projectBuild.results.vision}
+                               </p>
+                            </div>
+                            <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                               <h4 className="text-xl font-black mb-6 text-emerald-500 border-b border-emerald-500/10 pb-4">تحليل السوق</h4>
+                               <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300">
+                                  {projectBuild.results.market}
+                               </p>
+                            </div>
+                         </div>
+                         <div className="space-y-8">
+                            <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                               <h4 className="text-xl font-black mb-6 text-purple-500 border-b border-purple-500/10 pb-4">فرضيات النمو المقترحة</h4>
+                               <div className="space-y-4 text-right">
+                                  {projectBuild.results.hypotheses.map((h: string, i: number) => (
+                                    <div key={i} className="flex items-start gap-4 flex-row-reverse">
+                                       <div className="w-6 h-6 bg-purple-500/10 text-purple-500 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0 mt-1">{i+1}</div>
+                                       <p className="text-xs font-bold leading-relaxed text-slate-600 dark:text-slate-400">{h}</p>
+                                    </div>
+                                  ))}
+                               </div>
+                            </div>
+                            <button 
+                               onClick={() => { setProjectBuild(null); playPositiveSound(); }}
+                               className="w-full py-6 bg-slate-900 dark:bg-white/10 text-white rounded-2xl font-black text-xs hover:bg-blue-600 transition-all active:scale-95"
+                            >
+                               إعادة تعيين وبناء جديد
+                            </button>
+                         </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {activeNav === 'services' && (
                   <div className="max-w-6xl mx-auto space-y-12 pb-20">
-                     <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-white/5 pb-10">
+                     <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-slate-900/5 dark:border-white/5 pb-10">
                         <div className="space-y-2 text-right">
                            <h3 className="text-4xl font-black tracking-tight">خدمات التنفيذ الاحترافية</h3>
                            <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
@@ -590,11 +1165,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }}
-                            className="group p-10 glass rounded-[3rem] border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all text-right"
+                            className="group p-10 glass rounded-[3rem] border-slate-900/5 dark:border-white/5 flex flex-col justify-between hover:border-blue-500/30 transition-all text-right"
                           >
                              <div>
                                 <div className="flex justify-between items-start mb-8">
-                                   <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
+                                   <div className="w-16 h-16 bg-slate-900/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-4xl shadow-inner group-hover:scale-110 transition-transform">
                                       {service.icon}
                                    </div>
                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full ${service.category === 'Design' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : service.category === 'Tech' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
@@ -607,7 +1182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                 <div className="space-y-4 mb-10">
                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">خيارات الأداء:</p>
                                    {service.packages.map(pkg => (
-                                     <div key={pkg.id} className="flex justify-between items-center py-2 border-b border-white/5 group/pkg flex-row-reverse">
+                                     <div key={pkg.id} className="flex justify-between items-center py-2 border-b border-slate-900/5 dark:border-white/5 group/pkg flex-row-reverse">
                                         <span className="text-xs font-bold text-slate-400">{pkg.name}</span>
                                         <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg group-hover/pkg:bg-blue-600 group-hover/pkg:text-white transition-all">{pkg.price}</span>
                                      </div>
@@ -631,9 +1206,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                             سجل الطلبات
                             <span className="w-2 h-6 bg-emerald-500 rounded-full"></span>
                          </h4>
-                         <div className="glass rounded-[2.5rem] border-white/5 overflow-hidden">
+                         <div className="glass rounded-[2.5rem] border-slate-900/5 dark:border-white/5 overflow-hidden">
                             <table className="w-full text-right">
-                               <thead className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-white/5">
+                               <thead className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-900/5 dark:border-white/5">
                                   <tr>
                                      <th className="px-8 py-5">المشروع / الخدمة</th>
                                      <th className="px-8 py-5">الخطة</th>
@@ -646,7 +1221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                     const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
                                     const pkg = svc?.packages.find(p => p.id === req.packageId);
                                     return (
-                                      <tr key={req.id} className="hover:bg-white/5 transition-colors group">
+                                      <tr key={req.id} className="hover:bg-slate-900/5 dark:bg-white/5 transition-colors group">
                                          <td className="px-8 py-6 font-black text-sm">{svc?.title}</td>
                                          <td className="px-8 py-6 text-xs font-bold text-slate-500">{pkg?.name}</td>
                                          <td className="px-8 py-6 text-xs text-slate-500 font-mono">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</td>
@@ -668,7 +1243,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
                 {activeNav === 'startup_profile' && (
                   <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
-                     <div className="glass p-12 rounded-[4rem] border-white/5 relative overflow-hidden">
+                     <div className="glass p-12 rounded-[4rem] border-slate-900/5 dark:border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-64 h-64 bg-blue-600/5 blur-[100px] -z-10" />
                         
                         <div className="flex flex-col md:flex-row gap-16">
@@ -676,7 +1251,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                               <motion.div 
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => fileInputRef.current?.click()} 
-                                className="w-48 h-48 rounded-[3.5rem] bg-white/5 border-4 border-dashed border-white/10 flex items-center justify-center cursor-pointer hover:border-blue-500/50 transition-all overflow-hidden relative group"
+                                className="w-48 h-48 rounded-[3.5rem] bg-slate-900/5 dark:bg-white/5 border-4 border-dashed border-slate-900/10 dark:border-white/10 flex items-center justify-center cursor-pointer hover:border-blue-500/50 transition-all overflow-hidden relative group"
                               >
                                  {userProfile.logo ? (
                                    <img src={userProfile.logo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" title="Logo" />
@@ -694,19 +1269,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                            <div className="flex-1 space-y-8 text-right">
                               <div className="space-y-4">
                                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">عنوان التجربة الريادية</label>
-                                 <input className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl outline-none focus:border-blue-500 font-bold text-xl transition-all" value={userProfile.startupName} onChange={e => setUserProfile({...userProfile, startupName: e.target.value})} dir="rtl" />
+                                 <input className="w-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-5 rounded-2xl outline-none focus:border-blue-500 font-bold text-xl transition-all" value={userProfile.startupName} onChange={e => setUserProfile({...userProfile, startupName: e.target.value})} dir="rtl" />
                               </div>
                               
                               <div className="space-y-4">
                                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">القطاع السوقي المستهدف</label>
-                                 <select className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl font-bold outline-none appearance-none focus:border-blue-500 transition-all cursor-pointer" value={userProfile.industry} onChange={e => setUserProfile({...userProfile, industry: e.target.value})} dir="rtl">
+                                 <select className="w-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-5 rounded-2xl font-bold outline-none appearance-none focus:border-blue-500 transition-all cursor-pointer" value={userProfile.industry} onChange={e => setUserProfile({...userProfile, industry: e.target.value})} dir="rtl">
                                     {SECTORS.map(s => <option key={s.value} value={s.value} className="bg-slate-900">{s.label}</option>)}
                                  </select>
                               </div>
                               
                               <div className="space-y-4">
                                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">رؤية المشروع (Project Vision)</label>
-                                 <textarea className="w-full h-40 bg-white/5 border border-white/10 p-6 rounded-[2rem] outline-none focus:border-blue-500 resize-none font-medium leading-relaxed" value={userProfile.startupDescription} onChange={e => setUserProfile({...userProfile, startupDescription: e.target.value})} dir="rtl" />
+                                 <textarea className="w-full h-40 bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-6 rounded-[2rem] outline-none focus:border-blue-500 resize-none font-medium leading-relaxed" value={userProfile.startupDescription} onChange={e => setUserProfile({...userProfile, startupDescription: e.target.value})} dir="rtl" />
                               </div>
                               
                               <motion.button 
@@ -736,7 +1311,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                              animate={{ opacity: 1, scale: 1 }}
                              transition={{ delay: idx * 0.05 }}
                              key={task.id} 
-                             className={`p-10 glass rounded-[3rem] border-white/5 flex flex-col justify-between text-right relative overflow-hidden group ${task.status === 'LOCKED' ? 'opacity-40 grayscale pointer-events-none' : ''}`}
+                             className={`p-10 glass rounded-[3rem] border-slate-900/5 dark:border-white/5 flex flex-col justify-between text-right relative overflow-hidden group ${task.status === 'LOCKED' ? 'opacity-40 grayscale pointer-events-none' : ''}`}
                           >
                              <div className="relative z-10">
                                 <div className="flex justify-between items-center mb-8">
@@ -753,7 +1328,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                <motion.button 
                                  whileHover={{ x: -10 }}
                                  onClick={() => { setSelectedTask(task); playPositiveSound(); }} 
-                                 className="w-full py-4 glass border-white/10 hover:border-blue-500/50 text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 group/btn transition-all"
+                                 className="w-full py-4 glass border-slate-900/10 dark:border-white/10 hover:border-blue-500/50 text-slate-900 dark:text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 group/btn transition-all"
                                >
                                  <span>تسليم المخرج</span>
                                  <ArrowRight className="w-4 h-4 rotate-180 group-hover/btn:translate-x-1 transition-transform" />
@@ -761,12 +1336,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                              )}
                              
                              {task.status === 'SUBMITTED' && (
-                                <div className="text-center text-[10px] font-black text-slate-500 py-4 border border-dashed border-white/10 rounded-2xl uppercase tracking-widest">
+                                <div className="text-center text-[10px] font-black text-slate-500 py-4 border border-dashed border-slate-900/10 dark:border-white/10 rounded-2xl uppercase tracking-widest">
                                   In Review Process
                                 </div>
                              )}
 
-                             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-blue-600/10 transition-colors" />
+                             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-slate-900/5 dark:bg-white/5 rounded-full blur-2xl group-hover:bg-blue-600/10 transition-colors" />
                           </motion.div>
                         ))}
                      </div>
@@ -785,7 +1360,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-               className="max-w-md w-full p-10 rounded-[3.5rem] glass-dark border-white/10 shadow-2xl"
+               className="max-w-md w-full p-10 rounded-[3.5rem] glass-dark border-slate-900/10 dark:border-white/10 shadow-2xl"
              >
                 <h3 className="text-2xl font-black mb-8 tracking-tighter uppercase">تخصيص المسار</h3>
                 
@@ -793,7 +1368,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                    <div className="space-y-4">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">الرمز التعبيري المحطة</label>
                       <input 
-                         className="w-full bg-white/5 border border-white/10 p-6 text-4xl text-center rounded-[2.5rem] outline-none focus:border-blue-500 transition-all font-sans"
+                         className="w-full bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-6 text-4xl text-center rounded-[2.5rem] outline-none focus:border-blue-500 transition-all font-sans"
                          value={customIcon}
                          onChange={e => setCustomIcon(e.target.value.substring(0, 4))}
                       />
@@ -814,7 +1389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                    </div>
 
                    <div className="pt-6 flex gap-4">
-                      <button onClick={() => setEditingLevel(null)} className="flex-1 py-5 font-black text-slate-500 hover:text-white transition-colors">إلغاء</button>
+                      <button onClick={() => setEditingLevel(null)} className="flex-1 py-5 font-black text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">إلغاء</button>
                       <button onClick={handleSaveCustomization} className="flex-[2] py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[2rem] font-black shadow-2xl shadow-blue-600/30 transition-all active:scale-95">حفظ التغييرات</button>
                    </div>
                 </div>
@@ -829,10 +1404,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                initial={{ opacity: 0, scale: 0.95, y: 30 }}
                animate={{ opacity: 1, scale: 1, y: 0 }}
                exit={{ opacity: 0, scale: 0.95, y: 30 }}
-               className="max-w-4xl w-full p-12 rounded-[4rem] glass-dark border-white/10 shadow-3xl"
+               className="max-w-4xl w-full p-12 rounded-[4rem] glass-dark border-slate-900/10 dark:border-white/10 shadow-3xl"
              >
                 <div className="flex justify-between items-start mb-10">
-                   <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all transform hover:rotate-90">✕</button>
+                   <button onClick={() => { setSelectedService(null); setSelectedPackage(null); }} className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all transform hover:rotate-90">✕</button>
                    <div>
                       <h3 className="text-4xl font-black mb-2 tracking-tight">{selectedService.title}</h3>
                       <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.3em]">Excellence Configuration</p>
@@ -846,7 +1421,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                           key={pkg.id} 
                           onClick={() => { setSelectedPackage(pkg); playPositiveSound(); }} 
                           className={`p-8 rounded-[3.5rem] border-2 text-right transition-all flex flex-col gap-4 relative overflow-hidden group
-                            ${selectedPackage?.id === pkg.id ? 'border-blue-600 bg-blue-600/10 shadow-2xl' : 'border-white/5 bg-white/5 hover:border-white/20'}
+                            ${selectedPackage?.id === pkg.id ? 'border-blue-600 bg-blue-600/10 shadow-2xl' : 'border-slate-900/5 dark:border-white/5 bg-slate-900/5 dark:bg-white/5 hover:border-white/20'}
                           `}
                         >
                            {selectedPackage?.id === pkg.id && (
@@ -869,7 +1444,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                    <div className="space-y-4">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ملاحظات إضافية للتنفيذ</label>
                       <textarea 
-                         className="w-full h-32 bg-white/5 border border-white/10 p-6 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all resize-none font-medium text-lg font-sans"
+                         className="w-full h-32 bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-6 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all resize-none font-medium text-lg font-sans"
                          placeholder="مثال: تفضيلات الألوان، رابط شعار حالي، أو أي ملاحظات تقنية تساعد فريقنا..."
                          value={requestDetails}
                          onChange={e => setRequestDetails(e.target.value)}
@@ -902,10 +1477,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
               initial={{ opacity: 0, y: 50 }}
                animate={{ opacity: 1, y: 0 }}
                exit={{ opacity: 0, y: 50 }}
-              className="max-w-2xl w-full p-12 rounded-[4.5rem] glass-dark border-white/10 shadow-3xl"
+              className="max-w-2xl w-full p-12 rounded-[4.5rem] glass-dark border-slate-900/10 dark:border-white/10 shadow-3xl"
             >
                <div className="flex justify-between items-start mb-8">
-                  <button onClick={() => setSelectedTask(null)} className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all">✕</button>
+                  <button onClick={() => setSelectedTask(null)} className="w-10 h-10 glass rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">✕</button>
                    <div>
                       <h3 className="text-4xl font-black mb-1 tracking-tighter">{selectedTask.title}</h3>
                       <p className="text-blue-500 text-[10px] font-black uppercase tracking-[0.4em]">Deliverable Submission</p>
@@ -914,14 +1489,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
 
                 <div className="space-y-10">
                    <textarea 
-                      className="w-full h-56 bg-white/5 border border-white/10 p-8 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all resize-none font-medium text-lg leading-relaxed font-sans"
+                      className="w-full h-56 bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 p-8 rounded-[2.5rem] outline-none focus:border-blue-500 transition-all resize-none font-medium text-lg leading-relaxed font-sans"
                       placeholder="الصق رابط المخرج (Google Drive, Figma, GitHub) أو صف مخرجاتك هنا بالتفصيل..."
                       value={submissionText}
                       onChange={e => setSubmissionText(e.target.value)}
                    />
                    
                    <div className="flex gap-6">
-                      <button onClick={() => setSelectedTask(null)} className="flex-1 py-6 font-black text-slate-500 hover:text-white transition-colors text-lg">إلغاء</button>
+                      <button onClick={() => setSelectedTask(null)} className="flex-1 py-6 font-black text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors text-lg">إلغاء</button>
                       <button 
                         onClick={() => handleTaskSubmit()} 
                         disabled={!submissionText.trim()}

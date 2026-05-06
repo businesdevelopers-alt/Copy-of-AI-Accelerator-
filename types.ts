@@ -426,3 +426,42 @@ export interface MentorProfile {
   rating: number;
   tags: string[];
 }
+
+export const MOCK_MENTORS: MentorProfile[] = [
+  {
+    id: 'm1',
+    name: 'م. أحمد الخالدي',
+    role: 'CEO',
+    company: 'TechGrowth',
+    specialty: 'توسع الأسواق والتقنية',
+    bio: 'خبير في بناء وتوسيع الشركات التقنية في المنطقة العربية لأكثر من ١٥ عاماً.',
+    experience: 15,
+    avatar: '👨‍💼',
+    rating: 4.9,
+    tags: ['SaaS', 'Strategy', 'Tech']
+  },
+  {
+    id: 'm2',
+    name: 'د. سارة المنصور',
+    role: 'Investment Partner',
+    company: 'CapitalVenture',
+    specialty: 'التمويل والاستثمار',
+    bio: 'متخصصة في إعداد الشركات لجولات التمويل (Series A) وتقييم النماذج المالية.',
+    experience: 10,
+    avatar: '👩‍💼',
+    rating: 4.8,
+    tags: ['Finance', 'Pitching', 'VC']
+  },
+  {
+    id: 'm3',
+    name: 'الأستاذ عمر فاروق',
+    role: 'Growth Hacker',
+    company: 'ScaleUp',
+    specialty: 'التسويق الرقمي والنمو',
+    bio: 'ساعد أكثر من ٥٠ شركة ناشئة في الوصول لأول ١٠٠ ألف مستخدم.',
+    experience: 8,
+    avatar: '👨‍💻',
+    rating: 4.7,
+    tags: ['Marketing', 'Growth', 'Ads']
+  }
+];

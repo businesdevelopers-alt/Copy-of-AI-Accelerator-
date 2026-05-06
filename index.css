@@ -1,18 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: "Inter", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Tajawal", "Inter", "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Alexandria", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-50 antialiased;
+    @apply antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
   }
 }
 
 .bg-mesh {
-  background-color: var(--color-slate-950);
   background-image: 
     radial-gradient(at 0% 0%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%),
     radial-gradient(at 100% 0%, hsla(189, 100%, 56%, 0.05) 0px, transparent 50%),
@@ -21,9 +27,16 @@
 }
 
 .glass {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  @apply bg-slate-900/5 backdrop-blur-xl border border-slate-900/10 shadow-sm;
+}
+.dark .glass {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-none;
 }
 
 .glass-dark {
-  @apply bg-slate-950/40 backdrop-blur-2xl border border-white/5;
+  @apply bg-white/80 backdrop-blur-2xl border border-slate-900/10 shadow-lg;
 }
+.dark .glass-dark {
+  @apply bg-slate-950/40 backdrop-blur-2xl border border-white/5 shadow-none;
+}
+

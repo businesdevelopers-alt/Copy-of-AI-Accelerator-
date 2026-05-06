@@ -10,10 +10,24 @@ const DB_KEYS = {
   LOGS: 'db_logs',
   SESSION: 'db_current_session',
   TEMP_LEVEL_STATE: 'db_temp_level_',
-  LEVEL_CUSTOMIZATIONS: 'db_level_customs' // مفتاح جديد للتخصيصات
+  LEVEL_CUSTOMIZATIONS: 'db_level_customs',
+  AI_ANALYSIS: 'db_ai_analysis'
 };
 
 export const storageService = {
+  // ... existing methods ...
+  
+  saveAIAnalysis: (uid: string, type: 'swot' | 'growth' | 'opportunity', data: any) => {
+    const analysis = JSON.parse(localStorage.getItem(DB_KEYS.AI_ANALYSIS) || '{}');
+    if (!analysis[uid]) analysis[uid] = {};
+    analysis[uid][type] = data;
+    localStorage.setItem(DB_KEYS.AI_ANALYSIS, JSON.stringify(analysis));
+  },
+
+  getAIAnalysis: (uid: string, type: 'swot' | 'growth' | 'opportunity'): any | null => {
+    const analysis = JSON.parse(localStorage.getItem(DB_KEYS.AI_ANALYSIS) || '{}');
+    return analysis[uid]?.[type] || null;
+  },
   registerUser: (profile: UserProfile): { user: UserRecord; startup: StartupRecord } => {
     const uid = `u_${Date.now()}`;
     const newUser: UserRecord = {

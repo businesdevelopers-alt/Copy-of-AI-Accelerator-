@@ -510,3 +510,54 @@ export const generateFounderCV = async (data: any): Promise<string> => {
     systemInstruction: "أنت خبير في كتابة السير الذاتية لرواد الأعمال والمؤسسين التنفيذيين."
   });
 };
+
+export const generateSWOTAnalysis = async (startupName: string, description: string, industry: string): Promise<{ strengths: string[], weaknesses: string[], opportunities: string[], threats: string[] }> => {
+  const prompt = `حلل مشروع ${startupName} في قطاع ${industry}. الوصف: ${description}. 
+  المطلوب تحليل الرباعي (SWOT Analysis): نقاط القوة، نقاط الضعف، الفرص، والتهديدات.`;
+
+  return callGemini<{ strengths: string[], weaknesses: string[], opportunities: string[], threats: string[] }>({
+    prompt,
+    systemInstruction: "أنت محلل استراتيجي خبير. قدم تحليلاً واقعياً وعميقاً بتنسيق JSON.",
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
+        opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+        threats: { type: Type.ARRAY, items: { type: Type.STRING } }
+      },
+      required: ["strengths", "weaknesses", "opportunities", "threats"]
+    }
+  });
+};
+
+export const generateGrowthProjection = async (startupName: string, description: string, industry: string): Promise<{ months: { month: string, users: number, revenue: number }[] }> => {
+  const prompt = `المشروع: ${startupName}. القطاع: ${industry}. 
+  ولد توقعات نمو شهرية لمدة 12 شهراً تتضمن عدد المستخدمين المتوقع والإيرادات (بالدولار). 
+  يجب أن يكون النمو واقعياً وتدريجياً.`;
+
+  return callGemini<{ months: { month: string, users: number, revenue: number }[] }>({
+    prompt,
+    systemInstruction: "أنت مستشار مالي متخصص في الشركات الناشئة. عد النتيجة بتنسيق JSON.",
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+        months: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              month: { type: Type.STRING },
+              users: { type: Type.NUMBER },
+              revenue: { type: Type.NUMBER }
+            },
+            required: ["month", "users", "revenue"]
+          }
+        }
+      },
+      required: ["months"]
+    }
+  });
+};
