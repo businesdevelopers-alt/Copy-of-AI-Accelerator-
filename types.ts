@@ -113,11 +113,13 @@ export const SERVICES_CATALOG: ServiceItem[] = [
 export interface ServiceRequest {
   id: string;
   uid: string;
+  startupName: string;
   serviceId: string;
   packageId: string;
-  status: 'PENDING' | 'DISCUSSING' | 'IN_PROGRESS' | 'COMPLETED';
-  requestedAt: string;
+  status: 'PENDING' | 'DISCUSSING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  timestamp: string;
   details?: string;
+  adminResponse?: string;
 }
 
 export interface TaskRecord {
@@ -181,6 +183,7 @@ export interface UserProfile {
   agreedToContract?: boolean;
   signedContractName?: string;
   contractSignedAt?: string;
+  isAdmin?: boolean;
 }
 
 export interface LevelData {
@@ -379,6 +382,7 @@ export interface UserRecord {
   createdAt: string;
   lastLogin: string;
   settings: { theme: string; notifications: boolean };
+  isAdmin?: boolean;
 }
 
 export interface StartupRecord {

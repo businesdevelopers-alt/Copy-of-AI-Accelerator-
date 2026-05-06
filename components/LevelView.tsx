@@ -190,7 +190,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   }, [content]);
 
   const carouselItems = useMemo(() => {
-    const items = contentBlocks.map((b, i) => ({ type: 'content' as const, data: b, index: i }));
+    const items: { type: 'content' | 'resources'; data: string; index: number }[] = contentBlocks.map((b, i) => ({ type: 'content' as const, data: b, index: i }));
     items.push({ type: 'resources' as const, data: '', index: contentBlocks.length });
     return items;
   }, [contentBlocks]);

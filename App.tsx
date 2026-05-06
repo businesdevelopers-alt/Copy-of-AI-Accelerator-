@@ -53,7 +53,8 @@ function App() {
           industry: startup.industry,
           name: `${currentUser.firstName} ${currentUser.lastName}`,
           hasCompletedAssessment: startup.status === 'APPROVED',
-          logo: localStorage.getItem(`logo_${currentUser.uid}`) || undefined
+          logo: localStorage.getItem(`logo_${currentUser.uid}`) || undefined,
+          isAdmin: currentUser.isAdmin
         });
 
         const userProgress = storageService.getUserProgress(currentUser.uid);

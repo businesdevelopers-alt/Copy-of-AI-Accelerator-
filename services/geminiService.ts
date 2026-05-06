@@ -511,6 +511,36 @@ export const generateFounderCV = async (data: any): Promise<string> => {
   });
 };
 
+export const generateMarketingPlan = async (startupName: string, description: string, targetAudience: string): Promise<string> => {
+  return callGemini({
+    prompt: `صمم خطة تسويقية مفصلة لمشروع ${startupName}. 
+    الوصف: ${description}. 
+    الجمهور المستهدف: ${targetAudience}. 
+    المطلوب: استراتيجية القنوات، الميزانية المقترحة، أهداف ربع سنوية، وأدوات التنفيذ. الرد بالعربية بتنسيق ماركداون.`,
+    systemInstruction: "أنت خبير تسويق نمو (Growth Hacker) محترف."
+  });
+};
+
+export const generateSalesPlan = async (startupName: string, description: string, pricingModel: string): Promise<string> => {
+  return callGemini({
+    prompt: `صمم خطة مبيعات متكاملة لمشروع ${startupName}. 
+    الوصف: ${description}. 
+    نموذج التسعير: ${pricingModel}. 
+    المطلوب: قمع المبيعات (Funnel)، استراتيجيات الإغلاق، نظام الحوافز، وتوقعات الأداء. الرد بالعربية بتنسيق ماركداون.`,
+    systemInstruction: "أنت مدير مبيعات تنفيذي خبير في بناء فرق المبيعات عالية الأداء."
+  });
+};
+
+export const generateOperationalPlan = async (startupName: string, description: string, keyActivities: string): Promise<string> => {
+  return callGemini({
+    prompt: `صمم خطة تشغيلية (Operational Plan) لمشروع ${startupName}. 
+    الوصف: ${description}. 
+    الأنشطة الرئيسية: ${keyActivities}. 
+    المطلوب: هيكل التكاليف، العمليات اليومية، الموردين، وإدارة الجودة. الرد بالعربية بتنسيق ماركداون.`,
+    systemInstruction: "أنت خبير عمليات وتشغيل وبناء ميزات تنافسية من خلال الكفاءة التشغيلية."
+  });
+};
+
 export const generateSWOTAnalysis = async (startupName: string, description: string, industry: string): Promise<{ strengths: string[], weaknesses: string[], opportunities: string[], threats: string[] }> => {
   const prompt = `حلل مشروع ${startupName} في قطاع ${industry}. الوصف: ${description}. 
   المطلوب تحليل الرباعي (SWOT Analysis): نقاط القوة، نقاط الضعف، الفرص، والتهديدات.`;

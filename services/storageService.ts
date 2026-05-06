@@ -24,12 +24,40 @@ export const storageService = {
     localStorage.setItem(DB_KEYS.AI_ANALYSIS, JSON.stringify(analysis));
   },
 
+  getAllServiceRequests: (): ServiceRequest[] => {
+    return JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]')
+      .sort((a: ServiceRequest, b: ServiceRequest) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  },
+
+  updateRequestStatus: (requestId: string, status: ServiceRequest['status']) => {
+    const requests = JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]') as ServiceRequest[];
+    const updated = requests.map(r => r.id === requestId ? { ...r, status } : r);
+    localStorage.setItem(DB_KEYS.SERVICES, JSON.stringify(updated));
+  },
+
+  saveAdminResponse: (requestId: string, response: string) => {
+    const requests = JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]') as ServiceRequest[];
+    const updated = requests.map(r => r.id === requestId ? { ...r, adminResponse: response } : r);
+    localStorage.setItem(DB_KEYS.SERVICES, JSON.stringify(updated));
+  },
+
+  getAllUsersWithStartups: (): { user: UserRecord; startup: StartupRecord | undefined }[] => {
+    const users: UserRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.USERS) || '[]');
+    const startups: StartupRecord[] = JSON.parse(localStorage.getItem(DB_KEYS.STARTUPS) || '[]');
+    return users.map(u => ({
+      user: u,
+      startup: startups.find(s => s.ownerId === u.uid)
+    }));
+  },
+
   getAIAnalysis: (uid: string, type: 'swot' | 'growth' | 'opportunity'): any | null => {
     const analysis = JSON.parse(localStorage.getItem(DB_KEYS.AI_ANALYSIS) || '{}');
     return analysis[uid]?.[type] || null;
   },
   registerUser: (profile: UserProfile): { user: UserRecord; startup: StartupRecord } => {
     const uid = `u_${Date.now()}`;
+    const isAdmin = profile.email === 'businesdevelopers@gmail.com';
+
     const newUser: UserRecord = {
       uid,
       firstName: profile.firstName,
@@ -40,6 +68,7 @@ export const storageService = {
       birthDate: profile.birthDate || '',
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString(),
+      isAdmin,
       settings: { theme: 'blue', notifications: true }
     };
 
@@ -163,15 +192,16 @@ export const storageService = {
   },
 
   // --- Service Request Operations ---
-  requestService: (uid: string, serviceId: string, packageId: string, details: string) => {
+  requestService: (uid: string, startupName: string, serviceId: string, packageId: string, details: string) => {
     const requests = JSON.parse(localStorage.getItem(DB_KEYS.SERVICES) || '[]');
     const newRequest: ServiceRequest = {
       id: `req_${Date.now()}`,
       uid,
+      startupName,
       serviceId,
       packageId,
       status: 'PENDING',
-      requestedAt: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
       details
     };
     localStorage.setItem(DB_KEYS.SERVICES, JSON.stringify([...requests, newRequest]));

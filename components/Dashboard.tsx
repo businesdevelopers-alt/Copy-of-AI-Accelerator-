@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, 
@@ -12,6 +12,8 @@ import {
   LogOut, 
   Moon, 
   Sun, 
+  Users,
+  Star,
   ChevronLeft,
   Search,
   Zap,
@@ -22,12 +24,15 @@ import {
   Rocket,
   Bell,
   Menu,
-  Layers
+  Layers,
+  FileText,
+  Lock
 } from 'lucide-react';
-import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest, OpportunityAnalysis, MOCK_MENTORS, ProjectBuildData } from '../types';
+import { LevelData, UserProfile, DIGITAL_SHIELDS, SECTORS, TaskRecord, SERVICES_CATALOG, ServiceItem, ServicePackage, ServiceRequest, OpportunityAnalysis, MOCK_MENTORS, ProjectBuildData, UserRecord, StartupRecord } from '../types';
 import { storageService } from '../services/storageService';
-import { discoverOpportunities, generateSWOTAnalysis, generateGrowthProjection, runProjectAgents } from '../services/geminiService';
+import { discoverOpportunities, generateSWOTAnalysis, generateGrowthProjection, runProjectAgents, generateMarketingPlan, generateSalesPlan, generateOperationalPlan } from '../services/geminiService';
 import { playPositiveSound, playCelebrationSound } from '../services/audioService';
+import Markdown from 'react-markdown';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   Radar, RadarChart, PolarGrid, PolarAngleAxis
@@ -52,8 +57,10 @@ const NAV_ITEMS = [
   { id: 'tasks', label: 'المهام', icon: <CheckSquare className="w-5 h-5" /> },
   { id: 'opportunity_lab', label: 'مختبر الفرص', icon: <Compass className="w-5 h-5" /> },
   { id: 'project_builder', label: 'بناء المشروع (AI)', icon: <Layers className="w-5 h-5" /> },
+  { id: 'plans', label: 'صانع الخطط الاستراتيجية', icon: <FileText className="w-5 h-5" /> },
   { id: 'services', label: 'الخدمات', icon: <Settings className="w-5 h-5" /> }, 
   { id: 'startup_profile', label: 'ملف الشركة', icon: <Briefcase className="w-5 h-5" /> },
+  { id: 'admin_panel', label: 'لوحة الإدارة', icon: <Settings className="w-5 h-5" />, adminOnly: true },
 ];
 
 const PRESET_COLORS = [
@@ -112,10 +119,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
   const [isBuildingProject, setIsBuildingProject] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<string[]>(['a1', 'a2']);
   const [isAnalyzingOpp, setIsAnalyzingOpp] = useState(false);
+  
+  // Strategy Plans States
+  const [activePlanType, setActivePlanType] = useState<'marketing' | 'sales' | 'ops' | null>(null);
+  const [planResult, setPlanResult] = useState<string | null>(null);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [planInput, setPlanInput] = useState('');
 
   // SWOT States
   const [swotResult, setSwotResult] = useState<{ strengths: string[], weaknesses: string[], opportunities: string[], threats: string[] } | null>(null);
   const [isAnalyzingSWOT, setIsAnalyzingSWOT] = useState(false);
+
+  // Admin States
+  const [adminRequests, setAdminRequests] = useState<ServiceRequest[]>([]);
+  const [adminUsers, setAdminUsers] = useState<{ user: UserRecord; startup: StartupRecord | undefined }[]>([]);
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [adminResponseText, setAdminResponseText] = useState('');
+  const [selectedAdminRequestId, setSelectedAdminRequestId] = useState<string | null>(null);
+  const [adminTab, setAdminTab] = useState<'requests' | 'users' | 'content'>('requests');
 
   // Growth States
   const [growthData, setGrowthData] = useState<{ month: string, users: number, revenue: number }[]>([]);
@@ -165,8 +186,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
         selectedAgents: [],
         results: savedProjectBuild
       });
+
+      const savedMarketingPlan = storageService.getAIAnalysis(session.uid, 'marketing_plan' as any);
+      const savedSalesPlan = storageService.getAIAnalysis(session.uid, 'sales_plan' as any);
+      const savedOpsPlan = storageService.getAIAnalysis(session.uid, 'ops_plan' as any);
+      if (activeNav === 'plans') {
+        if (activePlanType === 'marketing' && savedMarketingPlan) setPlanResult(savedMarketingPlan);
+        if (activePlanType === 'sales' && savedSalesPlan) setPlanResult(savedSalesPlan);
+        if (activePlanType === 'ops' && savedOpsPlan) setPlanResult(savedOpsPlan);
+      }
+
+      if (activeNav === 'admin_panel' && userProfile.isAdmin) {
+        setAdminRequests(storageService.getAllServiceRequests());
+        setAdminUsers(storageService.getAllUsersWithStartups());
+      }
     }
-  }, [activeNav]);
+  }, [activeNav, activePlanType]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -219,7 +254,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     const session = storageService.getCurrentSession();
     
     setTimeout(() => {
-      const newReq = storageService.requestService(session.uid, selectedService.id, selectedPackage.id, requestDetails);
+      const newReq = storageService.requestService(session.uid, userProfile.startupName, selectedService.id, selectedPackage.id, requestDetails);
       setUserRequests(prev => [...prev, newReq]);
       setIsRequesting(false);
       setSelectedService(null);
@@ -254,9 +289,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
     }
   };
 
-  const filteredNavItems = NAV_ITEMS.filter(item => 
-    item.label.includes(searchQuery) || item.id.includes(searchQuery)
-  );
+  const handleUpdateRequestStatus = (_userId: string, requestId: string, status: ServiceRequest['status']) => {
+    storageService.updateRequestStatus(requestId, status);
+    setAdminRequests(storageService.getAllServiceRequests());
+    addNotification(`تم تحديث حالة الطلب إلى: ${status}`, 'success');
+  };
+
+  const handleSaveAdminResponse = (requestId: string) => {
+    if (!adminResponseText.trim()) return;
+    storageService.saveAdminResponse(requestId, adminResponseText);
+    setAdminRequests(storageService.getAllServiceRequests());
+    setSelectedAdminRequestId(null);
+    setAdminResponseText('');
+    addNotification('تم إرسال الرد للعميل بنجاح', 'success');
+  };
+
+  const filteredNavItems = NAV_ITEMS.filter(item => {
+    const matchesSearch = item.label.includes(searchQuery) || item.id.includes(searchQuery);
+    if (!matchesSearch) return false;
+    if (item.adminOnly && !userProfile.isAdmin) return false;
+    return true;
+  });
 
   const filteredLevels = levels.filter(level => 
     level.title.includes(searchQuery) || level.description.includes(searchQuery)
@@ -276,6 +329,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
       addNotification("فشل التحليل الاستراتيجي للفرص.", 'info');
     } finally {
       setIsAnalyzingOpp(false);
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    if (!activePlanType) return;
+    setIsGeneratingPlan(true);
+    playPositiveSound();
+    try {
+      let result = '';
+      if (activePlanType === 'marketing') {
+        result = await generateMarketingPlan(userProfile.startupName, userProfile.startupDescription, planInput || 'الجمهور المستهدف العام المهتم بالتقنية');
+      } else if (activePlanType === 'sales') {
+        result = await generateSalesPlan(userProfile.startupName, userProfile.startupDescription, planInput || 'نموذج الاشتراك الشهري (SaaS)');
+      } else {
+        result = await generateOperationalPlan(userProfile.startupName, userProfile.startupDescription, planInput || 'التوسع الرقمي وإدارة الفريق التقني');
+      }
+      setPlanResult(result);
+      const session = storageService.getCurrentSession();
+      if (session) storageService.saveAIAnalysis(session.uid, `${activePlanType}_plan` as any, result);
+      playCelebrationSound();
+      addNotification('تم إنشاء الخطة بنجاح!', 'success');
+    } catch (e) {
+      addNotification('فشل إنشاء الخطة، يرجى المحاولة لاحقاً', 'info');
+    } finally {
+      setIsGeneratingPlan(false);
     }
   };
 
@@ -1113,7 +1191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                             <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5 text-right">
                                <h4 className="text-xl font-black mb-6 text-emerald-500 border-b border-emerald-500/10 pb-4">تحليل السوق</h4>
                                <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300">
-                                  {projectBuild.results.market}
+                                  {projectBuild.results.marketAnalysis}
                                </p>
                             </div>
                          </div>
@@ -1136,6 +1214,357 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                إعادة تعيين وبناء جديد
                             </button>
                          </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeNav === 'plans' && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="text-right space-y-4">
+                      <h3 className="text-4xl font-black">صانع الخطط الاستراتيجية</h3>
+                      <p className="text-slate-500 max-w-2xl font-medium leading-relaxed">
+                        قم بتوليد خطط عمل احترافية لمشروعك باستخدام الذكاء الاصطناعي. اختر نوع الخطة وأدخل بعض التفاصيل للبدء.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 justify-end">
+                      <button 
+                        onClick={() => { setActivePlanType('marketing'); setPlanResult(null); setPlanInput(''); }}
+                        className={`px-8 py-4 rounded-2xl font-black text-sm transition-all ${activePlanType === 'marketing' ? 'bg-blue-600 text-white' : 'glass border-slate-900/5 dark:border-white/5 text-slate-500'}`}
+                      >
+                        خطة التسويق
+                      </button>
+                      <button 
+                        onClick={() => { setActivePlanType('sales'); setPlanResult(null); setPlanInput(''); }}
+                        className={`px-8 py-4 rounded-2xl font-black text-sm transition-all ${activePlanType === 'sales' ? 'bg-blue-600 text-white' : 'glass border-slate-900/5 dark:border-white/5 text-slate-500'}`}
+                      >
+                        خطة المبيعات
+                      </button>
+                      <button 
+                        onClick={() => { setActivePlanType('ops'); setPlanResult(null); setPlanInput(''); }}
+                        className={`px-8 py-4 rounded-2xl font-black text-sm transition-all ${activePlanType === 'ops' ? 'bg-blue-600 text-white' : 'glass border-slate-900/5 dark:border-white/5 text-slate-500'}`}
+                      >
+                        الخطة التشغيلية
+                      </button>
+                    </div>
+
+                    {!activePlanType && (
+                      <div className="flex flex-col items-center justify-center py-32 glass rounded-[4rem] border-slate-900/5 dark:border-white/5">
+                        <div className="w-24 h-24 bg-blue-600/10 rounded-full flex items-center justify-center mb-8">
+                          <FileText className="w-12 h-12 text-blue-600" />
+                        </div>
+                        <h4 className="text-2xl font-black mb-4">اختر نوع الخطة للبدء</h4>
+                        <p className="text-slate-500 max-w-sm text-center font-medium leading-relaxed">
+                          ابدأ ببناء خارطة طريق واضحة لنمو مشروعك وزيادة مبيعاتك.
+                        </p>
+                      </div>
+                    )}
+
+                    {activePlanType && !planResult && (
+                      <div className="glass p-12 rounded-[4rem] border-slate-900/5 dark:border-white/5 space-y-8 animate-slide-up">
+                        <div className="text-right space-y-2">
+                           <h4 className="text-xl font-black">
+                             {activePlanType === 'marketing' ? 'تفاصيل الجمهور المستهدف' : activePlanType === 'sales' ? 'تفاصيل نموذج المبيعات' : 'تفاصيل التشغيل والأنشطة'}
+                           </h4>
+                           <p className="text-sm text-slate-500 font-medium font-sans">
+                             {activePlanType === 'marketing' 
+                               ? 'من هم عملاؤك المثاليون؟ (مثال: أصحاب المشاريع الصغيرة في السعودية)' 
+                               : activePlanType === 'sales' 
+                                 ? 'كيف تبيع منتجك؟ (مثال: اشتراك شهري، عمولة، بيع مباشر)' 
+                                 : 'ما هي الأنشطة اليومية الرئيسية؟ (مثال: الشحن، التوصيل، التخزين، تطوير المحتوى)'}
+                           </p>
+                        </div>
+                        <textarea 
+                           className="w-full p-6 bg-slate-900/5 dark:bg-white/5 border border-slate-900/10 dark:border-white/10 rounded-3xl min-h-[150px] outline-none focus:ring-2 focus:ring-blue-500/20 text-right font-medium text-sm transition-all"
+                           placeholder="اكتب هنا..."
+                           value={planInput}
+                           onChange={(e) => setPlanInput(e.target.value)}
+                        />
+                        <button 
+                          onClick={handleGeneratePlan}
+                          disabled={isGeneratingPlan}
+                          className={`w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-sm flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 shadow-2xl shadow-blue-600/20 ${isGeneratingPlan ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isGeneratingPlan ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>جاري التوليد...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="w-5 h-5 fill-white" />
+                              <span>توليد الخطة بالذكاء الاصطناعي</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {planResult && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass p-12 rounded-[4rem] border-slate-900/5 dark:border-white/5 relative overflow-hidden"
+                      >
+                         <div className="flex justify-between items-center mb-8 pb-6 border-b border-slate-900/5 dark:border-white/5">
+                            <button 
+                              onClick={() => { setPlanResult(null); setPlanInput(''); }}
+                              className="text-xs font-black text-slate-400 hover:text-blue-500 transition-colors"
+                            >
+                              إعادة توليد خُطَّة جديدة
+                            </button>
+                            <h4 className="text-2xl font-black">
+                               {activePlanType === 'marketing' ? 'خطة التسويق الذكية' : activePlanType === 'sales' ? 'خطة المبيعات الاستراتيجية' : 'الخطة التشغيلية المتكاملة'}
+                            </h4>
+                         </div>
+                         <div className="markdown-body text-right prose prose-slate dark:prose-invert max-w-none prose-sm font-medium leading-loose">
+                           <Markdown>{planResult}</Markdown>
+                         </div>
+                         <div className="mt-12 flex justify-center">
+                            <button 
+                               onClick={() => { window.print(); }}
+                               className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs hover:bg-blue-600 transition-all flex items-center gap-3"
+                            >
+                               <FileText className="w-4 h-4" />
+                               طباعة الخطة أو حفظها بصيغة PDF
+                            </button>
+                         </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {activeNav === 'admin_panel' && userProfile.isAdmin && (
+                  <div className="max-w-6xl mx-auto space-y-12 pb-20">
+                    <div className="text-right space-y-4">
+                      <h3 className="text-4xl font-black">لوحة الإدارة المركزية</h3>
+                      <div className="flex justify-end gap-2 mt-6">
+                        <button 
+                          onClick={() => setAdminTab('content')}
+                          className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${adminTab === 'content' ? 'bg-blue-600 text-white' : 'glass hover:bg-white/10'}`}
+                        >إدارة المحتوى</button>
+                        <button 
+                          onClick={() => setAdminTab('users')}
+                          className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${adminTab === 'users' ? 'bg-blue-600 text-white' : 'glass hover:bg-white/10'}`}
+                        >المستخدمين</button>
+                        <button 
+                          onClick={() => setAdminTab('requests')}
+                          className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${adminTab === 'requests' ? 'bg-blue-600 text-white' : 'glass hover:bg-white/10'}`}
+                        >الطلبات</button>
+                      </div>
+                    </div>
+
+                    {adminTab === 'requests' && (
+                      <>
+                        {/* Stats Overview */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                           <div className="glass p-8 rounded-[2.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">إجمالي الطلبات</span>
+                              <h4 className="text-3xl font-black text-blue-600">{adminRequests.length}</h4>
+                           </div>
+                           <div className="glass p-8 rounded-[2.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">المستخدمين المسجلين</span>
+                              <h4 className="text-3xl font-black text-emerald-600">{adminUsers.length}</h4>
+                           </div>
+                           <div className="glass p-8 rounded-[2.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">طلبات معلقة</span>
+                              <h4 className="text-3xl font-black text-amber-500">{adminRequests.filter(r => r.status === 'PENDING').length}</h4>
+                           </div>
+                           <div className="glass p-8 rounded-[2.5rem] border-slate-900/5 dark:border-white/5 text-right">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">طلبات مكتملة</span>
+                              <h4 className="text-3xl font-black text-blue-500">{adminRequests.filter(r => r.status === 'COMPLETED').length}</h4>
+                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-10">
+                           <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5">
+                              <div className="flex justify-between items-center mb-10 border-b border-slate-900/5 dark:border-white/5 pb-6">
+                                 <div className="flex gap-2">
+                                    <button className="px-4 py-2 glass rounded-xl text-[10px] font-black">فلترة</button>
+                                 </div>
+                                 <h4 className="text-xl font-black">إدارة طلبات الخدمات</h4>
+                              </div>
+
+                              <div className="overflow-x-auto">
+                                 <table className="w-full text-right" dir="rtl">
+                                    <thead>
+                                       <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-900/5 dark:border-white/5">
+                                          <th className="pb-4 pr-4">الشركة</th>
+                                          <th className="pb-4">الخدمة</th>
+                                          <th className="pb-4">التاريخ</th>
+                                          <th className="pb-4">الحالة</th>
+                                          <th className="pb-4 pl-4 text-center">الإجراءات</th>
+                                       </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-900/5 dark:divide-white/5">
+                                       {adminRequests.map((req) => (
+                                          <Fragment key={req.id}>
+                                            <tr className="group hover:bg-slate-50/5 transition-colors">
+                                               <td className="py-6 pr-4">
+                                                  <div className="font-black text-xs">{req.startupName}</div>
+                                                  <div className="text-[10px] text-slate-400 mt-0.5">UID: {req.uid}</div>
+                                               </td>
+                                               <td className="py-6">
+                                                  <div className="font-bold text-xs">{SERVICES_CATALOG.find(s => s.id === req.serviceId)?.title}</div>
+                                                  <div className="text-[10px] text-blue-500 font-black mt-0.5">{req.packageId === 'p1' || req.id.includes('p1') ? 'باقة أساسية' : 'باقة متقدمة'}</div>
+                                               </td>
+                                               <td className="py-6">
+                                                  <div className="text-[10px] font-medium text-slate-500">{new Date(req.timestamp).toLocaleDateString('ar-EG')}</div>
+                                               </td>
+                                               <td className="py-6">
+                                                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
+                                                     req.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500' :
+                                                     req.status === 'IN_PROGRESS' ? 'bg-blue-500/10 text-blue-500' :
+                                                     req.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' :
+                                                     'bg-rose-500/10 text-rose-500'
+                                                  }`}>
+                                                     {req.status === 'PENDING' ? 'في الانتظار' : req.status === 'IN_PROGRESS' ? 'جاري العمل' : req.status === 'COMPLETED' ? 'مكتمل' : 'ملغي'}
+                                                  </span>
+                                               </td>
+                                               <td className="py-6 pl-4">
+                                                  <div className="flex items-center justify-center gap-2">
+                                                     <button 
+                                                       onClick={() => setSelectedAdminRequestId(selectedAdminRequestId === req.id ? null : req.id)}
+                                                       className={`p-2 glass rounded-lg hover:text-blue-500 text-[10px] transition-all ${selectedAdminRequestId === req.id ? 'bg-blue-600 text-white' : ''}`}
+                                                       title="الرد على الطلب"
+                                                     >💬</button>
+                                                     <button 
+                                                       onClick={() => handleUpdateRequestStatus(req.uid, req.id, 'IN_PROGRESS')}
+                                                       className="p-2 glass rounded-lg hover:text-blue-500 text-[10px] transition-all"
+                                                       title="تفعيل الطلب"
+                                                     >⚙️</button>
+                                                     <button 
+                                                       onClick={() => handleUpdateRequestStatus(req.uid, req.id, 'COMPLETED')}
+                                                       className="p-2 glass rounded-lg hover:text-emerald-500 text-[10px] transition-all"
+                                                       title="إكمال الطلب"
+                                                     >✅</button>
+                                                     <button 
+                                                       onClick={() => handleUpdateRequestStatus(req.uid, req.id, 'CANCELLED')}
+                                                       className="p-2 glass rounded-lg hover:text-rose-500 text-[10px] transition-all"
+                                                       title="إلغاء الطلب"
+                                                     >❌</button>
+                                                  </div>
+                                               </td>
+                                            </tr>
+                                            {selectedAdminRequestId === req.id && (
+                                              <tr className="bg-slate-900/5">
+                                                <td colSpan={5} className="p-6">
+                                                  <div className="flex flex-col gap-4">
+                                                    <div className="text-right">
+                                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">تفاصيل الطلب من العميل:</span>
+                                                      <p className="text-xs bg-white/5 p-4 rounded-xl mt-2 italic text-slate-500 leading-relaxed border border-white/5">{req.details || 'لا توجد تفاصيل إضافية'}</p>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block text-right">اكتب ردك هنا:</label>
+                                                      <textarea 
+                                                        className="w-full h-32 glass rounded-2xl p-5 text-sm outline-none border border-white/10 focus:border-blue-500 transition-all text-right"
+                                                        placeholder="كيف يمكننا مساعدتك؟ أو ما هو التحديث الحالي للطلب؟"
+                                                        value={adminResponseText}
+                                                        onChange={(e) => setAdminResponseText(e.target.value)}
+                                                      />
+                                                      <div className="flex justify-start">
+                                                        <button 
+                                                          onClick={() => handleSaveAdminResponse(req.id)}
+                                                          className="px-8 py-3 bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+                                                        >إرسال الرد</button>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )}
+                                            {req.adminResponse && selectedAdminRequestId !== req.id && (
+                                              <tr className="bg-emerald-500/5">
+                                                <td colSpan={5} className="px-10 py-3 text-right">
+                                                  <div className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter mb-1">الرد الحالي:</div>
+                                                  <p className="text-[11px] text-slate-500 italic">{req.adminResponse}</p>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </Fragment>
+                                       ))}
+                                    </tbody>
+                                 </table>
+                              </div>
+                              {adminRequests.length === 0 && (
+                                 <div className="py-20 text-center text-slate-400 font-medium italic">لاتوجد طلبات لعرضها حالياً</div>
+                              )}
+                           </div>
+                        </div>
+                      </>
+                    )}
+
+                    {adminTab === 'users' && (
+                      <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5">
+                        <h4 className="text-xl font-black mb-10 text-right">إدارة المستخدمين</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                           {adminUsers.map((item) => (
+                              <div key={item.user.uid} className="p-6 glass-dark rounded-3xl border border-slate-900/5 dark:border-white/5 flex flex-col items-end gap-3 text-right">
+                                 <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-xl">👤</div>
+                                 <div className="w-full">
+                                    <div className="font-black text-sm">{item.user.firstName} {item.user.lastName}</div>
+                                    <div className="text-[10px] font-bold text-blue-500 mt-1">{item.startup?.name || 'بدون شركة'}</div>
+                                    <div className="text-[9px] text-slate-500 mt-2 font-sans truncate">{item.user.email}</div>
+                                 </div>
+                                 <div className="mt-4 pt-4 border-t border-white/5 w-full flex justify-between items-center">
+                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded ${item.user.isAdmin ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-500/10 text-slate-400'}`}>
+                                       {item.user.isAdmin ? 'مدير' : 'مستخدم'}
+                                    </span>
+                                    <div className="text-[9px] font-medium text-slate-500">منذ {new Date(item.user.createdAt).toLocaleDateString('ar-EG')}</div>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {adminTab === 'content' && (
+                      <div className="glass p-10 rounded-[3.5rem] border-slate-900/5 dark:border-white/5">
+                        <div className="text-right space-y-6">
+                          <h4 className="text-xl font-black mb-10">التحكم بكامل الموقع</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-blue-500/20 transition-all text-right group">
+                              <Layers className="w-8 h-8 text-blue-500 mb-6" />
+                              <h5 className="text-lg font-black mb-2">إدارة المستويات</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed mb-6">تعديل المسميات، الألوان، والأيقونات الخاصة بالمستويات الستة للمسرعة.</p>
+                              <button 
+                                onClick={() => setActiveNav('academy')} 
+                                className="px-6 py-3 bg-blue-600/10 text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                              >فتح المحرر</button>
+                            </div>
+                            
+                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-emerald-500/20 transition-all text-right group">
+                              <Zap className="w-8 h-8 text-emerald-500 mb-6" />
+                              <h5 className="text-lg font-black mb-2">كتالوج الخدمات</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed mb-6">عرض وتعديل قائمة الخدمات التقنية والاستشارية المتاحة لرواد الأعمال.</p>
+                              <button 
+                                onClick={() => setActiveNav('services')} 
+                                className="px-6 py-3 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                              >إدارة الخدمات</button>
+                            </div>
+
+                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-all text-right group">
+                              <Users className="w-8 h-8 text-amber-500 mb-6" />
+                              <h5 className="text-lg font-black mb-2">قائمة الموجهين</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed mb-6">إضافة أو تعديل بيانات الخبراء والمستشارين الظاهرين في المنصة.</p>
+                              <button 
+                                onClick={() => setActiveNav('mentors')} 
+                                className="px-6 py-3 bg-amber-600/10 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                              >تعديل الموجهين</button>
+                            </div>
+
+                            <div className="p-8 glass rounded-[2.5rem] border border-white/5 hover:border-purple-500/20 transition-all text-right group">
+                              <Star className="w-8 h-8 text-purple-500 mb-6" />
+                              <h5 className="text-lg font-black mb-2">الإنجازات والدروع</h5>
+                              <p className="text-xs text-slate-500 leading-relaxed mb-6">تخصيص الدروع الرقمية التي يحصل عليها الطلاب عند إتمام المهام.</p>
+                              <button 
+                                onClick={() => setActiveNav('academy')} 
+                                className="px-6 py-3 bg-purple-600/10 text-purple-500 hover:bg-purple-600 hover:text-white rounded-xl text-[10px] font-black transition-all"
+                              >إدارة الأوسمة</button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1221,16 +1650,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ user: initialUser, levels,
                                     const svc = SERVICES_CATALOG.find(s => s.id === req.serviceId);
                                     const pkg = svc?.packages.find(p => p.id === req.packageId);
                                     return (
-                                      <tr key={req.id} className="hover:bg-slate-900/5 dark:bg-white/5 transition-colors group">
-                                         <td className="px-8 py-6 font-black text-sm">{svc?.title}</td>
-                                         <td className="px-8 py-6 text-xs font-bold text-slate-500">{pkg?.name}</td>
-                                         <td className="px-8 py-6 text-xs text-slate-500 font-mono">{new Date(req.requestedAt).toLocaleDateString('ar-EG')}</td>
-                                         <td className="px-8 py-6 flex justify-center">
-                                            <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${req.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
-                                               {req.status === 'PENDING' ? 'قيد المراجعة' : req.status}
-                                            </span>
-                                         </td>
-                                      </tr>
+                                      <Fragment key={req.id}>
+                                        <tr className="hover:bg-slate-900/5 dark:bg-white/5 transition-colors group">
+                                           <td className="px-8 py-6 font-black text-sm">{svc?.title}</td>
+                                           <td className="px-8 py-6 text-xs font-bold text-slate-500">{pkg?.name}</td>
+                                           <td className="px-8 py-6 text-xs text-slate-500 font-mono">{new Date(req.timestamp).toLocaleDateString('ar-EG')}</td>
+                                           <td className="px-8 py-6 flex flex-col items-center justify-center gap-2">
+                                              <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${req.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
+                                                 {req.status === 'PENDING' ? 'قيد المراجعة' : req.status}
+                                              </span>
+                                              {req.adminResponse && (
+                                                <span className="text-[10px] font-bold text-blue-500 bg-blue-500/5 px-2 py-1 rounded italic">وصلك رد</span>
+                                              )}
+                                           </td>
+                                        </tr>
+                                        {req.adminResponse && (
+                                          <tr key={`${req.id}-response`} className="bg-blue-500/5">
+                                            <td colSpan={4} className="px-8 py-4 text-right">
+                                              <div className="text-[10px] font-black text-blue-400 mb-1 uppercase tracking-widest">رد الإدارة:</div>
+                                              <p className="text-xs font-medium text-slate-600 dark:text-slate-300 italic">{req.adminResponse}</p>
+                                            </td>
+                                          </tr>
+                                        )}
+                                      </Fragment>
                                     );
                                   })}
                                </tbody>
