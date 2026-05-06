@@ -151,7 +151,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900" dir="rtl">
+    <div className="min-h-screen bg-brand-bg flex flex-col font-sans selection:bg-brand-primary/10 selection:text-brand-primary" dir="rtl">
       <style>{`
         .tool-card {
           transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -190,23 +190,23 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
       <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50 px-8 py-5">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
-            <button onClick={activeTool ? resetTool : onBack} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 hover:text-slate-900 transition-all active:scale-95 group border border-slate-100">
+            <button onClick={activeTool ? resetTool : onBack} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-brand-gray hover:text-brand-primary transition-all active:scale-95 group border border-slate-100">
               <svg className={`w-6 h-6 transform ${activeTool ? '' : 'rotate-180'} transition-transform group-hover:-translate-x-1`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
             <div>
-              <h1 className="text-2xl font-black text-slate-900 leading-none tracking-tight">استوديو الأدوات الذكية</h1>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[0.2em] mt-1.5">Elite AI Workbench • Version 2.5</p>
+              <h1 className="text-2xl font-bold text-slate-900 leading-none tracking-tight">استوديو الأدوات الذكية</h1>
+              <p className="text-[10px] font-bold text-brand-primary uppercase tracking-[0.2em] mt-1.5">Elite AI Workbench • Version 2.5</p>
             </div>
           </div>
           <div className="hidden lg:flex items-center gap-6">
-             <div className="px-5 py-2.5 bg-slate-900 text-white rounded-2xl flex items-center gap-4 shadow-lg">
-                <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">System Status</span>
-                <div className="h-4 w-px bg-white/10"></div>
+             <div className="px-5 py-2.5 bg-white text-brand-primary rounded-2xl flex items-center gap-4 shadow-lg">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-primary">System Status</span>
+                <div className="h-4 w-px bg-brand-primary/10"></div>
                 <div className="flex items-center gap-2">
                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                   <span className="text-[10px] font-black uppercase">Gemini 3 Pro</span>
+                   <span className="text-[10px] font-bold uppercase">Gemini 3 Pro</span>
                 </div>
              </div>
           </div>
@@ -219,11 +219,11 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
         {!activeTool && (
           <div className="animate-slide-up space-y-16">
             <div className="text-center space-y-6 max-w-3xl mx-auto">
-               <div className="inline-flex items-center gap-3 bg-blue-50 text-blue-600 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-blue-100">
+               <div className="inline-flex items-center gap-3 bg-brand-primary/5 text-brand-primary px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] border border-brand-primary">
                   <span className="animate-spin-slow">✨</span>
                   Accelerator Toolkit
                </div>
-               <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-tight">
+               <h2 className="text-3xl md:text-3xl font-bold text-slate-900 tracking-tighter leading-tight">
                  عزز طموحك <br/> 
                  <span className="text-transparent bg-clip-text bg-gradient-to-l from-blue-600 to-indigo-500">بأدوات ريادية ذكية</span>
                </h2>
@@ -245,12 +245,12 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                     >
                         <div className={`absolute top-0 right-0 w-48 h-48 bg-gradient-to-br ${tool.gradient} opacity-[0.03] rounded-bl-[6rem] group-hover:scale-125 transition-transform duration-1000`}></div>
                         
-                        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-5xl mb-12 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-inner border border-slate-50 relative">
+                        <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-3xl mb-12 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-inner border border-slate-50 relative">
                            <div className={`absolute inset-0 bg-gradient-to-br ${tool.gradient} opacity-0 group-hover:opacity-10 transition-opacity rounded-[2.5rem]`}></div>
                            {tool.icon}
                         </div>
                         
-                        <h3 className="text-3xl font-black text-slate-900 mb-4 group-hover:text-blue-600 transition-colors leading-tight">
+                        <h3 className="text-3xl font-bold text-slate-900 mb-4 group-hover:text-brand-primary transition-colors leading-tight">
                           {tool.title}
                         </h3>
                         <p className="text-slate-500 font-medium leading-relaxed mb-12 flex-grow text-base line-clamp-3">
@@ -259,7 +259,7 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                         
                         <div className="space-y-4 pt-10 border-t border-slate-50">
                            {tool.features.map((f, i) => (
-                             <div key={i} className="flex items-center gap-3 text-[11px] font-black text-slate-400 uppercase tracking-tighter">
+                             <div key={i} className="flex items-center gap-3 text-[11px] font-bold text-brand-gray uppercase tracking-tighter">
                                 <span className={`w-2 h-2 rounded-full bg-gradient-to-br ${tool.gradient} shadow-sm group-hover:animate-pulse`}></span>
                                 {f}
                              </div>
@@ -267,11 +267,11 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                         </div>
 
                         <div className="mt-12 flex items-center justify-between">
-                           <div className="flex items-center gap-3 text-blue-600 font-black text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
+                           <div className="flex items-center gap-3 text-brand-primary font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
                               <span>فتح المختبر</span>
                               <svg className="w-4 h-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7" /></svg>
                            </div>
-                           <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all text-slate-300">
+                           <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-brand-primary group-hover:text-white transition-all text-slate-600">
                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                            </div>
                         </div>
@@ -288,14 +288,14 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
             {/* Control Form Sidebar */}
             <div className="lg:w-[440px] shrink-0 bg-white p-10 md:p-12 rounded-[4rem] shadow-2xl border border-slate-100 h-fit sticky top-28 group">
                <div className="mb-12 flex items-center gap-6">
-                  <div className={`w-20 h-20 bg-gradient-to-br ${TOOLS_META.find(t => t.id === activeTool)?.gradient} rounded-[2rem] flex items-center justify-center text-4xl shadow-xl text-white transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                  <div className={`w-20 h-20 bg-gradient-to-br ${TOOLS_META.find(t => t.id === activeTool)?.gradient} rounded-[2rem] flex items-center justify-center text-3xl shadow-xl text-brand-primary transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
                     {TOOLS_META.find(t => t.id === activeTool)?.icon}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 leading-tight">
+                    <h2 className="text-2xl font-bold text-slate-900 leading-tight">
                       {TOOLS_META.find(t => t.id === activeTool)?.title}
                     </h2>
-                    <p className="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mt-1.5">Input Parameters</p>
+                    <p className="text-brand-primary font-bold text-[10px] uppercase tracking-[0.2em] mt-1.5">Input Parameters</p>
                   </div>
                </div>
 
@@ -303,10 +303,10 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                   {activeTool === 'IDEA' && (
                     <div className="space-y-6">
                       <div className="flex justify-between items-center px-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">إدخال البيانات</label>
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em]">إدخال البيانات</label>
                         <button 
                           onClick={() => ideaFileInputRef.current?.click()}
-                          className="text-[10px] font-black text-blue-600 flex items-center gap-2 hover:bg-blue-50 px-3 py-1 rounded-lg transition-all"
+                          className="text-[10px] font-bold text-brand-primary flex items-center gap-2 hover:bg-brand-primary/5 px-3 py-1 rounded-lg transition-all"
                         >
                           <span>📁 رفع ملف نصي (TXT)</span>
                         </button>
@@ -320,18 +320,18 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">قطاع العمل المفضل</label>
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">قطاع العمل المفضل</label>
                         <input 
-                          className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" 
+                          className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-bold" 
                           value={ideaForm.sector} 
                           onChange={e => setIdeaForm({...ideaForm, sector: e.target.value})} 
                           placeholder="مثال: التقنية المالية، الاستدامة..." 
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">ما هي اهتماماتك؟</label>
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">ما هي اهتماماتك؟</label>
                         <textarea 
-                          className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" 
+                          className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" 
                           value={ideaForm.interest} 
                           onChange={e => setIdeaForm({...ideaForm, interest: e.target.value})} 
                           placeholder="تحدث عن المشكلات التي تلاحظها أو المهارات التي تملكها..." 
@@ -343,20 +343,20 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                   {activeTool === 'CV' && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">الاسم الكامل</label>
-                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" value={cvForm.name} onChange={e => setCvForm({...cvForm, name: e.target.value})} placeholder="اسم المؤسس" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">الاسم الكامل</label>
+                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-bold" value={cvForm.name} onChange={e => setCvForm({...cvForm, name: e.target.value})} placeholder="اسم المؤسس" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">الخبرات العملية</label>
-                        <textarea className="w-full h-24 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={cvForm.experience} onChange={e => setCvForm({...cvForm, experience: e.target.value})} placeholder="اذكر أهم الأدوار السابقة..." />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">الخبرات العملية</label>
+                        <textarea className="w-full h-24 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" value={cvForm.experience} onChange={e => setCvForm({...cvForm, experience: e.target.value})} placeholder="اذكر أهم الأدوار السابقة..." />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">المهارات الأساسية</label>
-                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" value={cvForm.skills} onChange={e => setCvForm({...cvForm, skills: e.target.value})} placeholder="مهارات تقنية أو قيادية..." />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">المهارات الأساسية</label>
+                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-bold" value={cvForm.skills} onChange={e => setCvForm({...cvForm, skills: e.target.value})} placeholder="مهارات تقنية أو قيادية..." />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">رؤية مشروعك الحالي</label>
-                        <textarea className="w-full h-24 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={cvForm.vision} onChange={e => setCvForm({...cvForm, vision: e.target.value})} placeholder="لماذا أنت الشخص المناسب لهذا المشروع؟" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">رؤية مشروعك الحالي</label>
+                        <textarea className="w-full h-24 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" value={cvForm.vision} onChange={e => setCvForm({...cvForm, vision: e.target.value})} placeholder="لماذا أنت الشخص المناسب لهذا المشروع؟" />
                       </div>
                     </div>
                   )}
@@ -364,12 +364,12 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                   {activeTool === 'PRODUCT' && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">اسم المشروع</label>
-                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" value={productForm.projectName} onChange={e => setProductForm({...productForm, projectName: e.target.value})} placeholder="اسم شركتك الناشئة" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">اسم المشروع</label>
+                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-bold" value={productForm.projectName} onChange={e => setProductForm({...productForm, projectName: e.target.value})} placeholder="اسم شركتك الناشئة" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">وصف مختصر للحل</label>
-                        <textarea className="w-full h-44 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} placeholder="كيف سيعمل منتجك؟ وما هي الفائدة المباشرة للعميل؟" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">وصف مختصر للحل</label>
+                        <textarea className="w-full h-44 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} placeholder="كيف سيعمل منتجك؟ وما هي الفائدة المباشرة للعميل؟" />
                       </div>
                     </div>
                   )}
@@ -378,24 +378,24 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                     <div className="space-y-6">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">اسم الشركة</label>
+                          <label className="block text-[10px] font-bold text-brand-gray uppercase tracking-widest pr-2">اسم الشركة</label>
                           <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all font-bold" value={planForm.startupName} onChange={e => setPlanForm({...planForm, startupName: e.target.value})} placeholder="اسم المشروع" />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">القطاع</label>
+                          <label className="block text-[10px] font-bold text-brand-gray uppercase tracking-widest pr-2">القطاع</label>
                           <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all font-bold" value={planForm.industry} onChange={e => setPlanForm({...planForm, industry: e.target.value})} placeholder="مثال: SaaS" />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">المشكلة التي تعالجها</label>
+                        <label className="block text-[10px] font-bold text-brand-gray uppercase tracking-widest pr-2">المشكلة التي تعالجها</label>
                         <textarea className="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all font-medium resize-none" value={planForm.problem} onChange={e => setPlanForm({...planForm, problem: e.target.value})} placeholder="ما هو الألم الذي يشعر به العميل؟" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">الحل المقترح</label>
+                        <label className="block text-[10px] font-bold text-brand-gray uppercase tracking-widest pr-2">الحل المقترح</label>
                         <textarea className="w-full h-24 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all font-medium resize-none" value={planForm.solution} onChange={e => setPlanForm({...planForm, solution: e.target.value})} placeholder="كيف ينهي مشروعك هذا الألم؟" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">السوق المستهدف</label>
+                        <label className="block text-[10px] font-bold text-brand-gray uppercase tracking-widest pr-2">السوق المستهدف</label>
                         <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all font-bold" value={planForm.targetMarket} onChange={e => setPlanForm({...planForm, targetMarket: e.target.value})} placeholder="من هم عملاؤك المحتملون؟" />
                       </div>
                     </div>
@@ -404,16 +404,16 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                   {activeTool === 'DECK' && (
                     <div className="space-y-6">
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">اسم المشروع</label>
-                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-bold" value={deckForm.startupName} onChange={e => setDeckForm({...deckForm, startupName: e.target.value})} placeholder="اسم شركتك الناشئة" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">اسم المشروع</label>
+                        <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-bold" value={deckForm.startupName} onChange={e => setDeckForm({...deckForm, startupName: e.target.value})} placeholder="اسم شركتك الناشئة" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">المشكلة السوقية</label>
-                        <textarea className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={deckForm.problem} onChange={e => setDeckForm({...deckForm, problem: e.target.value})} placeholder="ما هو التحدي الصعب الذي تحاول حله؟" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">المشكلة السوقية</label>
+                        <textarea className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" value={deckForm.problem} onChange={e => setDeckForm({...deckForm, problem: e.target.value})} placeholder="ما هو التحدي الصعب الذي تحاول حله؟" />
                       </div>
                       <div className="space-y-2">
-                        <label className="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] pr-2">الحل المبتكر</label>
-                        <textarea className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-blue-500 transition-all font-medium resize-none" value={deckForm.solution} onChange={e => setDeckForm({...deckForm, solution: e.target.value})} placeholder="كيف يحل مشروعك هذا التحدي بشكل فريد؟" />
+                        <label className="block text-[11px] font-bold text-brand-gray uppercase tracking-[0.2em] pr-2">الحل المبتكر</label>
+                        <textarea className="w-full h-32 p-5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white focus:border-brand-primary transition-all font-medium resize-none" value={deckForm.solution} onChange={e => setDeckForm({...deckForm, solution: e.target.value})} placeholder="كيف يحل مشروعك هذا التحدي بشكل فريد؟" />
                       </div>
                     </div>
                   )}
@@ -422,11 +422,11 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                     <button 
                       onClick={handleGenerate} 
                       disabled={isLoading}
-                      className="w-full py-6 bg-slate-900 hover:bg-blue-600 text-white rounded-[2rem] font-black text-xl shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50 group overflow-hidden relative"
+                      className="w-full py-6 bg-white hover:bg-brand-primary text-white rounded-[2rem] font-bold text-xl shadow-2xl transition-all transform active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50 group overflow-hidden relative"
                     >
                       {isLoading ? (
                         <div className="flex items-center gap-4">
-                           <div className="w-6 h-6 border-[3px] border-white/20 border-t-white rounded-full animate-spin"></div>
+                           <div className="w-6 h-6 border-[3px] border-brand-primary/30 border-t-white rounded-full animate-spin"></div>
                            <span className="tracking-widest uppercase text-xs">Processing...</span>
                         </div>
                       ) : (
@@ -444,13 +444,13 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
             {/* Results Output Canvas */}
             <div className="flex-1 bg-white p-12 md:p-16 rounded-[4.5rem] shadow-2xl border border-slate-100 min-h-[800px] flex flex-col relative overflow-hidden">
                
-               <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-blue-50/50 rounded-full blur-[120px] -z-0"></div>
+               <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-brand-primary/5/50 rounded-full blur-[120px] -z-0"></div>
                <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-indigo-50/50 rounded-full blur-[100px] -z-0"></div>
 
                {!result && !isLoading && (
                  <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 select-none relative z-10">
-                    <div className="w-64 h-64 bg-slate-50 rounded-full flex items-center justify-center text-9xl mb-12 shadow-inner animate-pulse">🤖</div>
-                    <h3 className="text-4xl font-black text-slate-900 mb-6 tracking-tight">بانتظار مدخلاتك</h3>
+                    <div className="w-64 h-64 bg-slate-50 rounded-full flex items-center justify-center text-3xl mb-12 shadow-inner animate-pulse">🤖</div>
+                    <h3 className="text-3xl font-bold text-slate-900 mb-6 tracking-tight">بانتظار مدخلاتك</h3>
                     <p className="max-w-md text-xl font-medium leading-relaxed text-slate-500">املأ البيانات في لوحة التحكم الجانبية، وسيقوم محرك Gemini AI بصياغة أفكارك ومخططاتك بأسلوب ريادي رفيع المستوى.</p>
                  </div>
                )}
@@ -459,11 +459,11 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                  <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10">
                     <div className="relative w-44 h-44 mb-14">
                        <div className="absolute inset-0 border-[12px] border-slate-50 rounded-full"></div>
-                       <div className="absolute inset-0 border-[12px] border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                       <div className="absolute inset-0 flex items-center justify-center text-6xl animate-bounce">✨</div>
+                       <div className="absolute inset-0 border-[12px] border-brand-primary rounded-full border-t-transparent animate-spin"></div>
+                       <div className="absolute inset-0 flex items-center justify-center text-3xl animate-bounce">✨</div>
                     </div>
-                    <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">جاري التحليل والصياغة...</h3>
-                    <p className="text-slate-400 text-lg font-bold uppercase tracking-widest animate-pulse">Generative AI in Progress</p>
+                    <h3 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">جاري التحليل والصياغة...</h3>
+                    <p className="text-brand-gray text-lg font-bold uppercase tracking-widest animate-pulse">Generative AI in Progress</p>
                  </div>
                )}
 
@@ -471,14 +471,14 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                  <div className="relative z-10 flex flex-col h-full animate-slide-up">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12 pb-12 border-b border-slate-100">
                        <div>
-                          <h3 className="text-4xl font-black text-slate-900 flex items-center gap-5">
-                             <span className="w-3.5 h-12 bg-blue-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.4)]"></span>
+                          <h3 className="text-3xl font-bold text-slate-900 flex items-center gap-5">
+                             <span className="w-3.5 h-12 bg-brand-primary rounded-full shadow-[0_0_20px_rgba(59,130,246,0.4)]"></span>
                              المخرج النهائي
                           </h3>
-                          <p className="text-slate-400 font-bold mt-2 uppercase tracking-[0.2em] text-xs">Output generated via Gemini AI</p>
+                          <p className="text-brand-gray font-bold mt-2 uppercase tracking-[0.2em] text-xs">Output generated via Gemini AI</p>
                        </div>
                        <div className="flex gap-4 w-full md:w-auto">
-                          <button onClick={copyToClipboard} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 text-white rounded-[1.8rem] text-sm font-black shadow-2xl hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-4">
+                          <button onClick={copyToClipboard} className="flex-1 md:flex-none px-10 py-5 bg-white text-brand-primary rounded-[1.8rem] text-sm font-bold shadow-2xl hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-4">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
                             <span>نسخ النص</span>
                           </button>
@@ -492,29 +492,29 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
                         {activeTool === 'DECK' && result.slides ? (
                            <div className="space-y-16">
                               {result.slides.map((slide: any, i: number) => (
-                                <div key={i} className="bg-white p-14 rounded-[3.5rem] shadow-sm border border-slate-100 relative group hover:border-blue-200 transition-colors">
-                                   <span className="absolute top-10 left-12 text-7xl font-black text-slate-50 select-none group-hover:text-blue-50 transition-colors">0{i+1}</span>
-                                   <h4 className="text-3xl font-black text-blue-600 mb-10 relative z-10 pb-5 border-b border-slate-50">{slide.title}</h4>
-                                   <p className="text-slate-700 leading-relaxed text-2xl font-medium whitespace-pre-wrap relative z-10">{slide.content}</p>
+                                <div key={i} className="bg-white p-14 rounded-[3.5rem] shadow-sm border border-slate-100 relative group hover:border-brand-primary transition-colors">
+                                   <span className="absolute top-10 left-12 text-3xl font-bold text-slate-50 select-none group-hover:text-blue-50 transition-colors">0{i+1}</span>
+                                   <h4 className="text-3xl font-bold text-brand-primary mb-10 relative z-10 pb-5 border-b border-slate-50">{slide.title}</h4>
+                                   <p className="text-brand-primary leading-relaxed text-2xl font-medium whitespace-pre-wrap relative z-10">{slide.content}</p>
                                 </div>
                               ))}
                            </div>
                         ) : (
-                           <div className="prose prose-slate max-w-none prose-p:text-2xl prose-p:leading-[3rem] prose-p:text-slate-700 prose-li:text-xl prose-headings:font-black prose-headings:text-blue-600 whitespace-pre-wrap font-medium">
+                           <div className="prose prose-slate max-w-none prose-p:text-2xl prose-p:leading-[3rem] prose-p:text-brand-primary prose-li:text-xl prose-headings:font-bold prose-headings:text-brand-primary whitespace-pre-wrap font-medium">
                              {result}
                            </div>
                         )}
                     </div>
                     
-                    <div className="mt-12 p-8 bg-blue-600 rounded-[3rem] shadow-xl shadow-blue-100 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="mt-12 p-8 bg-brand-primary rounded-[3rem] shadow-xl shadow-brand-primary/20 flex flex-col md:flex-row items-center justify-between gap-8">
                        <div className="flex items-center gap-6">
-                          <span className="text-4xl bg-white/20 p-3 rounded-2xl backdrop-blur-sm">🧠</span>
-                          <div className="text-white">
-                             <p className="font-black text-lg">تحليل ذكي مكتمل</p>
-                             <p className="text-white/70 font-bold text-xs">تم بناء هذه المخرجات بناءً على أفضل الممارسات في مسرعات الأعمال العالمية.</p>
+                          <span className="text-3xl bg-white/20 p-3 rounded-2xl backdrop-blur-sm">🧠</span>
+                          <div className="text-brand-primary">
+                             <p className="font-bold text-lg">تحليل ذكي مكتمل</p>
+                             <p className="text-brand-primary/70 font-bold text-xs">تم بناء هذه المخرجات بناءً على أفضل الممارسات في مسرعات الأعمال العالمية.</p>
                           </div>
                        </div>
-                       <button onClick={resetTool} className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all backdrop-blur-md border border-white/20">تغيير الأداة ⊕</button>
+                       <button onClick={resetTool} className="px-8 py-3 bg-brand-primary/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-widest transition-all backdrop-blur-md border border-brand-primary/30">تغيير الأداة ⊕</button>
                     </div>
                  </div>
                )}
@@ -523,8 +523,8 @@ export const ToolsPage: React.FC<ToolsPageProps> = ({ onBack }) => {
         )}
       </main>
 
-      <footer className="py-12 border-t border-slate-200 text-center bg-white/50 no-print">
-         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.6em]">Professional Entrepreneurship Studio • AI Powered • 2024</p>
+      <footer className="py-12 border-t border-slate-200 text-center bg-brand-primary/50 no-print">
+         <p className="text-[10px] font-bold text-brand-gray uppercase tracking-[0.6em]">Professional Entrepreneurship Studio • AI Powered • 2024</p>
       </footer>
     </div>
   );

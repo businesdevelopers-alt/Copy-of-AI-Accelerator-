@@ -22,6 +22,7 @@ import { StaffPortal } from './components/StaffPortal';
 import { AchievementsPage } from './components/AchievementsPage';
 import { MentorshipPage } from './components/MentorshipPage';
 import { IncubationProgram } from './components/IncubationProgram';
+import { CommunityPage } from './components/CommunityPage';
 
 function App() {
   const [stage, setStage] = useState<FiltrationStage>(FiltrationStage.LANDING);
@@ -153,7 +154,7 @@ function App() {
   };
 
   return (
-    <div className="font-sans antialiased text-slate-900">
+    <div className="font-sans antialiased text-brand-primary">
       {stage === FiltrationStage.LANDING && (
         <LandingPage 
           onStart={() => setStage(FiltrationStage.WELCOME)} 
@@ -167,8 +168,11 @@ function App() {
           onAchievements={() => setStage(FiltrationStage.ACHIEVEMENTS)}
           onMentorship={() => setStage(FiltrationStage.MENTORSHIP)}
           onIncubation={() => setStage(FiltrationStage.INCUBATION_PROGRAM)}
+          onCommunity={() => setStage(FiltrationStage.COMMUNITY)}
         />
       )}
+
+      {stage === FiltrationStage.COMMUNITY && <CommunityPage onBack={() => setStage(FiltrationStage.LANDING)} />}
 
       {stage === FiltrationStage.INCUBATION_PROGRAM && (
         <IncubationProgram onBack={() => setStage(FiltrationStage.LANDING)} onApply={() => setStage(FiltrationStage.WELCOME)} />

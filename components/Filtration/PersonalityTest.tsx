@@ -92,9 +92,9 @@ export const PersonalityTest: React.FC<PersonalityTestProps> = ({ onComplete }) 
   const currentQ = QUESTIONS[currentIndex];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl text-center mb-8">
-        <h2 className="text-3xl font-bold text-slate-800 mb-2">🧠 نمط القيادة الريادية</h2>
+        <h2 className="text-3xl font-bold text-brand-primary mb-2">🧠 نمط القيادة الريادية</h2>
         <p className="text-slate-500">أجب بصراحة لاكتشاف نوع شخصيتك في إدارة الأعمال.</p>
       </div>
 
@@ -106,10 +106,10 @@ export const PersonalityTest: React.FC<PersonalityTestProps> = ({ onComplete }) 
         {/* Active Card */}
         <div className="absolute inset-0 bg-white rounded-3xl shadow-xl border border-slate-100 p-8 flex flex-col justify-between animate-fade-in-up">
           <div>
-            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
+            <span className="bg-brand-primary/10 text-brand-primary text-xs font-bold px-3 py-1 rounded-full">
               سؤال {currentIndex + 1} من {QUESTIONS.length}
             </span>
-            <h3 className="text-2xl font-bold text-slate-800 mt-6 leading-relaxed">
+            <h3 className="text-2xl font-bold text-brand-primary mt-6 leading-relaxed">
               {currentQ.situation}
             </h3>
           </div>
@@ -119,7 +119,7 @@ export const PersonalityTest: React.FC<PersonalityTestProps> = ({ onComplete }) 
               <button
                 key={idx}
                 onClick={() => handleAnswer(opt.style)}
-                className="w-full p-4 text-right bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-slate-700 font-medium hover:shadow-md active:scale-98"
+                className="w-full p-4 text-right bg-slate-50 hover:bg-brand-primary/5 border border-slate-200 hover:border-brand-primary rounded-xl transition-all duration-200 text-brand-primary font-medium hover:shadow-md active:scale-98"
               >
                 {opt.text}
               </button>
@@ -131,7 +131,7 @@ export const PersonalityTest: React.FC<PersonalityTestProps> = ({ onComplete }) 
       {/* Progress Bar */}
       <div className="w-full max-w-xl mt-12 bg-slate-200 h-2 rounded-full overflow-hidden">
         <div 
-          className="bg-blue-600 h-full transition-all duration-500 ease-out"
+          className="bg-brand-primary h-full transition-all duration-500 ease-out"
           style={{ width: `${((currentIndex + 1) / QUESTIONS.length) * 100}%` }}
         ></div>
       </div>

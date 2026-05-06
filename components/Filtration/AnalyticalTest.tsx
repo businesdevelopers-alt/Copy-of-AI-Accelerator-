@@ -65,8 +65,8 @@ export const AnalyticalTest: React.FC<AnalyticalTestProps> = ({ profile, onCompl
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-brand-bg">
+        <div className="w-16 h-16 border-4 border-brand-primary border-t-blue-600 rounded-full animate-spin mb-4"></div>
         <p className="text-slate-500 font-bold animate-pulse">جاري إعداد الاختبار التحليلي الخاص بقطاع {profile.sector}...</p>
       </div>
     );
@@ -79,11 +79,11 @@ export const AnalyticalTest: React.FC<AnalyticalTestProps> = ({ profile, onCompl
       <div className="w-full max-w-3xl">
         <div className="flex justify-between items-end mb-6">
            <div>
-             <h2 className="text-2xl font-bold text-slate-800">📊 التقييم التحليلي</h2>
+             <h2 className="text-2xl font-bold text-brand-primary">📊 التقييم التحليلي</h2>
              <p className="text-slate-500 text-sm">أثبت قدرتك على التفكير الريادي.</p>
            </div>
            <div className="text-left">
-             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">مؤشر الأداء</div>
+             <div className="text-xs text-brand-gray font-bold uppercase tracking-wider mb-1">مؤشر الأداء</div>
              <div className={`text-xl font-bold ${score > currentIndex / 2 ? 'text-green-600' : 'text-orange-500'}`}>
                 {Math.round((score / (currentIndex + 1 || 1)) * 100)}%
              </div>
@@ -99,18 +99,18 @@ export const AnalyticalTest: React.FC<AnalyticalTestProps> = ({ profile, onCompl
 
           <div className="p-8 md:p-10">
             <div className="flex justify-between items-start mb-6">
-               <span className={`text-xs font-bold px-2 py-1 rounded text-white ${
+               <span className={`text-xs font-bold px-2 py-1 rounded text-brand-primary ${
                  currentQ.difficulty === 'Easy' ? 'bg-green-500' : 
                  currentQ.difficulty === 'Medium' ? 'bg-yellow-500' : 'bg-red-500'
                }`}>
                  {currentQ.difficulty === 'Easy' ? 'سهل' : currentQ.difficulty === 'Medium' ? 'متوسط' : 'صعب'}
                </span>
-               <span className="text-slate-400 text-sm font-bold">
+               <span className="text-brand-gray text-sm font-bold">
                  {currentIndex + 1} / {questions.length}
                </span>
             </div>
 
-            <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-8 leading-relaxed">
+            <h3 className="text-xl md:text-2xl font-bold text-brand-primary mb-8 leading-relaxed">
               {currentQ.text}
             </h3>
 
@@ -122,8 +122,8 @@ export const AnalyticalTest: React.FC<AnalyticalTestProps> = ({ profile, onCompl
                   disabled={isProcessing}
                   className={`p-4 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-200 text-right font-medium relative min-h-[60px]
                     ${isProcessing && selectedOption === idx 
-                      ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                      : 'border-slate-100 hover:border-blue-500 hover:bg-blue-50 text-slate-700'}
+                      ? 'border-brand-primary bg-brand-primary/5 text-brand-primary' 
+                      : 'border-slate-100 hover:border-brand-primary hover:bg-brand-primary/5 text-brand-primary'}
                     ${isProcessing && selectedOption !== idx ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
@@ -133,7 +133,7 @@ export const AnalyticalTest: React.FC<AnalyticalTestProps> = ({ profile, onCompl
                   
                   {isProcessing && selectedOption === idx && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                       <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   )}
                 </button>

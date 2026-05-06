@@ -32,22 +32,22 @@ const TEMPLATES = {
   modern: {
     id: 'modern',
     name: 'فضي عصري',
-    previewColor: 'bg-slate-50',
+    previewColor: 'bg-brand-bg',
     styles: {
       containerBg: 'bg-slate-50',
       outerBorder: 'border-slate-400',
       innerBorder: 'border-slate-300/40',
-      textTitle: 'text-slate-800',
+      textTitle: 'text-brand-primary',
       textBody: 'text-slate-600',
-      textName: 'text-slate-900',
+      textName: 'text-brand-primary',
       accent: 'text-slate-500',
       sealBorder: 'border-slate-400',
       sealBg: 'bg-gradient-to-br from-white to-slate-100',
       sealIcon: 'text-slate-500',
-      logoBg: 'bg-slate-800',
-      logoIcon: 'text-white',
+      logoBg: 'bg-slate-100',
+      logoIcon: 'text-brand-primary',
       patternFill: '#94a3b8',
-      watermarkClass: 'text-slate-400'
+      watermarkClass: 'text-brand-gray'
     }
   }
 };
@@ -73,27 +73,27 @@ export const Certificate: React.FC<CertificateProps> = ({ user, onClose }) => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                  </div>
-                 <h1 className={`text-6xl font-serif font-bold mb-3 ${theme.textTitle}`}>شهادة تخرج</h1>
+                 <h1 className={`text-3xl font-serif font-bold mb-3 ${theme.textTitle}`}>شهادة تخرج</h1>
                  <p className={`font-bold tracking-[0.3em] text-xs uppercase ${theme.accent}`}>مسرعة الأعمال الذكية AI Accelerator</p>
               </div>
 
               <div className="my-10 space-y-6 relative z-10">
                 <p className={`text-2xl font-serif italic ${theme.textBody}`}>يشهد هذا المستند بأن رائد الأعمال</p>
-                <h2 className={`text-6xl font-bold font-serif px-12 pb-4 ${theme.textName}`}>{user.name}</h2>
+                <h2 className={`text-3xl font-bold font-serif px-12 pb-4 ${theme.textName}`}>{user.name}</h2>
                 <p className={`text-xl font-serif italic ${theme.textBody}`}>قد أتم بنجاح كافة متطلبات البرنامج التدريبي لبناء مشروع</p>
-                <h3 className={`text-4xl font-bold py-2 px-10 inline-block border-b-2 ${theme.textTitle}`}>"{user.startupName}"</h3>
+                <h3 className={`text-3xl font-bold py-2 px-10 inline-block border-b-2 ${theme.textTitle}`}>"{user.startupName}"</h3>
               </div>
 
               {/* Badges Inclusion in Certificate */}
               <div className="relative z-10 py-10 bg-black/5 rounded-[3rem] border-2 border-dashed border-black/10 mx-10">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">الأوسمة والدروع المكتسبة (Shields Earned)</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray mb-6">الأوسمة والدروع المكتسبة (Shields Earned)</p>
                   <div className="flex justify-center gap-6">
                       {DIGITAL_SHIELDS.map(s => (
                           <div key={s.id} className="flex flex-col items-center gap-1">
                               <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-3xl shadow-lg border-2 border-white`}>
                                   {s.icon}
                               </div>
-                              <span className="text-[8px] font-black text-slate-500 uppercase">{s.name.split(' ')[1]}</span>
+                              <span className="text-[8px] font-bold text-slate-500 uppercase">{s.name.split(' ')[1]}</span>
                           </div>
                       ))}
                   </div>
@@ -107,7 +107,7 @@ export const Certificate: React.FC<CertificateProps> = ({ user, onClose }) => {
                 
                 <div className={`w-28 h-28 border-4 rounded-full flex flex-col items-center justify-center shadow-xl ${theme.sealBg} ${theme.sealBorder}`}>
                    <span className="text-2xl">★</span>
-                   <span className="text-[10px] font-black uppercase">Verified</span>
+                   <span className="text-[10px] font-bold uppercase">Verified</span>
                 </div>
 
                 <div className="text-right">
@@ -122,8 +122,8 @@ export const Certificate: React.FC<CertificateProps> = ({ user, onClose }) => {
         </div>
 
         <div className="bg-slate-50 p-6 border-t flex justify-center gap-4 no-print">
-            <button onClick={() => window.print()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl transition-all hover:scale-105">تحميل نسخة PDF</button>
-            <button onClick={onClose} className="px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black text-sm">العودة للوحة التحكم</button>
+            <button onClick={() => window.print()} className="px-10 py-4 bg-white text-brand-primary rounded-2xl font-bold text-sm shadow-xl transition-all hover:scale-105">تحميل نسخة PDF</button>
+            <button onClick={onClose} className="px-10 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm">العودة للوحة التحكم</button>
         </div>
       </div>
     </div>

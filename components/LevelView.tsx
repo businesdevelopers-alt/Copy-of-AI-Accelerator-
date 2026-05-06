@@ -21,8 +21,8 @@ interface LevelTheme {
 const THEMES: LevelTheme[] = [
   { 
     id: 'blue', name: 'أزرق احترافي', 
-    primary: 'bg-blue-600', secondary: 'bg-blue-50', accent: 'text-blue-600', 
-    bg: 'bg-blue-50/50', border: 'border-blue-100', text: 'text-blue-700', ring: 'ring-blue-100',
+    primary: 'bg-brand-primary', secondary: 'bg-brand-primary/5', accent: 'text-brand-primary', 
+    bg: 'bg-brand-primary/5/50', border: 'border-brand-primary', text: 'text-brand-primary', ring: 'ring-blue-100',
     gradient: 'from-blue-600 to-indigo-700'
   },
   { 
@@ -141,7 +141,7 @@ const LevelIllustration: React.FC<{ levelId: number; theme: LevelTheme; wirefram
           </svg>
         );
       default:
-        return <div className="text-9xl">🚀</div>;
+        return <div className="text-3xl">🚀</div>;
     }
   };
 
@@ -251,7 +251,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-slate-950 text-slate-100' : activeTheme.bg + ' text-slate-900'} flex flex-col font-sans transition-colors duration-500 overflow-x-hidden`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-brand-bg text-brand-primary' : activeTheme.bg + ' text-brand-primary'} flex flex-col font-sans transition-colors duration-500 overflow-x-hidden`}>
       <style>{`
         @keyframes shield-pop {
           0% { transform: scale(0.5) rotate(-20deg); opacity: 0; }
@@ -273,19 +273,19 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
       `}</style>
 
       {/* Improved Header with Deep Progress */}
-      <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors duration-500 ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-gray-100 shadow-sm'}`}>
+      <header className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors duration-500 ${isDarkMode ? 'bg-white/90 border-slate-200' : 'bg-white/90 border-gray-100 shadow-sm'}`}>
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <button onClick={onBack} className="text-slate-400 font-black text-xs hover:text-blue-600 transition-all flex items-center gap-2">
+            <button onClick={onBack} className="text-brand-gray font-bold text-xs hover:text-brand-primary transition-all flex items-center gap-2">
                 <svg className="w-4 h-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" strokeWidth={2.5} /></svg>
                 خروج من المحطة
             </button>
             <div className="text-center flex flex-col items-center">
-                <h2 className="font-black text-sm">{level.title}</h2>
+                <h2 className="font-bold text-sm">{level.title}</h2>
                 <div className="flex items-center gap-3 mt-1.5">
                    <div className="w-40 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                        <div className={`${activeTheme.primary} h-full transition-all duration-1000 ease-out`} style={{ width: `${(currentContentPage / (carouselItems.length - 1 || 1)) * 100}%` }}></div>
                    </div>
-                   <span className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">
+                   <span className="text-[10px] font-bold text-brand-hover uppercase tracking-tighter">
                       {Math.round((currentContentPage / (carouselItems.length - 1 || 1)) * 100)}%
                    </span>
                 </div>
@@ -304,11 +304,11 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
              <div className="relative w-32 h-32">
                 <div className="absolute inset-0 border-8 border-slate-100 rounded-full"></div>
                 <div className={`absolute inset-0 border-8 ${activeTheme.accent} border-t-transparent rounded-full animate-spin`}></div>
-                <div className="absolute inset-0 flex items-center justify-center text-4xl">📚</div>
+                <div className="absolute inset-0 flex items-center justify-center text-3xl">📚</div>
              </div>
              <div className="text-center space-y-2">
-               <p className="font-black text-xl animate-pulse">جاري استدعاء المعرفة الذكية...</p>
-               <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Building Personal Learning Path</p>
+               <p className="font-bold text-xl animate-pulse">جاري استدعاء المعرفة الذكية...</p>
+               <p className="text-xs text-brand-gray font-bold uppercase tracking-widest">Building Personal Learning Path</p>
              </div>
           </div>
         )}
@@ -316,13 +316,13 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         {step === Step.LEARN && (
            <div className="w-full space-y-12 animate-fade-in">
               {/* Learning Progress Map (Area Chart Visualization) */}
-              <div className={`p-6 rounded-[2.5rem] border progress-map-card transition-all ${isDarkMode ? 'bg-slate-900 border-slate-800 shadow-2xl' : 'bg-white border-slate-100 shadow-sm'}`}>
+              <div className={`p-6 rounded-[2.5rem] border progress-map-card transition-all ${isDarkMode ? 'bg-white border-slate-200 shadow-2xl' : 'bg-white border-slate-100 shadow-sm'}`}>
                  <div className="flex justify-between items-center mb-6 px-4">
                     <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xs">📈</div>
-                       <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">خارطة التحصيل المعرفي للمحطة</h4>
+                       <div className="w-8 h-8 bg-brand-primary rounded-xl flex items-center justify-center text-white text-xs">📈</div>
+                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-brand-gray">خارطة التحصيل المعرفي للمحطة</h4>
                     </div>
-                    <span className="text-[10px] font-bold text-blue-500">الجزء {currentContentPage + 1} / {carouselItems.length}</span>
+                    <span className="text-[10px] font-bold text-brand-hover">الجزء {currentContentPage + 1} / {carouselItems.length}</span>
                  </div>
                  <div className="h-20 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -337,7 +337,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                              content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                    return (
-                                      <div className={`p-2 rounded-lg border text-[10px] font-black ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-lg'}`}>
+                                      <div className={`p-2 rounded-lg border text-[10px] font-bold ${isDarkMode ? 'bg-slate-100 border-slate-700' : 'bg-white border-slate-100 shadow-lg'}`}>
                                          {payload[0].payload.name}
                                       </div>
                                    );
@@ -362,10 +362,10 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                        <button 
                          key={i} 
                          onClick={() => { setCurrentContentPage(i); playPositiveSound(); }}
-                         className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black transition-all
+                         className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all
                            ${i === currentContentPage 
-                             ? 'bg-blue-600 text-white shadow-lg ring-4 ring-blue-500/20 scale-110' 
-                             : (i < currentContentPage ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-slate-100 text-slate-400 opacity-50')}
+                             ? 'bg-brand-primary text-white shadow-lg ring-4 ring-blue-500/20 scale-110' 
+                             : (i < currentContentPage ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-slate-100 text-brand-gray opacity-50')}
                          `}
                        >
                          {i === carouselItems.length - 1 ? '📚' : i + 1}
@@ -378,34 +378,34 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                  <LevelIllustration levelId={level.id} theme={activeTheme} isDarkMode={isDarkMode} activePage={currentContentPage} />
               </div>
 
-              <div className={`p-10 md:p-16 rounded-[4rem] border shadow-2xl transition-all duration-700 relative overflow-hidden ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+              <div className={`p-10 md:p-16 rounded-[4rem] border shadow-2xl transition-all duration-700 relative overflow-hidden ${isDarkMode ? 'bg-white border-slate-200' : 'bg-white border-slate-100'}`}>
                   {carouselItems[currentContentPage]?.type === 'content' ? (
                      <div key={currentContentPage} className="animate-fade-in-up">
                         <div 
                           onClick={() => toggleInsight(currentContentPage)}
                           className={`discovery-card p-8 rounded-[2.5rem] cursor-pointer border-2 transition-all relative group
-                            ${isDarkMode ? 'bg-slate-800/40 border-slate-700 hover:border-blue-500' : 'bg-slate-50 border-slate-100 hover:border-blue-200'}
+                            ${isDarkMode ? 'bg-slate-100/40 border-slate-700 hover:border-brand-primary' : 'bg-brand-bg border-slate-100 hover:border-brand-primary'}
                           `}
                         >
-                           <div className="absolute -top-4 -right-4 w-10 h-10 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                           <div className="absolute -top-4 -right-4 w-10 h-10 bg-brand-primary text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                               <span className="text-xl">✨</span>
                            </div>
                            
-                           <article className={`prose max-w-none ${isDarkMode ? 'prose-invert text-slate-200' : 'prose-slate text-slate-800'} prose-p:text-2xl prose-p:leading-[3.2rem]`}>
+                           <article className={`prose max-w-none ${isDarkMode ? 'prose-invert text-slate-200' : 'prose-slate text-brand-primary'} prose-p:text-2xl prose-p:leading-[3.2rem]`}>
                               {carouselItems[currentContentPage].data.split('\n').map((p, i) => <p key={i} className="mb-4">{p}</p>)}
                            </article>
 
                            <div className="mt-8 pt-8 border-t border-slate-200/50 flex items-center justify-between">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">انقر لاستكشاف الرؤية الاستراتيجية</span>
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-500 ${revealedInsights[currentContentPage] ? 'rotate-180 bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gray">انقر لاستكشاف الرؤية الاستراتيجية</span>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-500 ${revealedInsights[currentContentPage] ? 'rotate-180 bg-brand-primary text-white' : 'bg-slate-200 text-slate-500'}`}>
                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 9l-7 7-7-7" strokeWidth={3} /></svg>
                               </div>
                            </div>
 
                            <div className={`insight-reveal ${revealedInsights[currentContentPage] ? 'active' : ''}`}>
-                              <div className={`p-8 rounded-3xl border-l-4 ${isDarkMode ? 'bg-blue-900/20 border-blue-500 text-blue-100' : 'bg-blue-50 border-blue-600 text-blue-900'}`}>
-                                 <h4 className="font-black text-sm mb-4 uppercase tracking-widest flex items-center gap-3">
-                                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                              <div className={`p-8 rounded-3xl border-l-4 ${isDarkMode ? 'bg-brand-primary/20 border-brand-primary text-blue-100' : 'bg-brand-primary/5 border-brand-primary text-brand-primary'}`}>
+                                 <h4 className="font-bold text-sm mb-4 uppercase tracking-widest flex items-center gap-3">
+                                    <span className="w-2 h-2 rounded-full bg-brand-hover animate-ping"></span>
                                     رؤية استراتيجية لـ {user.startupName}
                                  </h4>
                                  <p className="text-lg font-medium leading-relaxed italic">
@@ -417,19 +417,19 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                      </div>
                   ) : (
                     <div className="text-center space-y-10 animate-fade-in-up">
-                       <div className="w-24 h-24 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto shadow-inner text-6xl">📚</div>
+                       <div className="w-24 h-24 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto shadow-inner text-3xl">📚</div>
                        <div className="space-y-4">
-                          <h3 className="text-3xl font-black">مصادر المحطة المعتمدة</h3>
+                          <h3 className="text-3xl font-bold">مصادر المحطة المعتمدة</h3>
                           <p className="text-slate-500 text-lg font-medium max-w-lg mx-auto">لقد أتممت قراءة المادة العلمية. يمكنك تعزيز فهمك عبر المصادر الإضافية التالية.</p>
                        </div>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {['دليل التنفيذ السريع', 'نموذج PDF المعتمد', 'فيديو توضيحي (Gemini)', 'أدوات تحليل السوق'].map((m, i) => (
-                             <div key={m} className={`p-8 rounded-[2rem] border-2 font-black hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex items-center justify-between group
-                               ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-100'}
+                             <div key={m} className={`p-8 rounded-[2rem] border-2 font-bold hover:border-brand-primary cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex items-center justify-between group
+                               ${isDarkMode ? 'bg-slate-100 border-slate-700' : 'bg-slate-50 border-slate-100'}
                              `}>
                                 <span>{m}</span>
-                                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                   <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeWidth={2.5} /></svg>
+                                <div className="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <svg className="w-5 h-5 text-brand-hover" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" strokeWidth={2.5} /></svg>
                                 </div>
                              </div>
                           ))}
@@ -439,16 +439,16 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
               </div>
 
               <div className="flex justify-between items-center px-6">
-                  <button disabled={currentContentPage === 0} onClick={() => { setCurrentContentPage(p => p - 1); playPositiveSound(); }} className="px-10 py-5 bg-slate-200 text-slate-600 rounded-[1.8rem] font-black disabled:opacity-30 transition-all active:scale-95">السابق</button>
+                  <button disabled={currentContentPage === 0} onClick={() => { setCurrentContentPage(p => p - 1); playPositiveSound(); }} className="px-10 py-5 bg-slate-200 text-slate-600 rounded-[1.8rem] font-bold disabled:opacity-30 transition-all active:scale-95">السابق</button>
                   <div className="flex gap-2">
                      {carouselItems.map((_, i) => (
-                       <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i === currentContentPage ? 'w-8 bg-blue-600' : 'w-2 bg-slate-200'}`}></div>
+                       <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i === currentContentPage ? 'w-8 bg-brand-primary' : 'w-2 bg-slate-200'}`}></div>
                      ))}
                   </div>
                   {currentContentPage < carouselItems.length - 1 ? (
-                    <button onClick={() => { setCurrentContentPage(p => p + 1); playPositiveSound(); }} className="px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black shadow-xl hover:bg-blue-600 transition-all active:scale-95">المتابعة</button>
+                    <button onClick={() => { setCurrentContentPage(p => p + 1); playPositiveSound(); }} className="px-12 py-5 bg-white text-white rounded-[1.8rem] font-bold shadow-xl hover:bg-brand-primary transition-all active:scale-95">المتابعة</button>
                   ) : (
-                    <button onClick={() => { setStep(Step.EXERCISE); playPositiveSound(); }} className="px-14 py-5 bg-blue-600 text-white rounded-[1.8rem] font-black shadow-2xl animate-pulse active:scale-95 transition-all">بدء التمرين التطبيقي</button>
+                    <button onClick={() => { setStep(Step.EXERCISE); playPositiveSound(); }} className="px-14 py-5 bg-brand-primary text-white rounded-[1.8rem] font-bold shadow-2xl animate-pulse active:scale-95 transition-all">بدء التمرين التطبيقي</button>
                   )}
               </div>
            </div>
@@ -456,18 +456,18 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
         {step === Step.EXERCISE && (
             <div className="w-full max-w-3xl space-y-10 animate-fade-in-up">
-                <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative overflow-hidden transition-all duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-full"></div>
-                    <h3 className="text-3xl font-black mb-8 flex items-center gap-4">
-                        <span className="text-5xl">✏️</span>
+                <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative overflow-hidden transition-all duration-500 ${isDarkMode ? 'bg-white border-slate-200' : 'bg-white border-slate-100'}`}>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 rounded-bl-full"></div>
+                    <h3 className="text-3xl font-bold mb-8 flex items-center gap-4">
+                        <span className="text-3xl">✏️</span>
                         تحدي العبور للمستوى {level.id}
                     </h3>
-                    <div className={`p-8 rounded-[2.5rem] mb-10 border-r-8 ${isDarkMode ? 'bg-slate-800 border-blue-500' : 'bg-blue-50 border-blue-600'}`}>
+                    <div className={`p-8 rounded-[2.5rem] mb-10 border-r-8 ${isDarkMode ? 'bg-slate-100 border-brand-primary' : 'bg-brand-primary/5 border-brand-primary'}`}>
                        <p className="text-xl font-bold leading-relaxed">{exercisePrompt}</p>
                     </div>
                     <textarea 
                         className={`w-full h-64 p-8 rounded-[2.5rem] outline-none border-2 transition-all font-bold text-lg resize-none shadow-inner
-                          ${isDarkMode ? 'bg-slate-800 border-slate-700 focus:border-blue-500 text-white' : 'bg-slate-50 border-slate-200 focus:border-blue-500 text-slate-900'}
+                          ${isDarkMode ? 'bg-slate-100 border-slate-700 focus:border-brand-primary text-brand-primary' : 'bg-slate-50 border-slate-200 focus:border-brand-primary text-slate-900'}
                         `}
                         placeholder="صغ مخرجاتك هنا ليقوم AI بمراجعتها..."
                         value={exerciseAnswer}
@@ -478,7 +478,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                         <div className={`mt-10 p-10 rounded-[3rem] border-2 animate-fade-in ${exerciseFeedback.includes('مقبولة') ? 'bg-green-50 border-green-200 text-green-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
                             <div className="flex items-center gap-4 mb-4">
                                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-2xl">🤖</div>
-                               <p className="font-black text-xl">مراجعة المستشار الذكي:</p>
+                               <p className="font-bold text-xl">مراجعة المستشار الذكي:</p>
                             </div>
                             <p className="font-bold text-lg leading-relaxed italic pr-4 border-r-2 border-current/20">"{exerciseFeedback}"</p>
                         </div>
@@ -491,14 +491,14 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                              const res = await evaluateExerciseResponse(exercisePrompt, exerciseAnswer);
                              setExerciseFeedback(res.feedback);
                              setIsExerciseSubmitting(false);
-                         }} disabled={isExerciseSubmitting || exerciseAnswer.length < 20} className="px-14 py-6 bg-slate-900 text-white rounded-[2rem] font-black shadow-2xl disabled:opacity-30 transition-all active:scale-95 flex items-center gap-4">
+                         }} disabled={isExerciseSubmitting || exerciseAnswer.length < 20} className="px-14 py-6 bg-white text-brand-primary rounded-[2rem] font-bold shadow-2xl disabled:opacity-30 transition-all active:scale-95 flex items-center gap-4">
                             {isExerciseSubmitting && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
                             <span>إرسال للمراجعة الفورية</span>
                          </button>
                        ) : exerciseFeedback.includes('مقبولة') ? (
-                         <button onClick={startQuiz} className="px-14 py-6 bg-blue-600 text-white rounded-[2rem] font-black shadow-2xl animate-bounce transition-all active:scale-95">انتقل للاختبار النهائي 🎯</button>
+                         <button onClick={startQuiz} className="px-14 py-6 bg-brand-primary text-white rounded-[2rem] font-bold shadow-2xl animate-bounce transition-all active:scale-95">انتقل للاختبار النهائي 🎯</button>
                        ) : (
-                         <button onClick={() => { setExerciseFeedback(''); setExerciseAnswer(''); playPositiveSound(); }} className="px-14 py-6 bg-slate-200 text-slate-700 rounded-[2rem] font-black transition-all active:scale-95">إعادة صياغة الحل</button>
+                         <button onClick={() => { setExerciseFeedback(''); setExerciseAnswer(''); playPositiveSound(); }} className="px-14 py-6 bg-slate-200 text-brand-primary rounded-[2rem] font-bold transition-all active:scale-95">إعادة صياغة الحل</button>
                        )}
                     </div>
                 </div>
@@ -507,16 +507,16 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
 
         {step === Step.QUIZ && (
             <div className="w-full max-w-3xl animate-fade-in-up">
-                 <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative transition-all duration-500 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'}`}>
+                 <div className={`p-10 md:p-14 rounded-[4rem] border shadow-2xl relative transition-all duration-500 ${isDarkMode ? 'bg-white border-slate-200' : 'bg-white border-slate-100'}`}>
                     <div className="text-center mb-12">
-                       <span className="text-xs font-black text-blue-500 uppercase tracking-[0.3em]">Final Proficiency Assessment</span>
-                       <h3 className="text-3xl font-black mt-2">اختبار الكفاءة النهائي</h3>
+                       <span className="text-xs font-bold text-brand-hover uppercase tracking-[0.3em]">Final Proficiency Assessment</span>
+                       <h3 className="text-3xl font-bold mt-2">اختبار الكفاءة النهائي</h3>
                     </div>
                     <div className="space-y-12">
                         {quizQuestions.map((q, qIdx) => (
                             <div key={q.id} className="space-y-6">
-                                <p className="font-black text-xl flex items-center gap-4">
-                                   <span className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-xs text-slate-400">{qIdx + 1}</span>
+                                <p className="font-bold text-xl flex items-center gap-4">
+                                   <span className="w-10 h-10 bg-slate-100 rounded-2xl flex items-center justify-center text-xs text-brand-gray">{qIdx + 1}</span>
                                    {q.text}
                                 </p>
                                 <div className="grid grid-cols-1 gap-4 pr-10">
@@ -526,8 +526,8 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                                             onClick={() => { const na = [...quizAnswers]; na[qIdx] = oIdx; setQuizAnswers(na); playPositiveSound(); }}
                                             className={`p-6 text-right rounded-3xl border-2 transition-all font-bold text-lg group relative overflow-hidden
                                               ${quizAnswers[qIdx] === oIdx 
-                                                ? 'bg-blue-600 border-blue-600 text-white shadow-xl' 
-                                                : (isDarkMode ? 'bg-slate-800 border-slate-700 hover:border-blue-500 text-slate-300' : 'bg-slate-50 border-slate-100 hover:border-blue-200')}
+                                                ? 'bg-brand-primary border-brand-primary text-white shadow-xl' 
+                                                : (isDarkMode ? 'bg-slate-100 border-slate-700 hover:border-brand-primary text-slate-600' : 'bg-slate-50 border-slate-100 hover:border-brand-primary')}
                                             `}
                                         >
                                             <span className="relative z-10">{opt}</span>
@@ -542,7 +542,7 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
                             </div>
                         ))}
                     </div>
-                    <button onClick={handleQuizSubmit} disabled={quizAnswers.includes(-1)} className="w-full mt-16 py-7 bg-slate-900 text-white rounded-[2.5rem] font-black text-2xl shadow-2xl disabled:opacity-30 active:scale-95 transition-all flex items-center justify-center gap-4">
+                    <button onClick={handleQuizSubmit} disabled={quizAnswers.includes(-1)} className="w-full mt-16 py-7 bg-white text-brand-primary rounded-[2.5rem] font-bold text-2xl shadow-2xl disabled:opacity-30 active:scale-95 transition-all flex items-center justify-center gap-4">
                        <span>إنهاء الاختبار وحصد الدرع</span>
                        <span className="text-3xl">🛡️</span>
                     </button>
@@ -553,32 +553,32 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
         {step === Step.COMPLETED && (
           <div className="flex flex-col items-center justify-center min-h-[75vh] text-center space-y-12 animate-fade-in">
              <div className="relative">
-                <div className="absolute inset-0 bg-blue-500 blur-[100px] opacity-30 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 bg-brand-primary blur-[100px] opacity-30 rounded-full animate-pulse"></div>
                 <div className={`w-72 h-72 rounded-[5rem] bg-gradient-to-br ${shieldInfo?.color} flex items-center justify-center text-[140px] shadow-3xl border-8 border-white animate-shield-earned relative z-10`}>
                    {shieldInfo?.icon}
-                   <div className="absolute -top-10 -right-10 bg-yellow-400 text-white px-5 py-3 rounded-3xl font-black text-sm shadow-2xl animate-bounce uppercase tracking-widest border-4 border-white">درع جديد!</div>
+                   <div className="absolute -top-10 -right-10 bg-yellow-400 text-brand-primary px-5 py-3 rounded-3xl font-bold text-sm shadow-2xl animate-bounce uppercase tracking-widest border-4 border-white">درع جديد!</div>
                 </div>
              </div>
              
              <div className="space-y-6">
-                <h2 className="text-6xl font-black tracking-tight">إنجاز مذهل!</h2>
+                <h2 className="text-3xl font-bold tracking-tight">إنجاز مذهل!</h2>
                 <div className="space-y-2">
-                   <h3 className="text-3xl font-black text-blue-600">لقد كسبت: {shieldInfo?.name}</h3>
+                   <h3 className="text-3xl font-bold text-brand-primary">لقد كسبت: {shieldInfo?.name}</h3>
                    <p className="text-slate-500 font-bold text-xl uppercase tracking-widest">Level {level.id} Mastery Achieved</p>
                 </div>
-                <p className="text-slate-400 font-medium max-w-xl mx-auto text-lg leading-relaxed">تم توثيق هذا الإنجاز وتشفيره في ملفك الريادي. مشروعك الآن أكثر نضجاً وقرباً من الجاهزية الاستثمارية.</p>
+                <p className="text-brand-gray font-medium max-w-xl mx-auto text-lg leading-relaxed">تم توثيق هذا الإنجاز وتشفيره في ملفك الريادي. مشروعك الآن أكثر نضجاً وقرباً من الجاهزية الاستثمارية.</p>
              </div>
 
              <div className="flex flex-col sm:flex-row gap-6">
                 <button 
                   onClick={onComplete}
-                  className="px-16 py-6 bg-slate-900 text-white rounded-[2.5rem] font-black text-xl shadow-2xl transform hover:scale-105 transition-all active:scale-95 flex items-center gap-4"
+                  className="px-16 py-6 bg-white text-brand-primary rounded-[2.5rem] font-bold text-xl shadow-2xl transform hover:scale-105 transition-all active:scale-95 flex items-center gap-4"
                 >
                   العودة للوحة التحكم
                 </button>
                 <button 
                    onClick={() => window.print()}
-                   className="px-10 py-6 bg-white border-2 border-slate-200 text-slate-600 rounded-[2.5rem] font-black text-lg transition-all hover:bg-slate-50 active:scale-95"
+                   className="px-10 py-6 bg-white border-2 border-slate-200 text-slate-600 rounded-[2.5rem] font-bold text-lg transition-all hover:bg-slate-50 active:scale-95"
                 >
                    مشاركة الإنجاز 🔗
                 </button>
@@ -590,11 +590,11 @@ export const LevelView: React.FC<LevelViewProps> = ({ level, user, onComplete, o
       {/* Interactive Floating Feedback */}
       {step === Step.LEARN && (
         <div className="fixed bottom-8 left-8 z-50 animate-bounce">
-           <div className={`p-4 rounded-2xl shadow-2xl border-2 flex items-center gap-3 transition-colors ${isDarkMode ? 'bg-slate-900 border-blue-500' : 'bg-white border-blue-100'}`}>
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">🧠</div>
+           <div className={`p-4 rounded-2xl shadow-2xl border-2 flex items-center gap-3 transition-colors ${isDarkMode ? 'bg-white border-brand-primary' : 'bg-white border-brand-primary'}`}>
+              <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-white shadow-lg">🧠</div>
               <div>
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Learning Momentum</p>
-                 <p className="text-xs font-black text-blue-500">مستوى التركيز: عالٍ جداً</p>
+                 <p className="text-[10px] font-bold text-brand-gray uppercase tracking-widest">Learning Momentum</p>
+                 <p className="text-xs font-bold text-brand-hover">مستوى التركيز: عالٍ جداً</p>
               </div>
            </div>
         </div>

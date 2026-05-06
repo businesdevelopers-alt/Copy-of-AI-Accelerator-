@@ -208,6 +208,17 @@ export const createPathFinderChat = () => {
   });
 };
 
+export const createAIMentorChat = (systemPrompt: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return ai.chats.create({
+    model: FLASH_MODEL,
+    config: {
+      systemInstruction: systemPrompt || "أنت مرشد أعمال ذكي لمساعدة رواد الأعمال.",
+      temperature: 0.7,
+    }
+  });
+};
+
 export const generateStartupIdea = async (data: { sector: string, interest: string }): Promise<string> => {
   return callGemini({
     prompt: `أنت محرك ابتكار ريادي. بناءً على قطاع ${data.sector} واهتمام المستخدم بـ ${data.interest}، ولد 3 أفكار لمشاريع ناشئة مبتكرة وغير تقليدية. المطلوب: لكل فكرة (اسم جذاب، المشكلة التي تحلها، الحل المقترح، الميزة التنافسية). الرد باللغة العربية بأسلوب احترافي.`,
@@ -588,6 +599,37 @@ export const generateGrowthProjection = async (startupName: string, description:
         }
       },
       required: ["months"]
+    }
+  });
+};
+
+export const generateDigitalTwinReport = async (startupName: string, startupIndustry: string, startupStage: string, startupDescription: string) => {
+  const prompt = `Perform a High-Fidelity Deep Scan for a startup named "${startupName}".
+Industry: ${startupIndustry}
+Stage: ${startupStage}
+Description: ${startupDescription}
+
+Structure the report into four strategic pillars:
+1. Status Pulse (Status Pulse)
+2. Technological Edge (Technological Edge)
+3. Ecosystem Synergy (Ecosystem Synergy)
+4. Six-Month Roadmap (Six-Month Roadmap)
+
+Respond in JSON.`;
+
+  return callGemini<{ pulse: string, tech: string, synergy: string, roadmap: string }>({
+    prompt,
+    systemInstruction: "You are an advanced AI diagnostics engine analyzing digital entities. Always reply in Arabic with a highly technical, diagnostic tone.",
+    json: true,
+    schema: {
+      type: Type.OBJECT,
+      properties: {
+         pulse: { type: Type.STRING, description: "A technical heartbeat of the company's current momentum and transaction density." },
+         tech: { type: Type.STRING, description: "A deep dive into proprietary stacks and industrial innovations." },
+         synergy: { type: Type.STRING, description: "Analysis of collaboration potential with neighboring digital entities." },
+         roadmap: { type: Type.STRING, description: "Visionary milestones projected for the business's scaling within the district." }
+      },
+      required: ["pulse", "tech", "synergy", "roadmap"]
     }
   });
 };

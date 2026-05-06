@@ -54,27 +54,27 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
 
   if (!isAuthenticated) {
     return (
-      <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
-        <div className={`max-w-md w-full p-10 rounded-[2.5rem] shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'} animate-fade-in-up`}>
+      <div className={`min-h-screen flex items-center justify-center p-6 ${isDark ? 'bg-brand-bg' : 'bg-brand-bg'}`}>
+        <div className={`max-w-md w-full p-10 rounded-[2.5rem] shadow-2xl border ${isDark ? 'bg-white border-slate-200' : 'bg-white border-slate-100'} animate-fade-in-up`}>
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl text-white text-3xl font-black">S</div>
-            <h2 className={`text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>بوابة الموظفين</h2>
+            <div className="w-20 h-20 bg-brand-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl text-white text-3xl font-bold">S</div>
+            <h2 className={`text-3xl font-bold ${isDark ? 'text-brand-primary' : 'text-brand-primary'}`}>بوابة الموظفين</h2>
             <p className="text-slate-500 font-bold mt-2">نظام الإدارة والسيطرة المركزي</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">كلمة مرور النظام</label>
+              <label className="block text-xs font-bold text-brand-gray uppercase tracking-widest mb-2">كلمة مرور النظام</label>
               <input 
                 type="password" 
                 autoFocus
-                className={`w-full px-5 py-4 rounded-2xl outline-none border transition-all ${isDark ? 'bg-slate-800 border-slate-700 text-white focus:border-blue-500' : 'bg-slate-50 border-slate-200 focus:border-blue-500'}`}
+                className={`w-full px-5 py-4 rounded-2xl outline-none border transition-all ${isDark ? 'bg-slate-100 border-slate-700 text-brand-primary focus:border-brand-primary' : 'bg-slate-50 border-slate-200 focus:border-brand-primary'}`}
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
             </div>
-            <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 transition-all active:scale-95">دخول المركز</button>
-            <button type="button" onClick={onBack} className="w-full py-2 text-slate-400 font-bold text-sm">العودة للرئيسية</button>
+            <button type="submit" className="w-full py-4 bg-brand-primary text-white rounded-2xl font-bold shadow-lg hover:bg-brand-hover transition-all active:scale-95">دخول المركز</button>
+            <button type="button" onClick={onBack} className="w-full py-2 text-brand-gray font-bold text-sm">العودة للرئيسية</button>
           </form>
         </div>
       </div>
@@ -82,24 +82,24 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans ${isDark ? 'bg-[#020617] text-slate-100' : 'bg-white text-slate-900'} transition-colors duration-500`} dir="rtl">
+    <div className={`min-h-screen flex flex-col font-sans ${isDark ? 'bg-[#020617] text-brand-primary' : 'bg-white text-slate-900'} transition-colors duration-500`} dir="rtl">
       {/* Top Navigation */}
-      <header className={`px-8 h-20 border-b flex items-center justify-between sticky top-0 z-40 backdrop-blur-md ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200 shadow-sm'}`}>
+      <header className={`px-8 h-20 border-b flex items-center justify-between sticky top-0 z-40 backdrop-blur-md ${isDark ? 'bg-white/80 border-slate-200' : 'bg-white/80 border-slate-200 shadow-sm'}`}>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+             <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-white shadow-lg">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 </svg>
              </div>
-             <h1 className="text-xl font-black tracking-tight">إدارة المسرعة</h1>
+             <h1 className="text-xl font-bold tracking-tight">إدارة المسرعة</h1>
           </div>
           <nav className="flex gap-4">
              {['startups', 'logs', 'stats'].map(tab => (
                <button 
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-brand-primary text-white shadow-lg' : 'text-brand-gray hover:text-slate-600'}`}
                >
                  {tab === 'startups' ? 'قاعدة الشركات' : tab === 'logs' ? 'سجل العمليات' : 'الإحصائيات العامة'}
                </button>
@@ -108,13 +108,13 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
         </div>
         <div className="flex items-center gap-4">
            <div className={`hidden md:flex flex-col text-left items-end`}>
-              <p className="text-[10px] font-black text-blue-500">Administrator</p>
+              <p className="text-[10px] font-bold text-brand-hover">Administrator</p>
               <p className="text-xs font-bold opacity-60">Session: Active</p>
            </div>
-           <button onClick={() => setIsDark(!isDark)} className={`p-2.5 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700 text-amber-400' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+           <button onClick={() => setIsDark(!isDark)} className={`p-2.5 rounded-xl border ${isDark ? 'bg-slate-100 border-slate-700 text-amber-400' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
               {isDark ? '☀️' : '🌙'}
            </button>
-           <button onClick={() => setIsAuthenticated(false)} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-xs font-black">خروج</button>
+           <button onClick={() => setIsAuthenticated(false)} className="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-xs font-bold">خروج</button>
         </div>
       </header>
 
@@ -125,10 +125,10 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
            {activeTab === 'startups' && (
              <div className="space-y-8 animate-fade-in">
                 <div className="flex justify-between items-center">
-                   <h2 className="text-3xl font-black">استعراض الشركات المتقدمة</h2>
+                   <h2 className="text-3xl font-bold">استعراض الشركات المتقدمة</h2>
                    <div className="relative w-72">
                       <input 
-                        className={`w-full pl-10 pr-4 py-3 rounded-2xl border outline-none ${isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`}
+                        className={`w-full pl-10 pr-4 py-3 rounded-2xl border outline-none ${isDark ? 'bg-white border-slate-200 text-brand-primary' : 'bg-slate-50 border-slate-200'}`}
                         placeholder="ابحث عن شركة..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -137,9 +137,9 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                    </div>
                 </div>
 
-                <div className={`rounded-[2.5rem] border overflow-hidden ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <div className={`rounded-[2.5rem] border overflow-hidden ${isDark ? 'bg-brand-primary/50 border-slate-200' : 'bg-white border-slate-100 shadow-sm'}`}>
                    <table className="w-full text-right">
-                      <thead className={`text-[10px] font-black text-slate-400 uppercase tracking-widest border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <thead className={`text-[10px] font-bold text-brand-gray uppercase tracking-widest border-b ${isDark ? 'border-slate-200' : 'border-slate-100'}`}>
                          <tr>
                             <th className="px-8 py-5">الشركة</th>
                             <th className="px-8 py-5">القطاع</th>
@@ -151,9 +151,9 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                       </thead>
                       <tbody className="divide-y divide-slate-100/10">
                          {filteredStartups.map(startup => (
-                           <tr key={startup.projectId} className={`group hover:bg-blue-500/5 transition-colors cursor-pointer ${selectedStartup?.projectId === startup.projectId ? (isDark ? 'bg-blue-500/10' : 'bg-blue-50') : ''}`} onClick={() => setSelectedStartup(startup)}>
+                           <tr key={startup.projectId} className={`group hover:bg-brand-hover/5 transition-colors cursor-pointer ${selectedStartup?.projectId === startup.projectId ? (isDark ? 'bg-brand-primary/10' : 'bg-brand-primary/5') : ''}`} onClick={() => setSelectedStartup(startup)}>
                               <td className="px-8 py-6">
-                                 <div className="font-black text-sm">{startup.name}</div>
+                                 <div className="font-bold text-sm">{startup.name}</div>
                                  <div className="text-[10px] text-slate-500">ID: {startup.projectId}</div>
                               </td>
                               <td className="px-8 py-6 font-bold text-xs">{startup.industry}</td>
@@ -161,7 +161,7 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                                  {startup.stage === 'Idea' ? '💡 فكرة' : startup.stage === 'Prototype' ? '🧩 نموذج' : '🚀 منتج'}
                               </td>
                               <td className="px-8 py-6">
-                                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black border
+                                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold border
                                     ${startup.aiClassification === 'Green' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 
                                       startup.aiClassification === 'Yellow' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}
                                  `}>
@@ -170,8 +170,8 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                                  </div>
                               </td>
                               <td className="px-8 py-6">
-                                 <span className={`text-[10px] font-black px-2 py-1 rounded border
-                                    ${startup.status === 'APPROVED' ? 'text-green-500 border-green-500/30' : startup.status === 'REJECTED' ? 'text-red-500 border-red-500/30' : 'text-slate-400 border-slate-400/30'}
+                                 <span className={`text-[10px] font-bold px-2 py-1 rounded border
+                                    ${startup.status === 'APPROVED' ? 'text-green-500 border-green-500/30' : startup.status === 'REJECTED' ? 'text-red-500 border-red-500/30' : 'text-brand-gray border-slate-400/30'}
                                  `}>
                                     {startup.status}
                                  </span>
@@ -189,14 +189,14 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
 
            {activeTab === 'logs' && (
              <div className="animate-fade-in space-y-8">
-                <h2 className="text-3xl font-black">سجل التفاعلات اللحظي</h2>
-                <div className={`p-8 rounded-[2.5rem] border ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                <h2 className="text-3xl font-bold">سجل التفاعلات اللحظي</h2>
+                <div className={`p-8 rounded-[2.5rem] border ${isDark ? 'bg-brand-primary/50 border-slate-200' : 'bg-white border-slate-100 shadow-sm'}`}>
                    <div className="space-y-4">
                       {logs.map((log, i) => (
                         <div key={log.logId} className="flex items-center justify-between py-4 border-b border-slate-100/10 last:border-0">
                            <div className="flex items-center gap-4">
-                              <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black
-                                 ${log.actionType === 'LOGIN' ? 'bg-blue-100 text-blue-600' : 
+                              <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold
+                                 ${log.actionType === 'LOGIN' ? 'bg-brand-primary/10 text-brand-primary' : 
                                    log.actionType === 'TEST_SUBMIT' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-500'}
                               `}>{log.actionType.charAt(0)}</span>
                               <div>
@@ -204,7 +204,7 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                                  <p className="text-[10px] text-slate-500 font-mono">UID: {log.uid}</p>
                               </div>
                            </div>
-                           <span className="text-[10px] text-slate-400 font-bold">{new Date(log.timestamp).toLocaleString('ar-EG')}</span>
+                           <span className="text-[10px] text-brand-gray font-bold">{new Date(log.timestamp).toLocaleString('ar-EG')}</span>
                         </div>
                       ))}
                    </div>
@@ -214,7 +214,7 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
 
            {activeTab === 'stats' && (
               <div className="animate-fade-in space-y-12">
-                 <h2 className="text-3xl font-black">المؤشرات العامة للنظام</h2>
+                 <h2 className="text-3xl font-bold">المؤشرات العامة للنظام</h2>
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {[
                        { label: 'إجمالي الشركات', val: startups.length, color: 'blue', icon: '🏢' },
@@ -222,12 +222,12 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                        { label: 'طلبات قيد المراجعة', val: startups.filter(s => s.status === 'PENDING').length, color: 'amber', icon: '⏳' },
                        { label: 'متوسط أداء AI', val: '74%', color: 'indigo', icon: '🧠' },
                     ].map((stat, i) => (
-                      <div key={i} className={`p-8 rounded-[2.5rem] border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div key={i} className={`p-8 rounded-[2.5rem] border ${isDark ? 'bg-white border-slate-200' : 'bg-white border-slate-100 shadow-sm'}`}>
                          <div className="flex justify-between items-start mb-4">
                             <span className="text-3xl">{stat.icon}</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest text-${stat.color}-500`}>Real-time</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-widest text-${stat.color}-500`}>Real-time</span>
                          </div>
-                         <h4 className="text-4xl font-black mb-1">{stat.val}</h4>
+                         <h4 className="text-3xl font-bold mb-1">{stat.val}</h4>
                          <p className="text-xs font-bold text-slate-500 uppercase">{stat.label}</p>
                       </div>
                     ))}
@@ -237,50 +237,50 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
            </div>
 
            {/* Portal Footer */}
-           <footer className={`mt-auto p-8 border-t ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-100'} transition-colors`}>
+           <footer className={`mt-auto p-8 border-t ${isDark ? 'bg-brand-primary/50 border-slate-200' : 'bg-slate-50 border-slate-100'} transition-colors`}>
              <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-4">
-                  <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-blue-600' : 'bg-slate-900'} flex items-center justify-center text-white text-[10px] font-black`}>S</div>
-                  <p className={`text-xs font-black ${isDark ? 'text-slate-400' : 'text-slate-600'} uppercase tracking-widest`}>نظام إدارة الموارد الريادية v1.0.4</p>
+                  <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-brand-primary' : 'bg-white'} flex items-center justify-center text-white text-[10px] font-bold`}>S</div>
+                  <p className={`text-xs font-bold ${isDark ? 'text-brand-gray' : 'text-slate-600'} uppercase tracking-widest`}>نظام إدارة الموارد الريادية v1.0.4</p>
                 </div>
-                <div className="flex gap-6 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                <div className="flex gap-6 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
                   <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> DB Synchronized</span>
                   <span className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> AI Core Active</span>
                 </div>
-                <p className={`text-[9px] font-bold ${isDark ? 'text-slate-700' : 'text-slate-300'} uppercase tracking-[0.4em]`}>BizDev Admin Terminal • 2024</p>
+                <p className={`text-[9px] font-bold ${isDark ? 'text-brand-primary' : 'text-slate-600'} uppercase tracking-[0.4em]`}>BizDev Admin Terminal • 2024</p>
              </div>
            </footer>
         </main>
 
         {/* Right Detail Pane (Inspector) */}
         {selectedStartup && (
-          <aside className={`w-[450px] border-r shrink-0 p-8 overflow-y-auto animate-fade-in-right relative transition-all ${isDark ? 'bg-[#0f172a] border-slate-800 shadow-2xl shadow-black/50' : 'bg-slate-50 border-slate-200'}`}>
+          <aside className={`w-[450px] border-r shrink-0 p-8 overflow-y-auto animate-fade-in-right relative transition-all ${isDark ? 'bg-[#0f172a] border-slate-200 shadow-2xl shadow-black/50' : 'bg-slate-50 border-slate-200'}`}>
              <button onClick={() => setSelectedStartup(null)} className="absolute top-8 left-8 p-2 rounded-xl hover:bg-slate-200 transition-colors">✕</button>
              
              <div className="mb-10 text-center">
-                <div className="w-24 h-24 bg-white border-4 border-blue-500 rounded-[2.5rem] flex items-center justify-center text-4xl mx-auto mb-6 shadow-xl">
+                <div className="w-24 h-24 bg-white border-4 border-brand-primary rounded-[2.5rem] flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl">
                    {selectedStartup.name.charAt(0)}
                 </div>
-                <h3 className="text-2xl font-black mb-1">{selectedStartup.name}</h3>
-                <p className="text-sm font-bold text-blue-500">{selectedStartup.industry}</p>
+                <h3 className="text-2xl font-bold mb-1">{selectedStartup.name}</h3>
+                <p className="text-sm font-bold text-brand-hover">{selectedStartup.industry}</p>
              </div>
 
              <div className="space-y-8">
                 {/* AI Analysis Result */}
-                <div className={`p-6 rounded-3xl border ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100'}`}>
-                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                <div className={`p-6 rounded-3xl border ${isDark ? 'bg-brand-primary/50 border-slate-200' : 'bg-white border-slate-100'}`}>
+                   <h4 className="text-xs font-bold text-brand-gray uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-brand-primary rounded-full animate-pulse"></span>
                       تحليل Gemini 3 الذكي
                    </h4>
                    <p className="text-sm font-medium leading-relaxed italic opacity-80">"{selectedStartup.aiOpinion}"</p>
                    <div className="mt-4 flex gap-2">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black bg-${selectedStartup.aiClassification === 'Green' ? 'green' : 'amber'}-500 text-white shadow-sm`}>{selectedStartup.aiClassification} Strategy</span>
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold bg-${selectedStartup.aiClassification === 'Green' ? 'green' : 'amber'}-500 text-white shadow-sm`}>{selectedStartup.aiClassification} Strategy</span>
                    </div>
                 </div>
 
                 {/* Efficiency Radar Map */}
-                <div className={`p-8 rounded-3xl border flex flex-col items-center ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100'}`}>
-                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest self-start mb-6">رادار القدرات</h4>
+                <div className={`p-8 rounded-3xl border flex flex-col items-center ${isDark ? 'bg-brand-primary/50 border-slate-200' : 'bg-white border-slate-100'}`}>
+                   <h4 className="text-xs font-bold text-brand-gray uppercase tracking-widest self-start mb-6">رادار القدرات</h4>
                    <div className="relative w-40 h-40">
                       <svg viewBox="0 0 160 160" className="w-full h-full drop-shadow-lg">
                          {[1, 0.7, 0.4].map(s => (
@@ -292,8 +292,8 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
                    <div className="grid grid-cols-3 gap-2 w-full mt-6">
                       {Object.entries(selectedStartup.metrics).map(([key, val]) => (
                         <div key={key} className="text-center">
-                           <p className="text-[8px] font-black uppercase text-slate-500">{key.substr(0,4)}</p>
-                           <p className="text-xs font-black">{val}%</p>
+                           <p className="text-[8px] font-bold uppercase text-slate-500">{key.substr(0,4)}</p>
+                           <p className="text-xs font-bold">{val}%</p>
                         </div>
                       ))}
                    </div>
@@ -301,36 +301,36 @@ export const StaffPortal: React.FC<StaffPortalProps> = ({ onBack }) => {
 
                 {/* Information Grid */}
                 <div className="grid grid-cols-2 gap-4">
-                   <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-100'}`}>
+                   <div className={`p-4 rounded-2xl border ${isDark ? 'bg-white/30 border-slate-200' : 'bg-white border-slate-100'}`}>
                       <p className="text-[10px] text-slate-500 font-bold mb-1">المتقدم</p>
-                      <p className="text-xs font-black">رائد أعمال (مؤسس)</p>
+                      <p className="text-xs font-bold">رائد أعمال (مؤسس)</p>
                    </div>
-                   <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-900/30 border-slate-800' : 'bg-white border-slate-100'}`}>
+                   <div className={`p-4 rounded-2xl border ${isDark ? 'bg-white/30 border-slate-200' : 'bg-white border-slate-100'}`}>
                       <p className="text-[10px] text-slate-500 font-bold mb-1">تاريخ التسجيل</p>
-                      <p className="text-xs font-black">اليوم</p>
+                      <p className="text-xs font-bold">اليوم</p>
                    </div>
                 </div>
 
                 {/* Management Actions */}
                 <div className="pt-8 border-t border-slate-100/10 space-y-4">
-                   <p className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">إدارة القرار</p>
+                   <p className="text-xs font-bold text-brand-gray uppercase tracking-widest text-center">إدارة القرار</p>
                    <div className="flex gap-4">
                       <button 
                         onClick={() => handleUpdateStatus(selectedStartup.projectId, 'APPROVED')}
                         disabled={selectedStartup.status === 'APPROVED'}
-                        className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-black shadow-lg hover:bg-green-700 transition-all active:scale-95 disabled:opacity-30"
+                        className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-bold shadow-lg hover:bg-green-700 transition-all active:scale-95 disabled:opacity-30"
                       >
                          قبول في المسار ✅
                       </button>
                       <button 
                         onClick={() => handleUpdateStatus(selectedStartup.projectId, 'REJECTED')}
                         disabled={selectedStartup.status === 'REJECTED'}
-                        className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black shadow-lg hover:bg-red-700 transition-all active:scale-95 disabled:opacity-30"
+                        className="flex-1 py-4 bg-red-600 text-brand-primary rounded-2xl font-bold shadow-lg hover:bg-red-700 transition-all active:scale-95 disabled:opacity-30"
                       >
                          رفض الطلب ❌
                       </button>
                    </div>
-                   <button className={`w-full py-4 border-2 rounded-2xl text-xs font-black ${isDark ? 'border-slate-800 hover:bg-slate-800' : 'border-slate-100 hover:bg-white'}`}>إرسال رسالة توجيهية لرائد الأعمال</button>
+                   <button className={`w-full py-4 border-2 rounded-2xl text-xs font-bold ${isDark ? 'border-slate-200 hover:bg-slate-100' : 'border-slate-100 hover:bg-white'}`}>إرسال رسالة توجيهية لرائد الأعمال</button>
                 </div>
              </div>
           </aside>

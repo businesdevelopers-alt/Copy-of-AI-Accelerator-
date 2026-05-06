@@ -19,7 +19,8 @@ export enum FiltrationStage {
   STAFF_PORTAL = 'STAFF_PORTAL',
   ACHIEVEMENTS = 'ACHIEVEMENTS',
   MENTORSHIP = 'MENTORSHIP',
-  INCUBATION_PROGRAM = 'INCUBATION_PROGRAM'
+  INCUBATION_PROGRAM = 'INCUBATION_PROGRAM',
+  COMMUNITY = 'COMMUNITY'
 }
 
 export interface OpportunityAnalysis {
@@ -429,43 +430,47 @@ export interface MentorProfile {
   avatar: string;
   rating: number;
   tags: string[];
+  systemPrompt?: string;
 }
 
 export const MOCK_MENTORS: MentorProfile[] = [
   {
     id: 'm1',
-    name: 'م. أحمد الخالدي',
-    role: 'CEO',
-    company: 'TechGrowth',
-    specialty: 'توسع الأسواق والتقنية',
-    bio: 'خبير في بناء وتوسيع الشركات التقنية في المنطقة العربية لأكثر من ١٥ عاماً.',
+    name: 'الموجه المالي',
+    role: 'AI Financial Advisor',
+    company: 'بيزنس ديفلوبرز',
+    specialty: 'التمويل والاستثمار',
+    bio: 'مستشار مالي يعتمد على الذكاء الاصطناعي، متخصص في هيكلة النماذج المالية للشركات الناشئة وإدارة التدفقات النقدية والتحضير لجولات التمويل.',
     experience: 15,
-    avatar: '👨‍💼',
+    avatar: '💰',
     rating: 4.9,
-    tags: ['SaaS', 'Strategy', 'Tech']
+    tags: ['Finance', 'Investment', 'SaaS'],
+    systemPrompt: 'أنت مستشار مالي خبير للشركات الناشئة. هدفك مساعدة رواد الأعمال في فهم نماذجهم المالية، وحساب التكاليف والإيرادات، وتقديم نصائح للاستثمار. قم بالرد بأسلوب احترافي ودقيق وعملي، وتجنب الإجابات الطويلة جداً إلا إذا طلب منك المستخدم تفاصيل دقيقة. ركز على التدفق النقدي والتقييم.'
   },
   {
     id: 'm2',
-    name: 'د. سارة المنصور',
-    role: 'Investment Partner',
-    company: 'CapitalVenture',
-    specialty: 'التمويل والاستثمار',
-    bio: 'متخصصة في إعداد الشركات لجولات التمويل (Series A) وتقييم النماذج المالية.',
+    name: 'الموجه التقني',
+    role: 'AI Tech Mentor',
+    company: 'بيزنس ديفلوبرز',
+    specialty: 'التطوير التقني',
+    bio: 'مرشد تقني مدعوم بالذكاء الاصطناعي لمساعدتك في اتخاذ أفضل القرارات التقنية وبناء بنيتك التحتية وتطوير منتجك الأولي (MVP).',
     experience: 10,
-    avatar: '👩‍💼',
+    avatar: '💻',
     rating: 4.8,
-    tags: ['Finance', 'Pitching', 'VC']
+    tags: ['Tech', 'Cloud', 'Architecture'],
+    systemPrompt: 'أنت مرشد تقني ( CTO ) ذو خبرة واسعة في مساعدة الشركات الناشئة على بناء منتجاتها التقنية. قدم نصائح حول البنية التحتية، اختيار لغات البرمجة والتقنيات، كيفية بناء MVP سريع وبتكلفة منخفضة. ركز على الجوانب الهندسية وتجربة المستخدم والسرعة في التنفيذ.'
   },
   {
     id: 'm3',
-    name: 'الأستاذ عمر فاروق',
-    role: 'Growth Hacker',
-    company: 'ScaleUp',
-    specialty: 'التسويق الرقمي والنمو',
-    bio: 'ساعد أكثر من ٥٠ شركة ناشئة في الوصول لأول ١٠٠ ألف مستخدم.',
+    name: 'موجه النمو',
+    role: 'AI Growth Hacker',
+    company: 'بيزنس ديفلوبرز',
+    specialty: 'النمو والتسويق',
+    bio: 'خبير نمو يعمل بالذكاء الاصطناعي لاكتشاف أفضل القنوات والاستراتيجيات لرفع عدد مستخدمي منتجك بأقل تكلفة ممكنة.',
     experience: 8,
-    avatar: '👨‍💻',
-    rating: 4.7,
-    tags: ['Marketing', 'Growth', 'Ads']
+    avatar: '🚀',
+    rating: 4.9,
+    tags: ['Marketing', 'Growth', 'Ads'],
+    systemPrompt: 'أنت خبير نمو وتسويق رقمي (Growth Hacker). مهمتك هي مساعدة رواد الأعمال في إيجاد طرق مبتكرة لزيادة عدد المستخدمين والمبيعات بتكاليف منخفضة. اقترح استراتيجيات مجربة لتحسين معدلات التحويل وزيادة ولاء العملاء والاستفادة من تحليلات البيانات.'
   }
 ];
